@@ -57,7 +57,7 @@ export function Mascot({
       height={(size * 224) / 200}
       role="img"
       aria-label={title ?? `${code} mascot`}
-      className={cn('select-none overflow-visible', className)}
+      className={cn('h-auto max-w-full select-none overflow-visible', className)}
     >
       {/* soft aura at deep bond — a single calm ring, never a pile of effects */}
       {showAura && (
@@ -89,7 +89,7 @@ export function Mascot({
 
         {/* seeded markings — quiet, constant per team */}
         {p.markings.map((m, i) => (
-          <circle key={i} cx={m.x} cy={m.y} r={m.r} fill={rgba(p.outline, 0.12)} />
+          <circle key={i} cx={m.x} cy={m.y} r={m.r} fill={rgba(p.markColor, 0.13)} />
         ))}
 
         {/* cheeks */}
@@ -265,6 +265,7 @@ interface Params {
   belly: string
   outline: string
   cheek: string
+  markColor: string
   ink: string
   markings: Array<{ x: number; y: number; r: number }>
 }
@@ -300,7 +301,11 @@ function buildParams(code: string, color: string, color2: string, level: number)
     bodyFill,
     belly: lighten(color, 0.66),
     outline: darken(color, 0.5),
-    cheek: mixHex(color2, '#ff9a8a', 0.35),
+    // a soft, warm blush — mostly coral with a hint of the team color, so it
+    // reads friendly regardless of a team's secondary color.
+    cheek: mixHex('#ff9a8a', color, 0.18),
+    // quiet markings borrow the team's secondary color
+    markColor: mixHex(color2, darken(color, 0.5), 0.45),
     ink: '#23231f',
     markings,
   }
