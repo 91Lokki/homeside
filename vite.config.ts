@@ -10,11 +10,11 @@ import path from 'node:path'
  * API-Football key works locally exactly as it will in production.
  */
 function apiDev(env: Record<string, string>): Plugin {
-  const ROUTES = new Set(['fixtures', 'standings', 'match', 'squad'])
+  const ROUTES = new Set(['fixtures', 'match'])
   return {
     name: 'homeside-api-dev',
     configureServer(server: ViteDevServer) {
-      for (const k of ['API_FOOTBALL_KEY', 'API_FOOTBALL_HOST', 'WC_LEAGUE_ID', 'WC_SEASON']) {
+      for (const k of ['HIGHLIGHTLY_KEY', 'WC_LEAGUE_ID', 'WC_SEASON']) {
         if (env[k] != null && env[k] !== '' && process.env[k] == null) process.env[k] = env[k]
       }
       server.middlewares.use(async (req, res, next) => {

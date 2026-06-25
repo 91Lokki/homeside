@@ -1,36 +1,32 @@
-import { afFetch, getConfig, hasKey, json, noData, ProxyError } from './_lib/apiFootball'
+import { getConfig, hasKey, hlFetch, json, noData, ProxyError } from './_lib/highlightly'
 
 export const config = { runtime: 'edge' }
 
 /**
  * GET /api/match?fixture=ID
  *
- * The light match report: goal/card timeline (events), possession & shots
- * (statistics), and lineups — fetched server-side in one shot so the client
- * makes a single request per finished/in-progress match it wants to expand.
+ * The light match report for a finished match: goal/card timeline via
+ * /matches/{id} (its `events`), and possession/shots via /statistics/{id}.
+ * Finished matches are immutable, so this is cached hard.
  */
 export default async function handler(req: Request): Promise<Response> {
   const cfg = getConfig()
   if (!hasKey(cfg)) return noData('no API key configured')
 
-  const { searchParams } = new URL(req.url)
-  const fixture = searchParams.get('fixture') ?? ''
+  const fixture = new URL(req.url).searchParams.get('fixture') ?? ''
   if (!/^\d+$/.test(fixture)) {
     return json({ source: 'error', reason: 'missing or invalid fixture id' }, { status: 400, sMaxAge: 0 })
   }
 
   try {
-    const [events, statistics, lineups] = await Promise.all([
-      afFetch(cfg, 'fixtures/events', { fixture }),
-      afFetch(cfg, 'fixtures/statistics', { fixture }),
-      afFetch(cfg, 'fixtures/lineups', { fixture }),
+    const [match, statistics] = await Promise.all([
+      hlFetch(cfg, `/matches/${fixture}`),
+      hlFetch(cfg, `/statistics/${fixture}`),
     ])
-    // Finished matches are immutable — cache hard. (Live ones still update
-    // every ~30s via stale-while-revalidate.)
-    return json({ source: 'live', fixture, events, statistics, lineups }, { sMaxAge: 30, swr: 600 })
+    return json({ source: 'highlightly', fixture, match, statistics }, { sMaxAge: 86400, swr: 604800 })
   } catch (err) {
     const status = err instanceof ProxyError ? err.status : 502
     const reason = err instanceof ProxyError ? err.message : 'upstream request failed'
-    return json({ source: 'error', reason }, { status, sMaxAge: 15, swr: 30 })
+    return json({ source: 'error', reason }, { status, sMaxAge: 30, swr: 120 })
   }
 }

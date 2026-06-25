@@ -2,24 +2,16 @@ import { TEAMS } from '@/data/teams'
 import type { Match, Stage, TeamCode } from '@/domain/types'
 
 /**
- * Frontend data access. Talks ONLY to our own /api proxy (never to API-Football
+ * Frontend data access. Talks ONLY to our own /api proxy (never to Highlightly
  * directly — the key lives server-side). When the proxy reports no key / an
  * error, we return null and the app keeps the real seed snapshot untouched.
  * Nothing here ever invents a result.
  */
 
 interface ProxyResult {
-  source?: 'none' | 'error' | 'live'
+  source?: 'none' | 'error' | 'highlightly'
   reason?: string
-  response?: unknown[]
-  /** API-Football returns HTTP 200 with this populated for plan/param errors. */
-  errors?: unknown
-}
-
-function hasApiErrors(errs: unknown): boolean {
-  if (Array.isArray(errs)) return errs.length > 0
-  if (errs && typeof errs === 'object') return Object.keys(errs).length > 0
-  return false
+  matches?: unknown[]
 }
 
 async function getProxy(path: string): Promise<unknown[] | null> {
@@ -27,11 +19,8 @@ async function getProxy(path: string): Promise<unknown[] | null> {
     const res = await fetch(path, { headers: { accept: 'application/json' } })
     if (!res.ok) return null
     const data = (await res.json()) as ProxyResult
-    if (data.source === 'none' || data.source === 'error') return null
-    // A populated `errors` block (e.g. "this season isn't in your plan") means no
-    // usable data — fall back to the snapshot honestly rather than claiming live.
-    if (hasApiErrors(data.errors)) return null
-    return Array.isArray(data.response) ? data.response : null
+    if (data.source !== 'highlightly') return null
+    return Array.isArray(data.matches) ? data.matches : null
   } catch {
     return null
   }
@@ -39,6 +28,8 @@ async function getProxy(path: string): Promise<unknown[] | null> {
 
 /* --------------------------- name -> code mapping ------------------------- */
 
+// Highlightly's WC team names reconciled to the seed's 3-letter codes. Names that
+// already match a seed team verbatim don't need an entry here.
 const ALIASES: Record<string, TeamCode> = {
   'united states': 'USA',
   usa: 'USA',
@@ -60,7 +51,7 @@ const ALIASES: Record<string, TeamCode> = {
   'congo dr': 'COD',
   'democratic republic of the congo': 'COD',
   'saudi arabia': 'KSA',
-  'bosnia and herzegovina': 'BIH',
+  'bosnia and herzegovina': 'BIH', // "Bosnia & Herzegovina" is normalized to this below
   bosnia: 'BIH',
   'ir iran': 'IRN',
   iran: 'IRN',
@@ -75,78 +66,95 @@ const NAME_TO_CODE: Record<string, TeamCode> = (() => {
 
 function codeFromName(name: string | undefined): TeamCode | null {
   if (!name) return null
-  // Normalize curly/back apostrophes so e.g. "Côte d'Ivoire" matches regardless
-  // of which apostrophe character the API uses.
-  const key = name.toLowerCase().trim().replace(/[’`´]/g, "'")
+  // Normalize curly apostrophes and "&" -> "and" so e.g. "Bosnia & Herzegovina"
+  // and "Côte d'Ivoire" match regardless of punctuation.
+  const key = name
+    .toLowerCase()
+    .trim()
+    .replace(/[’`´]/g, "'")
+    .replace(/\s*&\s*/g, ' and ')
   return NAME_TO_CODE[key] ?? null
 }
 
-/* ------------------------- API-Football normalizers ----------------------- */
+/* ------------------------- Highlightly normalizers ------------------------ */
 
-function stageFromRound(round: string | undefined): { stage: Stage; group?: string } {
+/** Highlightly group rounds are "Group Stage - N" (no letter); the seed carries
+ *  the group letter, so for group matches we only need stage = 'group'. */
+function stageFromRound(round: string | undefined): Stage {
   const r = (round ?? '').toLowerCase()
-  const g = r.match(/group\s+([a-l])/)
-  if (g) return { stage: 'group', group: g[1].toUpperCase() }
-  if (r.includes('final') && !r.includes('semi') && !r.includes('quarter')) {
-    if (r.includes('3rd') || r.includes('third')) return { stage: 'F3' }
-    return { stage: 'F' }
-  }
-  if (r.includes('semi')) return { stage: 'SF' }
-  if (r.includes('quarter')) return { stage: 'QF' }
-  if (r.includes('16')) return { stage: 'R16' }
-  if (r.includes('32')) return { stage: 'R32' }
-  return { stage: 'group' }
+  if (r.includes('group')) return 'group'
+  if (r.includes('round of 32') || r.includes('r32')) return 'R32'
+  if (r.includes('round of 16') || r.includes('r16')) return 'R16'
+  if (r.includes('quarter')) return 'QF'
+  if (r.includes('semi')) return 'SF'
+  if (r.includes('third') || r.includes('3rd') || r.includes('play-off')) return 'F3'
+  if (r.includes('final')) return 'F'
+  return 'group'
 }
 
-interface AfFixture {
-  fixture?: { id?: number; date?: string; status?: { short?: string; elapsed?: number | null } }
-  league?: { round?: string }
-  teams?: { home?: { name?: string }; away?: { name?: string } }
-  goals?: { home?: number | null; away?: number | null }
-  score?: { penalty?: { home?: number | null; away?: number | null } }
+function isFinished(description: string | undefined): boolean {
+  const d = (description ?? '').toLowerCase()
+  return d.includes('finish') || d.includes('after extra') || d.includes('penalt') || d === 'aet' || d === 'ft'
 }
 
-function normalizeFixture(af: AfFixture): Match | null {
-  const homeCode = codeFromName(af.teams?.home?.name)
-  const awayCode = codeFromName(af.teams?.away?.name)
+/** Parse a Highlightly score string like "3 - 1" into numbers. */
+function parseScore(s: string | null | undefined): { home: number; away: number } | null {
+  if (!s) return null
+  const m = String(s).split(/\s*[-–]\s*/)
+  if (m.length !== 2) return null
+  const home = Number(m[0])
+  const away = Number(m[1])
+  if (Number.isNaN(home) || Number.isNaN(away)) return null
+  return { home, away }
+}
+
+interface HlTeam {
+  id?: number
+  name?: string
+}
+interface HlMatch {
+  id?: number
+  round?: string
+  date?: string
+  state?: { description?: string; clock?: number | null; score?: { current?: string | null; penalties?: string | null } }
+  homeTeam?: HlTeam
+  awayTeam?: HlTeam
+}
+
+function normalizeMatch(hl: HlMatch): Match | null {
+  const homeCode = codeFromName(hl.homeTeam?.name)
+  const awayCode = codeFromName(hl.awayTeam?.name)
   if (!homeCode || !awayCode) return null
 
-  const short = af.fixture?.status?.short ?? 'NS'
-  const FINISHED = ['FT', 'AET', 'PEN', 'AWD', 'WO']
-  const LIVE = ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE', 'SUSP', 'INT']
-  const status: Match['status'] = FINISHED.includes(short) ? 'finished' : LIVE.includes(short) ? 'live' : 'scheduled'
-
-  const { stage, group } = stageFromRound(af.league?.round)
-  const pen = af.score?.penalty
-  const hasPens = pen && pen.home != null && pen.away != null
+  const finished = isFinished(hl.state?.description)
+  const score = finished ? parseScore(hl.state?.score?.current) : null
+  const pens = finished ? parseScore(hl.state?.score?.penalties) : null
 
   return {
-    id: `af-${af.fixture?.id ?? `${homeCode}-${awayCode}`}`,
-    stage,
-    group,
+    id: `hl-${hl.id}`,
+    stage: stageFromRound(hl.round),
     homeCode,
     awayCode,
-    kickoff: af.fixture?.date ?? new Date().toISOString(),
-    status,
-    homeScore: status === 'scheduled' ? null : af.goals?.home ?? null,
-    awayScore: status === 'scheduled' ? null : af.goals?.away ?? null,
-    minute: status === 'live' ? af.fixture?.status?.elapsed ?? null : null,
-    pens: hasPens ? { home: pen!.home!, away: pen!.away! } : undefined,
-    apiFixtureId: af.fixture?.id,
+    kickoff: hl.date ?? new Date().toISOString(),
+    status: finished ? 'finished' : 'scheduled',
+    homeScore: score ? score.home : null,
+    awayScore: score ? score.away : null,
+    minute: null,
+    pens: pens ?? undefined,
+    apiFixtureId: hl.id,
   }
 }
 
 /**
- * Fetch real, FINISHED match results from the proxy. This is a low-frequency
- * results updater — not live: in-progress and scheduled fixtures are ignored, so
- * only final scores ever reach the app. Returns null when the proxy has no key
- * (the caller then keeps the real seed snapshot untouched).
+ * Fetch real, FINISHED match results from the proxy. Low-frequency results
+ * updater — not live: only final scores reach the app. Returns null when the
+ * proxy has no key (the caller then keeps the real seed snapshot untouched).
  */
 export async function fetchResults(): Promise<Match[] | null> {
   const raw = await getProxy('/api/fixtures')
   if (!raw) return null
   return raw
-    .map((x) => normalizeFixture(x as AfFixture))
+    .map((x) => normalizeMatch(x as HlMatch))
     .filter((m): m is Match => m !== null && m.status === 'finished')
 }
 
@@ -158,9 +166,10 @@ const pairKey = (a: TeamCode, b: TeamCode) => [a, b].sort().join('~')
 const mergeKey = (m: Match) => `${m.stage}:${pairKey(m.homeCode!, m.awayCode!)}`
 
 /**
- * Overlay live matches onto the seed. Live updates an existing seed match (by
- * stage + unordered team pair), preserving the seed's home/away orientation;
- * brand-new matches (knockout fixtures once teams are known) are appended.
+ * Overlay real results onto the seed. A result updates an existing seed match (by
+ * stage + unordered team pair), preserving the seed's home/away orientation and
+ * its group letter; brand-new matches (knockout fixtures once teams are known)
+ * are appended.
  */
 export function mergeMatches(seed: Match[], live: Match[]): Match[] {
   const out = seed.map((m) => ({ ...m }))
@@ -197,13 +206,13 @@ export function mergeMatches(seed: Match[], live: Match[]): Match[] {
 /* ------------------------------ match report ------------------------------ */
 
 export interface MatchReport {
-  events: AfEvent[]
+  events: ReportEvent[]
   possession: { home: number | null; away: number | null }
   shots: { home: number | null; away: number | null }
   shotsOnTarget: { home: number | null; away: number | null }
 }
 
-interface AfEvent {
+interface ReportEvent {
   minute: number | null
   team: TeamCode | null
   player: string
@@ -211,40 +220,66 @@ interface AfEvent {
   detail: string
 }
 
-// Resolve a stat block by team CODE (not raw name) so teams whose seed name
-// differs from API-Football's name (e.g. South Korea / Korea Republic) still match.
-function statValue(stats: any[], wantCode: TeamCode | null, type: string): number | null {
-  const block = stats?.find((s) => codeFromName(s?.team?.name) === wantCode)
-  const row = block?.statistics?.find((r: any) => r?.type === type)
-  if (!row) return null
-  const v = row.value
-  if (v == null) return null
-  if (typeof v === 'string') return parseInt(v.replace('%', ''), 10) || 0
-  return v
+interface HlStatBlock {
+  team?: { name?: string }
+  statistics?: Array<{ displayName?: string; value?: number | string | null }>
 }
 
-export async function fetchMatchReport(fixtureId: number, homeCode?: TeamCode | null, awayCode?: TeamCode | null): Promise<MatchReport | null> {
+/** Read one statistic for a team (by code), matched on Highlightly's displayName. */
+function statVal(blocks: HlStatBlock[], code: TeamCode | null, displayName: string): number | null {
+  const block = blocks.find((b) => codeFromName(b?.team?.name) === code)
+  const row = block?.statistics?.find((s) => (s?.displayName ?? '').toLowerCase() === displayName.toLowerCase())
+  const v = row?.value
+  if (v == null) return null
+  return typeof v === 'number' ? v : Number.isNaN(parseFloat(v)) ? null : parseFloat(v)
+}
+
+function parseMinute(time: unknown): number | null {
+  const m = String(time ?? '').match(/^\d+/)
+  return m ? Number(m[0]) : null
+}
+
+export async function fetchMatchReport(
+  fixtureId: number,
+  homeCode?: TeamCode | null,
+  awayCode?: TeamCode | null,
+): Promise<MatchReport | null> {
   try {
     const res = await fetch(`/api/match?fixture=${fixtureId}`)
     if (!res.ok) return null
     const data = await res.json()
-    if (data.source === 'none' || data.source === 'error') return null
+    if (data.source !== 'highlightly') return null
 
-    const events: AfEvent[] = (data.events?.response ?? []).map((e: any) => ({
-      minute: e?.time?.elapsed ?? null,
+    // /matches/{id} returns an array; statistics is an array of team blocks.
+    const detail = Array.isArray(data.match) ? data.match[0] : data.match
+    const blocks: HlStatBlock[] = Array.isArray(data.statistics) ? data.statistics : (data.statistics?.data ?? [])
+
+    const events: ReportEvent[] = (detail?.events ?? []).map((e: any) => ({
+      minute: parseMinute(e?.time),
       team: codeFromName(e?.team?.name),
-      player: e?.player?.name ?? '',
+      player: e?.player ?? '',
       type: e?.type ?? '',
-      detail: e?.detail ?? '',
+      detail: e?.substituted ? `for ${e.substituted}` : '',
     }))
-    const stats = data.statistics?.response ?? []
+
     const home = homeCode ?? null
     const away = awayCode ?? null
+    const poss = (c: TeamCode | null) => {
+      const p = statVal(blocks, c, 'Possession')
+      return p == null ? null : Math.round(p * 100) // Highlightly reports a fraction
+    }
+    // Highlightly has no single "total shots"; sum shots by pitch location.
+    const totalShots = (c: TeamCode | null) => {
+      const inside = statVal(blocks, c, 'Shots within penalty area')
+      const outside = statVal(blocks, c, 'Shots outside penalty area')
+      return inside == null && outside == null ? null : (inside ?? 0) + (outside ?? 0)
+    }
+
     return {
       events,
-      possession: { home: statValue(stats, home, 'Ball Possession'), away: statValue(stats, away, 'Ball Possession') },
-      shots: { home: statValue(stats, home, 'Total Shots'), away: statValue(stats, away, 'Total Shots') },
-      shotsOnTarget: { home: statValue(stats, home, 'Shots on Goal'), away: statValue(stats, away, 'Shots on Goal') },
+      possession: { home: poss(home), away: poss(away) },
+      shots: { home: totalShots(home), away: totalShots(away) },
+      shotsOnTarget: { home: statVal(blocks, home, 'Shots on target'), away: statVal(blocks, away, 'Shots on target') },
     }
   } catch {
     return null

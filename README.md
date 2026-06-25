@@ -30,28 +30,22 @@ matches. Not a stats dashboard; a quiet companion for the summer.
 ## Stack
 
 Vite + React 18 + TypeScript + Tailwind. A thin **Vercel Edge** proxy in
-[`/api`](api) keeps the API-Football key server-side. The mascot and ambient
-field are seeded generative art (no heavy dependencies).
+[`/api`](api) keeps the Highlightly Football API key server-side. The mascot and
+ambient field are seeded generative art (no heavy dependencies).
 
 ## Local development
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (runs on the seed snapshot)
+echo "HIGHLIGHTLY_KEY=<your key>" > .env.local   # optional; omit to use the snapshot
+npm run dev          # http://localhost:5173
 ```
 
-To exercise the **real-results** path locally, run the proxy with the Vercel CLI
-in a second terminal (it reads your key from `.env`) — the Vite dev server
-proxies `/api` to it. Results are fetched on load and refreshed every few hours
-(low-frequency; there is no in-match live polling):
-
-```bash
-cp .env.example .env # then fill in API_FOOTBALL_KEY
-vercel dev           # serves /api on :3000
-```
-
-Without a key, every `/api` route returns a "no data" signal and the app stays
-on the committed real snapshot.
+`npm run dev` runs the `/api` functions itself (a small Vite middleware) and
+reads `.env.local` — no Vercel CLI needed. With a key, real **finished** results
+are fetched on load and refreshed every few hours (low-frequency; no in-match
+live polling). Without a key, every `/api` route returns a "no data" signal and
+the app stays on the committed real snapshot.
 
 ## Deploying to Vercel
 
@@ -60,9 +54,8 @@ on the committed real snapshot.
 
    | Variable | Value |
    | --- | --- |
-   | `API_FOOTBALL_KEY` | your API-Football key |
-   | `API_FOOTBALL_HOST` | `v3.football.api-sports.io` (or the RapidAPI host) |
-   | `WC_LEAGUE_ID` | `1` |
+   | `HIGHLIGHTLY_KEY` | your Highlightly API key |
+   | `WC_LEAGUE_ID` | `1635` |
    | `WC_SEASON` | `2026` |
 
 3. Deploy. The serverless functions in `/api` are detected automatically and the
@@ -85,7 +78,7 @@ node scripts/build-seed.mjs
 ## Project structure
 
 ```
-api/            Vercel Edge proxy (key stays here): fixtures, standings, match, squad
+api/            Vercel Edge proxy (key stays here): fixtures, match
 src/
   data/         generated seed snapshot (teams, fixtures, bracket, squads, meta)
   domain/       pure logic: types, record/standings, results-only bond, bracket resolver

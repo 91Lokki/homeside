@@ -87,7 +87,7 @@ function Shell() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-4 text-2xs text-faint sm:px-8">
           <span>
             {connected
-              ? 'Real results via API-Football, refreshed periodically.'
+              ? 'Real results via Highlightly, refreshed periodically.'
               : `Snapshot as of ${DATA_META.asOf}.`}{' '}
             Growth reflects real finished matches only.
           </span>
