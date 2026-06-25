@@ -55,10 +55,28 @@ export async function afFetch(
     : { 'x-apisports-key': cfg.key! }
 
   const res = await fetch(url.toString(), { headers })
+  const bodyText = await res.text()
+  let data: any = null
+  try {
+    data = JSON.parse(bodyText)
+  } catch {
+    /* non-JSON error body */
+  }
+
+  // Log status, result count, and API-Football's own `errors` (it returns HTTP
+  // 200 with a populated `errors` object for out-of-plan seasons, bad params,
+  // etc.). The key is never part of the URL or this log.
+  const errs = data?.errors
+  const errCount = Array.isArray(errs) ? errs.length : errs && typeof errs === 'object' ? Object.keys(errs).length : 0
+  console.log(
+    `[api-football] ${path}?${url.searchParams.toString()} status=${res.status} results=${data?.results ?? '?'}` +
+      (errCount ? ` errors=${JSON.stringify(errs)}` : ''),
+  )
+
   if (!res.ok) {
     throw new ProxyError(`upstream ${res.status}`, res.status === 429 ? 429 : 502)
   }
-  return res.json()
+  return data ?? JSON.parse(bodyText)
 }
 
 export class ProxyError extends Error {

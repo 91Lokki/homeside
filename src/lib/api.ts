@@ -12,6 +12,14 @@ interface ProxyResult {
   source?: 'none' | 'error' | 'live'
   reason?: string
   response?: unknown[]
+  /** API-Football returns HTTP 200 with this populated for plan/param errors. */
+  errors?: unknown
+}
+
+function hasApiErrors(errs: unknown): boolean {
+  if (Array.isArray(errs)) return errs.length > 0
+  if (errs && typeof errs === 'object') return Object.keys(errs).length > 0
+  return false
 }
 
 async function getProxy(path: string): Promise<unknown[] | null> {
@@ -20,6 +28,9 @@ async function getProxy(path: string): Promise<unknown[] | null> {
     if (!res.ok) return null
     const data = (await res.json()) as ProxyResult
     if (data.source === 'none' || data.source === 'error') return null
+    // A populated `errors` block (e.g. "this season isn't in your plan") means no
+    // usable data — fall back to the snapshot honestly rather than claiming live.
+    if (hasApiErrors(data.errors)) return null
     return Array.isArray(data.response) ? data.response : null
   } catch {
     return null

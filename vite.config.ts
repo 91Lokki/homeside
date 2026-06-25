@@ -1,26 +1,52 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+/**
+ * Run the /api Edge functions during `npm run dev` — no Vercel CLI needed.
+ *
+ * The functions in /api are standard Request->Response handlers; here we adapt
+ * Node's req/res to them and expose the server-side env (from .env) so the
+ * API-Football key works locally exactly as it will in production.
+ */
+function apiDev(env: Record<string, string>): Plugin {
+  const ROUTES = new Set(['fixtures', 'standings', 'match', 'squad'])
+  return {
+    name: 'homeside-api-dev',
+    configureServer(server: ViteDevServer) {
+      for (const k of ['API_FOOTBALL_KEY', 'API_FOOTBALL_HOST', 'WC_LEAGUE_ID', 'WC_SEASON']) {
+        if (env[k] != null && env[k] !== '' && process.env[k] == null) process.env[k] = env[k]
+      }
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url || !req.url.startsWith('/api/')) return next()
+        const route = new URL(req.url, 'http://localhost').pathname.replace(/^\/api\//, '').split('/')[0]
+        if (!ROUTES.has(route)) return next()
+        try {
+          const mod = await server.ssrLoadModule(`/api/${route}.ts`)
+          const response: Response = await mod.default(new Request('http://localhost' + req.url))
+          res.statusCode = response.status
+          response.headers.forEach((v, k) => res.setHeader(k, v))
+          res.end(await response.text())
+        } catch (e) {
+          res.statusCode = 500
+          res.setHeader('content-type', 'application/json')
+          res.end(JSON.stringify({ source: 'error', reason: 'dev api: ' + (e as Error).message }))
+        }
+      })
     },
-  },
-  server: {
-    // Local dev: proxy /api to `vercel dev` (port 3000) so the serverless
-    // functions in /api work the same locally as in production. Run both with:
-    //   vercel dev      (serves /api on :3000)
-    //   npm run dev     (serves the Vite app, proxying /api -> :3000)
-    // If you are not running `vercel dev`, the app falls back to seed data.
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
+  }
+}
+
+// https://vite.dev/config/
+export default defineConfig(({ mode }) => {
+  // Load ALL env vars (including non-VITE_ server-only ones) from .env for the dev API.
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    plugins: [react(), apiDev(env)],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
+  }
 })
