@@ -1,7 +1,7 @@
-import { Lock, MapPin } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
-import { computeBond, LEVELS, MAX_LEVEL, moodLine } from '@/domain/bond'
+import { computeBond, MAX_LEVEL, moodLine } from '@/domain/bond'
 import { nextMatchFor, recordFor, resultFor } from '@/domain/record'
 import type { Match } from '@/domain/types'
 import { AmbientField } from '@/components/AmbientField'
@@ -89,7 +89,7 @@ export function HomeBase() {
         </div>
       </div>
 
-      {squad && <SquadStrip notable={squad.notable} unlocked={bond.unlockedNotable} />}
+      {squad && <SquadStrip notable={squad.notable} />}
     </div>
   )
 }
@@ -198,44 +198,21 @@ function StarCard({ star }: { star: { name: string; position: string; club?: str
   )
 }
 
-function SquadStrip({ notable, unlocked }: { notable: { name: string; position: string; number?: number | null }[]; unlocked: number }) {
+function SquadStrip({ notable }: { notable: { name: string; position: string; number?: number | null }[] }) {
+  if (notable.length === 0) return null
   return (
     <section className="mt-5">
-      <div className="flex items-center justify-between">
-        <Label>Squad · unlocks as your bond grows</Label>
-        <span className="text-2xs text-faint">
-          {Math.min(unlocked, notable.length)} / {notable.length} met
-        </span>
-      </div>
+      <Label>Squad to follow</Label>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        {notable.map((p, i) => {
-          const open = i < unlocked
-          const unlockLevel = Math.min(i + 2, LEVELS.length)
-          return (
-            <div
-              key={p.name}
-              className={cn(
-                'rounded-card border p-3 transition-colors',
-                open ? 'bg-surface' : 'border-dashed bg-transparent',
-              )}
-            >
-              {open ? (
-                <>
-                  <p className="truncate text-sm font-medium">{p.name}</p>
-                  <p className="mt-0.5 text-2xs text-faint">
-                    {p.position}
-                    {p.number != null ? ` · ${p.number}` : ''}
-                  </p>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 text-faint">
-                  <Lock size={13} />
-                  <span className="text-2xs">Bond level {unlockLevel}</span>
-                </div>
-              )}
-            </div>
-          )
-        })}
+        {notable.map((p) => (
+          <div key={p.name} className="rounded-card border bg-surface p-3">
+            <p className="truncate text-sm font-medium">{p.name}</p>
+            <p className="mt-0.5 text-2xs text-faint">
+              {p.position}
+              {p.number != null ? ` · ${p.number}` : ''}
+            </p>
+          </div>
+        ))}
       </div>
     </section>
   )

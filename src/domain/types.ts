@@ -15,6 +15,8 @@ export interface Team {
   color2: string
   /** A gentle national motif keyword that shapes the mascot (e.g. "maple", "crane"). */
   symbol: string
+  /** Seeding pot 1–4 from the official draw (pot 1 = the seeded/strongest teams). */
+  pot: number
   /** API-Football team id, when known — enables live squad lookups. */
   apiTeamId?: number
   /** Host nation flag (USA / Canada / Mexico). */

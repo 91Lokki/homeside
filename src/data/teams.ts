@@ -10,6 +10,7 @@ export const TEAMS: Team[] = [
     "name": "Mexico",
     "nameTC": "墨西哥",
     "group": "A",
+    "pot": 1,
     "color": "#006847",
     "color2": "#CE1126",
     "symbol": "Golden eagle",
@@ -20,6 +21,7 @@ export const TEAMS: Team[] = [
     "name": "South Africa",
     "nameTC": "南非",
     "group": "A",
+    "pot": 2,
     "color": "#007749",
     "color2": "#FFB81C",
     "symbol": "Springbok / Protea flower"
@@ -29,6 +31,7 @@ export const TEAMS: Team[] = [
     "name": "South Korea",
     "nameTC": "南韓",
     "group": "A",
+    "pot": 3,
     "color": "#CD2E3A",
     "color2": "#0047A0",
     "symbol": "Tiger"
@@ -38,6 +41,7 @@ export const TEAMS: Team[] = [
     "name": "Czechia",
     "nameTC": "捷克",
     "group": "A",
+    "pot": 4,
     "color": "#D7141A",
     "color2": "#11457E",
     "symbol": "Linden leaf"
@@ -47,6 +51,7 @@ export const TEAMS: Team[] = [
     "name": "Canada",
     "nameTC": "加拿大",
     "group": "B",
+    "pot": 1,
     "color": "#D52B1E",
     "color2": "#FFFFFF",
     "symbol": "Maple leaf",
@@ -57,6 +62,7 @@ export const TEAMS: Team[] = [
     "name": "Bosnia and Herzegovina",
     "nameTC": "波士尼亞",
     "group": "B",
+    "pot": 2,
     "color": "#002395",
     "color2": "#FFCC00",
     "symbol": "Golden lily (Lilium bosniacum)"
@@ -66,6 +72,7 @@ export const TEAMS: Team[] = [
     "name": "Qatar",
     "nameTC": "卡達",
     "group": "B",
+    "pot": 3,
     "color": "#8A1538",
     "color2": "#FFFFFF",
     "symbol": "Oryx (Arabian oryx)"
@@ -75,6 +82,7 @@ export const TEAMS: Team[] = [
     "name": "Switzerland",
     "nameTC": "瑞士",
     "group": "B",
+    "pot": 4,
     "color": "#D52B1E",
     "color2": "#FFFFFF",
     "symbol": "Edelweiss flower"
@@ -84,6 +92,7 @@ export const TEAMS: Team[] = [
     "name": "Brazil",
     "nameTC": "巴西",
     "group": "C",
+    "pot": 1,
     "color": "#FFDF00",
     "color2": "#009C3B",
     "symbol": "Toucan"
@@ -93,6 +102,7 @@ export const TEAMS: Team[] = [
     "name": "Morocco",
     "nameTC": "摩洛哥",
     "group": "C",
+    "pot": 2,
     "color": "#C1272D",
     "color2": "#006233",
     "symbol": "Lion (Atlas lion)"
@@ -102,6 +112,7 @@ export const TEAMS: Team[] = [
     "name": "Haiti",
     "nameTC": "海地",
     "group": "C",
+    "pot": 3,
     "color": "#00209F",
     "color2": "#D21034",
     "symbol": "Hispaniolan trogon"
@@ -111,6 +122,7 @@ export const TEAMS: Team[] = [
     "name": "Scotland",
     "nameTC": "蘇格蘭",
     "group": "C",
+    "pot": 4,
     "color": "#0065BF",
     "color2": "#FFFFFF",
     "symbol": "Thistle"
@@ -120,6 +132,7 @@ export const TEAMS: Team[] = [
     "name": "United States",
     "nameTC": "美國",
     "group": "D",
+    "pot": 1,
     "color": "#3C3B6E",
     "color2": "#B22234",
     "symbol": "Bald eagle",
@@ -130,6 +143,7 @@ export const TEAMS: Team[] = [
     "name": "Paraguay",
     "nameTC": "巴拉圭",
     "group": "D",
+    "pot": 2,
     "color": "#D52B1E",
     "color2": "#0038A8",
     "symbol": "Bellbird (campana)"
@@ -139,6 +153,7 @@ export const TEAMS: Team[] = [
     "name": "Australia",
     "nameTC": "澳洲",
     "group": "D",
+    "pot": 3,
     "color": "#00843D",
     "color2": "#FFCD00",
     "symbol": "Kangaroo"
@@ -148,6 +163,7 @@ export const TEAMS: Team[] = [
     "name": "Türkiye",
     "nameTC": "土耳其",
     "group": "D",
+    "pot": 4,
     "color": "#E30A17",
     "color2": "#FFFFFF",
     "symbol": "Crescent moon and star / tulip"
@@ -157,6 +173,7 @@ export const TEAMS: Team[] = [
     "name": "Germany",
     "nameTC": "德國",
     "group": "E",
+    "pot": 1,
     "color": "#000000",
     "color2": "#DD0000",
     "symbol": "Eagle (Bundesadler)"
@@ -166,6 +183,7 @@ export const TEAMS: Team[] = [
     "name": "Curaçao",
     "nameTC": "古拉索",
     "group": "E",
+    "pot": 2,
     "color": "#002B7F",
     "color2": "#F9E814",
     "symbol": "Flamingo"
@@ -175,6 +193,7 @@ export const TEAMS: Team[] = [
     "name": "Côte d'Ivoire",
     "nameTC": "象牙海岸",
     "group": "E",
+    "pot": 3,
     "color": "#FF8200",
     "color2": "#009E60",
     "symbol": "Elephant"
@@ -184,6 +203,7 @@ export const TEAMS: Team[] = [
     "name": "Ecuador",
     "nameTC": "厄瓜多",
     "group": "E",
+    "pot": 4,
     "color": "#FFDD00",
     "color2": "#034EA2",
     "symbol": "Andean condor"
@@ -193,6 +213,7 @@ export const TEAMS: Team[] = [
     "name": "Netherlands",
     "nameTC": "荷蘭",
     "group": "F",
+    "pot": 1,
     "color": "#FF6200",
     "color2": "#FFFFFF",
     "symbol": "Tulip"
@@ -202,6 +223,7 @@ export const TEAMS: Team[] = [
     "name": "Japan",
     "nameTC": "日本",
     "group": "F",
+    "pot": 2,
     "color": "#BC002D",
     "color2": "#FFFFFF",
     "symbol": "Red-crowned crane"
@@ -211,6 +233,7 @@ export const TEAMS: Team[] = [
     "name": "Sweden",
     "nameTC": "瑞典",
     "group": "F",
+    "pot": 3,
     "color": "#006AA7",
     "color2": "#FECC00",
     "symbol": "Elk / moose"
@@ -220,6 +243,7 @@ export const TEAMS: Team[] = [
     "name": "Tunisia",
     "nameTC": "突尼西亞",
     "group": "F",
+    "pot": 4,
     "color": "#E70013",
     "color2": "#FFFFFF",
     "symbol": "Eagle of Carthage"
@@ -229,6 +253,7 @@ export const TEAMS: Team[] = [
     "name": "Belgium",
     "nameTC": "比利時",
     "group": "G",
+    "pot": 1,
     "color": "#E30613",
     "color2": "#FAE042",
     "symbol": "Lion (Flemish lion)"
@@ -238,6 +263,7 @@ export const TEAMS: Team[] = [
     "name": "Egypt",
     "nameTC": "埃及",
     "group": "G",
+    "pot": 2,
     "color": "#CE1126",
     "color2": "#000000",
     "symbol": "Lotus flower"
@@ -247,6 +273,7 @@ export const TEAMS: Team[] = [
     "name": "Iran",
     "nameTC": "伊朗",
     "group": "G",
+    "pot": 3,
     "color": "#239F40",
     "color2": "#DA0000",
     "symbol": "Cheetah (Asiatic cheetah)"
@@ -256,6 +283,7 @@ export const TEAMS: Team[] = [
     "name": "New Zealand",
     "nameTC": "紐西蘭",
     "group": "G",
+    "pot": 4,
     "color": "#000000",
     "color2": "#FFFFFF",
     "symbol": "Kiwi bird"
@@ -265,6 +293,7 @@ export const TEAMS: Team[] = [
     "name": "Spain",
     "nameTC": "西班牙",
     "group": "H",
+    "pot": 1,
     "color": "#C60B1E",
     "color2": "#FFC400",
     "symbol": "Bull (gentle silhouette)"
@@ -274,6 +303,7 @@ export const TEAMS: Team[] = [
     "name": "Cabo Verde",
     "nameTC": "維德角",
     "group": "H",
+    "pot": 2,
     "color": "#003893",
     "color2": "#CF2027",
     "symbol": "Cory's shearwater (seabird)"
@@ -283,6 +313,7 @@ export const TEAMS: Team[] = [
     "name": "Saudi Arabia",
     "nameTC": "沙烏地阿拉伯",
     "group": "H",
+    "pot": 3,
     "color": "#006C35",
     "color2": "#FFFFFF",
     "symbol": "Date palm"
@@ -292,6 +323,7 @@ export const TEAMS: Team[] = [
     "name": "Uruguay",
     "nameTC": "烏拉圭",
     "group": "H",
+    "pot": 4,
     "color": "#7FB3D5",
     "color2": "#FFFFFF",
     "symbol": "Sun of May"
@@ -301,6 +333,7 @@ export const TEAMS: Team[] = [
     "name": "France",
     "nameTC": "法國",
     "group": "I",
+    "pot": 1,
     "color": "#0055A4",
     "color2": "#EF4135",
     "symbol": "Rooster (Gallic rooster)"
@@ -310,6 +343,7 @@ export const TEAMS: Team[] = [
     "name": "Senegal",
     "nameTC": "塞內加爾",
     "group": "I",
+    "pot": 2,
     "color": "#00853F",
     "color2": "#FDEF42",
     "symbol": "Lion (Lion of Teranga)"
@@ -319,6 +353,7 @@ export const TEAMS: Team[] = [
     "name": "Iraq",
     "nameTC": "伊拉克",
     "group": "I",
+    "pot": 3,
     "color": "#007A3D",
     "color2": "#CE1126",
     "symbol": "Date palm"
@@ -328,6 +363,7 @@ export const TEAMS: Team[] = [
     "name": "Norway",
     "nameTC": "挪威",
     "group": "I",
+    "pot": 4,
     "color": "#BA0C2F",
     "color2": "#00205B",
     "symbol": "Elk / moose"
@@ -337,6 +373,7 @@ export const TEAMS: Team[] = [
     "name": "Argentina",
     "nameTC": "阿根廷",
     "group": "J",
+    "pot": 1,
     "color": "#75AADB",
     "color2": "#FFFFFF",
     "symbol": "Sun of May"
@@ -346,6 +383,7 @@ export const TEAMS: Team[] = [
     "name": "Algeria",
     "nameTC": "阿爾及利亞",
     "group": "J",
+    "pot": 2,
     "color": "#006233",
     "color2": "#FFFFFF",
     "symbol": "Fennec fox"
@@ -355,6 +393,7 @@ export const TEAMS: Team[] = [
     "name": "Austria",
     "nameTC": "奧地利",
     "group": "J",
+    "pot": 3,
     "color": "#ED2939",
     "color2": "#FFFFFF",
     "symbol": "Edelweiss flower"
@@ -364,6 +403,7 @@ export const TEAMS: Team[] = [
     "name": "Jordan",
     "nameTC": "約旦",
     "group": "J",
+    "pot": 4,
     "color": "#007A3D",
     "color2": "#CE1126",
     "symbol": "Oryx (Arabian oryx)"
@@ -373,6 +413,7 @@ export const TEAMS: Team[] = [
     "name": "Portugal",
     "nameTC": "葡萄牙",
     "group": "K",
+    "pot": 1,
     "color": "#FF0000",
     "color2": "#006600",
     "symbol": "Rooster of Barcelos"
@@ -382,6 +423,7 @@ export const TEAMS: Team[] = [
     "name": "DR Congo",
     "nameTC": "剛果民主共和國",
     "group": "K",
+    "pot": 2,
     "color": "#007FFF",
     "color2": "#F7D618",
     "symbol": "Leopard"
@@ -391,6 +433,7 @@ export const TEAMS: Team[] = [
     "name": "Uzbekistan",
     "nameTC": "烏茲別克",
     "group": "K",
+    "pot": 3,
     "color": "#1EB53A",
     "color2": "#0099B5",
     "symbol": "Khumo (Huma bird)"
@@ -400,6 +443,7 @@ export const TEAMS: Team[] = [
     "name": "Colombia",
     "nameTC": "哥倫比亞",
     "group": "K",
+    "pot": 4,
     "color": "#FCD116",
     "color2": "#003893",
     "symbol": "Andean condor"
@@ -409,6 +453,7 @@ export const TEAMS: Team[] = [
     "name": "England",
     "nameTC": "英格蘭",
     "group": "L",
+    "pot": 1,
     "color": "#FFFFFF",
     "color2": "#CE1124",
     "symbol": "Three lions / red rose"
@@ -418,6 +463,7 @@ export const TEAMS: Team[] = [
     "name": "Croatia",
     "nameTC": "克羅埃西亞",
     "group": "L",
+    "pot": 2,
     "color": "#FF0000",
     "color2": "#FFFFFF",
     "symbol": "Red-and-white checkerboard (šahovnica)"
@@ -427,6 +473,7 @@ export const TEAMS: Team[] = [
     "name": "Ghana",
     "nameTC": "迦納",
     "group": "L",
+    "pot": 3,
     "color": "#006B3F",
     "color2": "#FCD116",
     "symbol": "Black star"
@@ -436,6 +483,7 @@ export const TEAMS: Team[] = [
     "name": "Panama",
     "nameTC": "巴拿馬",
     "group": "L",
+    "pot": 4,
     "color": "#005293",
     "color2": "#DA121A",
     "symbol": "Harpy eagle"

@@ -55,7 +55,8 @@ const starByCode = Object.fromEntries(starsData.teams.map((t) => [t.code, t]))
 /* ------------------------------- teams ------------------------------------ */
 const TEAMS = []
 for (const g of groups.groups) {
-  for (const t of g.teams) {
+  // The draw lists each group's teams in pot order (pot 1 = seeded first).
+  g.teams.forEach((t, i) => {
     const c = colorByCode[t.code] || {}
     // Store the TRUE identity colors. Contrast against the gallery-white / dark
     // canvas is handled at runtime (the theme provider derives a readable accent
@@ -67,12 +68,13 @@ for (const g of groups.groups) {
       name: t.name,
       nameTC: TC[t.code],
       group: g.id,
+      pot: i + 1,
       color,
       color2,
       symbol: c.symbol || 'leaf',
       ...(HOSTS.has(t.code) ? { host: true } : {}),
     })
-  }
+  })
 }
 
 /* ------------------------------- squads ----------------------------------- */
