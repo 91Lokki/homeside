@@ -142,7 +142,16 @@ function MatchRow({ match, homeCode }: { match: Match; homeCode: string | null }
         className={cn('flex w-full items-center gap-3 px-4 py-3 text-left', expandable && 'hover:bg-sunken/40')}
       >
         <span className="w-12 shrink-0 text-2xs tnum text-faint">
-          {match.status === 'finished' ? 'FT' : match.status === 'live' ? <span className="inline-flex items-center gap-1 text-team"><LiveDot /></span> : localTime(match.kickoff)}
+          {match.status === 'finished' ? (
+            'FT'
+          ) : match.status === 'live' ? (
+            <span className="inline-flex items-center gap-1 text-team">
+              <LiveDot />
+              <span className="sr-only">Live</span>
+            </span>
+          ) : (
+            localTime(match.kickoff)
+          )}
         </span>
         <span className={cn('flex-1 truncate text-right text-sm', match.homeCode === homeCode ? 'font-semibold text-team' : 'font-medium')}>
           {home?.name ?? match.homeLabel ?? '—'}

@@ -86,8 +86,8 @@ export function unlockedNotableForLevel(level: number): number {
 }
 
 export function moodFor(matches: Match[], code: TeamCode): { mood: Mood; lastResult: Result | null; lastMatch: Match | null } {
-  if (liveMatchFor(matches, code)) {
-    const live = liveMatchFor(matches, code)!
+  const live = liveMatchFor(matches, code)
+  if (live) {
     return { mood: 'cheering', lastResult: null, lastMatch: live }
   }
   const finished = finishedFor(matches, code)

@@ -55,6 +55,7 @@ export function localZoneName(): string {
  */
 export function relativeKickoff(iso: string, now: Date = new Date()): string {
   const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
   const diff = then - now.getTime()
   const mins = Math.round(diff / 60000)
   if (mins < 0) return 'underway'

@@ -132,10 +132,56 @@ export function computeGroupStandings(matches: Match[], group: GroupId, teams: T
 
   const out = [...rows.values()]
   for (const r of out) r.gd = r.gf - r.ga
-  // FIFA group ranking: points, then goal difference, then goals for.
-  // (Head-to-head & fair play tiebreakers need richer data; this covers the
-  // common cases for a calm companion view.)
-  out.sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf || a.code.localeCompare(b.code))
-  out.forEach((r, i) => (r.rank = i + 1))
-  return out
+  // FIFA group ranking (Art. 14): overall points, GD, GF; then, among any teams
+  // still level, a head-to-head mini-table (points, GD, GF using only matches
+  // between the tied teams). Remaining ties keep a stable order rather than an
+  // arbitrary alphabetical one (the further criteria — fair play, FIFA ranking,
+  // drawing of lots — aren't available in this data).
+  out.sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf)
+  const ranked = breakTiesByHeadToHead(out, groupMatches)
+  ranked.forEach((r, i) => (r.rank = i + 1))
+  return ranked
+}
+
+/** Reorder clusters of teams level on points/GD/GF using a head-to-head mini-table. */
+function breakTiesByHeadToHead(rows: StandingRow[], groupMatches: Match[]): StandingRow[] {
+  const result: StandingRow[] = []
+  let i = 0
+  while (i < rows.length) {
+    let j = i + 1
+    while (
+      j < rows.length &&
+      rows[j].points === rows[i].points &&
+      rows[j].gd === rows[i].gd &&
+      rows[j].gf === rows[i].gf
+    ) {
+      j++
+    }
+    const cluster = rows.slice(i, j)
+    if (cluster.length > 1) {
+      const codes = new Set(cluster.map((r) => r.code))
+      const mini = new Map(cluster.map((r) => [r.code, { pts: 0, gd: 0, gf: 0 }]))
+      for (const m of groupMatches) {
+        if (m.homeCode == null || m.awayCode == null || m.homeScore == null || m.awayScore == null) continue
+        if (!codes.has(m.homeCode) || !codes.has(m.awayCode)) continue
+        const h = mini.get(m.homeCode)!
+        const a = mini.get(m.awayCode)!
+        h.gf += m.homeScore
+        h.gd += m.homeScore - m.awayScore
+        a.gf += m.awayScore
+        a.gd += m.awayScore - m.homeScore
+        if (m.homeScore > m.awayScore) h.pts += 3
+        else if (m.homeScore < m.awayScore) a.pts += 3
+        else (h.pts += 1), (a.pts += 1)
+      }
+      cluster.sort((x, y) => {
+        const mx = mini.get(x.code)!
+        const my = mini.get(y.code)!
+        return my.pts - mx.pts || my.gd - mx.gd || my.gf - mx.gf
+      })
+    }
+    result.push(...cluster)
+    i = j
+  }
+  return result
 }

@@ -69,7 +69,10 @@ const NAME_TO_CODE: Record<string, TeamCode> = (() => {
 
 function codeFromName(name: string | undefined): TeamCode | null {
   if (!name) return null
-  return NAME_TO_CODE[name.toLowerCase().trim()] ?? null
+  // Normalize curly/back apostrophes so e.g. "Côte d'Ivoire" matches regardless
+  // of which apostrophe character the API uses.
+  const key = name.toLowerCase().trim().replace(/[’`´]/g, "'")
+  return NAME_TO_CODE[key] ?? null
 }
 
 /* ------------------------- API-Football normalizers ----------------------- */
@@ -103,8 +106,9 @@ function normalizeFixture(af: AfFixture): Match | null {
   if (!homeCode || !awayCode) return null
 
   const short = af.fixture?.status?.short ?? 'NS'
-  const status: Match['status'] =
-    ['FT', 'AET', 'PEN'].includes(short) ? 'finished' : ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE'].includes(short) ? 'live' : 'scheduled'
+  const FINISHED = ['FT', 'AET', 'PEN', 'AWD', 'WO']
+  const LIVE = ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'LIVE', 'SUSP', 'INT']
+  const status: Match['status'] = FINISHED.includes(short) ? 'finished' : LIVE.includes(short) ? 'live' : 'scheduled'
 
   const { stage, group } = stageFromRound(af.league?.round)
   const pen = af.score?.penalty
@@ -135,22 +139,25 @@ export async function fetchLiveMatches(): Promise<Match[] | null> {
 /* ------------------------------ merge with seed --------------------------- */
 
 const pairKey = (a: TeamCode, b: TeamCode) => [a, b].sort().join('~')
+// Include the stage so a knockout rematch never collides with (and overwrites)
+// the same two teams' group-stage meeting.
+const mergeKey = (m: Match) => `${m.stage}:${pairKey(m.homeCode!, m.awayCode!)}`
 
 /**
  * Overlay live matches onto the seed. Live updates an existing seed match (by
- * unordered team pair), preserving the seed's home/away orientation; brand-new
- * matches (knockout fixtures once teams are known) are appended.
+ * stage + unordered team pair), preserving the seed's home/away orientation;
+ * brand-new matches (knockout fixtures once teams are known) are appended.
  */
 export function mergeMatches(seed: Match[], live: Match[]): Match[] {
   const out = seed.map((m) => ({ ...m }))
   const index = new Map<string, number>()
   out.forEach((m, i) => {
-    if (m.homeCode && m.awayCode) index.set(pairKey(m.homeCode, m.awayCode), i)
+    if (m.homeCode && m.awayCode) index.set(mergeKey(m), i)
   })
 
   for (const lm of live) {
     if (!lm.homeCode || !lm.awayCode) continue
-    const key = pairKey(lm.homeCode, lm.awayCode)
+    const key = mergeKey(lm)
     const i = index.get(key)
     if (i != null) {
       const seedMatch = out[i]
@@ -159,6 +166,7 @@ export function mergeMatches(seed: Match[], live: Match[]): Match[] {
         ...seedMatch,
         status: lm.status,
         minute: lm.minute,
+        kickoff: lm.kickoff || seedMatch.kickoff,
         apiFixtureId: lm.apiFixtureId ?? seedMatch.apiFixtureId,
         homeScore: flip ? lm.awayScore : lm.homeScore,
         awayScore: flip ? lm.homeScore : lm.awayScore,
@@ -189,8 +197,10 @@ interface AfEvent {
   detail: string
 }
 
-function statValue(stats: any[], homeAwayName: string | undefined, type: string): number | null {
-  const block = stats?.find((s) => s?.team?.name === homeAwayName)
+// Resolve a stat block by team CODE (not raw name) so teams whose seed name
+// differs from API-Football's name (e.g. South Korea / Korea Republic) still match.
+function statValue(stats: any[], wantCode: TeamCode | null, type: string): number | null {
+  const block = stats?.find((s) => codeFromName(s?.team?.name) === wantCode)
   const row = block?.statistics?.find((r: any) => r?.type === type)
   if (!row) return null
   const v = row.value
@@ -199,7 +209,7 @@ function statValue(stats: any[], homeAwayName: string | undefined, type: string)
   return v
 }
 
-export async function fetchMatchReport(fixtureId: number, homeName?: string, awayName?: string): Promise<MatchReport | null> {
+export async function fetchMatchReport(fixtureId: number, homeCode?: TeamCode | null, awayCode?: TeamCode | null): Promise<MatchReport | null> {
   try {
     const res = await fetch(`/api/match?fixture=${fixtureId}`)
     if (!res.ok) return null
@@ -214,11 +224,13 @@ export async function fetchMatchReport(fixtureId: number, homeName?: string, awa
       detail: e?.detail ?? '',
     }))
     const stats = data.statistics?.response ?? []
+    const home = homeCode ?? null
+    const away = awayCode ?? null
     return {
       events,
-      possession: { home: statValue(stats, homeName, 'Ball Possession'), away: statValue(stats, awayName, 'Ball Possession') },
-      shots: { home: statValue(stats, homeName, 'Total Shots'), away: statValue(stats, awayName, 'Total Shots') },
-      shotsOnTarget: { home: statValue(stats, homeName, 'Shots on Goal'), away: statValue(stats, awayName, 'Shots on Goal') },
+      possession: { home: statValue(stats, home, 'Ball Possession'), away: statValue(stats, away, 'Ball Possession') },
+      shots: { home: statValue(stats, home, 'Total Shots'), away: statValue(stats, away, 'Total Shots') },
+      shotsOnTarget: { home: statValue(stats, home, 'Shots on Goal'), away: statValue(stats, away, 'Shots on Goal') },
     }
   } catch {
     return null

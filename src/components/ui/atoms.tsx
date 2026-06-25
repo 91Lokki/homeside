@@ -61,6 +61,7 @@ export function Score({ home, away, live = false }: { home: number | null; away:
   const blank = home == null || away == null
   return (
     <span
+      aria-label={blank ? 'Not yet played' : `${home}–${away}${live ? ', live' : ''}`}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-[8px] px-2 py-0.5 font-grotesk text-sm font-semibold tnum',
         live ? 'bg-team-soft text-team' : 'bg-sunken text-ink',

@@ -69,13 +69,10 @@ function assignThirds(
   const thirds = [...standings.entries()]
     .map(([g, rows]) => ({ group: g, row: rows[2] }))
     .filter((x) => x.row)
-    .sort(
-      (a, b) =>
-        b.row.points - a.row.points ||
-        b.row.gd - a.row.gd ||
-        b.row.gf - a.row.gf ||
-        a.group.localeCompare(b.group),
-    )
+    // points, then GD, then GF. Remaining ties stay in a stable order (the next
+    // FIFA criteria — fair play, FIFA ranking — aren't available in this data),
+    // rather than being decided by an arbitrary alphabetical group letter.
+    .sort((a, b) => b.row.points - a.row.points || b.row.gd - a.row.gd || b.row.gf - a.row.gf)
   const qualifying = thirds.slice(0, 8) // 8 best thirds
   const qualifyingGroups = new Set(qualifying.map((q) => q.group))
 

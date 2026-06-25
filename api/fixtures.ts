@@ -13,8 +13,8 @@ export default async function handler(req: Request): Promise<Response> {
   const cfg = getConfig()
   if (!hasKey(cfg)) return noData('no API key configured')
 
-  const { searchParams } = new URL(req.url)
-  const live = searchParams.get('live')
+  const liveParam = new URL(req.url).searchParams.get('live')
+  const live = liveParam === '1' || liveParam === 'all'
 
   try {
     const params: Record<string, string> = { league: cfg.leagueId, season: cfg.season }
@@ -23,6 +23,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json(data, live ? { sMaxAge: 25, swr: 60 } : { sMaxAge: 120, swr: 600 })
   } catch (err) {
     const status = err instanceof ProxyError ? err.status : 502
-    return json({ source: 'error', reason: String(err), response: [] }, { status, sMaxAge: 15, swr: 30 })
+    const reason = err instanceof ProxyError ? err.message : 'upstream request failed'
+    return json({ source: 'error', reason, response: [] }, { status, sMaxAge: 15, swr: 30 })
   }
 }

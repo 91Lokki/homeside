@@ -18,6 +18,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json(data, { sMaxAge: 3600, swr: 86400 })
   } catch (err) {
     const status = err instanceof ProxyError ? err.status : 502
-    return json({ source: 'error', reason: String(err), response: [] }, { status, sMaxAge: 30, swr: 60 })
+    const reason = err instanceof ProxyError ? err.message : 'upstream request failed'
+    return json({ source: 'error', reason, response: [] }, { status, sMaxAge: 30, swr: 60 })
   }
 }

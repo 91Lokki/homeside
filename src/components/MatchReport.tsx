@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { teamByCode } from '@/data/teams'
 import type { Match } from '@/domain/types'
 import { fetchMatchReport, type MatchReport as Report } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -10,9 +9,6 @@ export function MatchReport({ match, accentCode }: { match: Match; accentCode?: 
   const [report, setReport] = useState<Report | null>(null)
   const [state, setState] = useState<'idle' | 'loading' | 'unavailable' | 'ready'>('idle')
 
-  const home = match.homeCode ? teamByCode[match.homeCode] : null
-  const away = match.awayCode ? teamByCode[match.awayCode] : null
-
   useEffect(() => {
     let cancelled = false
     if (!match.apiFixtureId) {
@@ -20,7 +16,7 @@ export function MatchReport({ match, accentCode }: { match: Match; accentCode?: 
       return
     }
     setState('loading')
-    fetchMatchReport(match.apiFixtureId, home?.name, away?.name).then((r) => {
+    fetchMatchReport(match.apiFixtureId, match.homeCode, match.awayCode).then((r) => {
       if (cancelled) return
       if (r) {
         setReport(r)
@@ -32,7 +28,7 @@ export function MatchReport({ match, accentCode }: { match: Match; accentCode?: 
     return () => {
       cancelled = true
     }
-  }, [match.apiFixtureId, home?.name, away?.name])
+  }, [match.apiFixtureId, match.homeCode, match.awayCode])
 
   if (state === 'loading') {
     return <div className="px-4 py-5 text-2xs text-faint">Loading report…</div>
