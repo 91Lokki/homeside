@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Mood } from '@/domain/bond'
-import { darken, lighten, mixHex } from '@/lib/prng'
+import { darken, lighten, luminance, mixHex } from '@/lib/prng'
+import { clamp } from '@/lib/utils'
 
 /** Flat palette derived from a team's true colors (no gradients). */
 export interface MascotPalette {
@@ -37,12 +38,15 @@ export interface MascotArtProps {
 export type MascotArt = (p: MascotArtProps) => ReactNode
 
 export function buildPalette(color: string, color2: string): MascotPalette {
+  // Lighten the body more for very dark team colors so the silhouette stays
+  // visible against the dark-mode canvas (a black-primary eagle shouldn't vanish).
+  const whiteMix = clamp(0.3 + (0.5 - luminance(color)) * 0.5, 0.3, 0.6)
   return {
     color,
     color2,
-    body: mixHex(color, '#ffffff', 0.32),
-    belly: lighten(color, 0.66),
-    outline: darken(color, 0.5),
+    body: mixHex(color, '#ffffff', whiteMix),
+    belly: lighten(color, 0.68),
+    outline: darken(color, 0.45),
     ink: '#23231f',
   }
 }

@@ -71,7 +71,7 @@ export function HomeBase() {
             <p className="mt-2.5 text-center text-xs text-muted">
               {moodLine(bond.mood)}{' '}
               {bond.xpForNextLevel != null ? (
-                <span className="text-faint">· {bond.xpForNextLevel - bond.xpIntoLevel} to next bond</span>
+                <span className="text-faint">· {Math.max(1, Math.ceil(bond.xpForNextLevel - bond.xpIntoLevel))} to next</span>
               ) : (
                 <span className="text-faint">· fully grown</span>
               )}
