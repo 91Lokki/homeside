@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Homeside design system — gallery-white & calm.
+ * Neutral grayscale everywhere; the single accent is --team (set at runtime).
+ */
+@layer base {
+  :root {
+    /* surfaces */
+    --canvas: #fbfbf9;
+    --surface: #ffffff;
+    --sunken: #f3f3f0;
+    /* ink ramp */
+    --ink: #1a1a17;
+    --muted: #6c6c65;
+    --faint: #9c9c94;
+    --hairline: rgba(20, 20, 16, 0.10);
+    /* the one accent (neutral until a home team is chosen) */
+    --team: #4a4a45;
+    --team-soft: rgba(74, 74, 69, 0.08);
+    --team-ink: #ffffff;
+    /* motion */
+    --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --canvas: #0e0e0c;
+    --surface: #161613;
+    --sunken: #1e1e1a;
+    --ink: #f1f1ec;
+    --muted: #a2a299;
+    --faint: #67675f;
+    --hairline: rgba(255, 255, 255, 0.11);
+    --team: #b8b8b0;
+    --team-soft: rgba(184, 184, 176, 0.10);
+    --team-ink: #0e0e0c;
+
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--hairline);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: 'Space Grotesk', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'tnum' 0;
+    transition: background-color 0.5s var(--ease-calm), color 0.5s var(--ease-calm);
+    min-height: 100dvh;
+  }
+
+  /* Tabular figures for anything score-like is opt-in via .tnum */
+  .tnum {
+    font-feature-settings: 'tnum' 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--team);
+    color: var(--team-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--team);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* The app never relies on motion for meaning. Honour the OS preference. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* The uppercase, letter-spaced micro-label used throughout the UI. */
+  .label {
+    @apply text-2xs uppercase tracking-label text-faint font-medium;
+  }
+
+  /* A hairline-bordered surface card — no shadow, gentle radius. */
+  .panel {
+    @apply rounded-card border bg-surface;
+    border-color: var(--hairline);
+  }
+}
