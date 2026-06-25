@@ -51,6 +51,11 @@ export function Bracket() {
               <span className="font-medium">{homeTeam.name}</span> didn&rsquo;t make the round of 32 this time — but the
               bracket plays on. Your mascot stays right here with you.
             </>
+          ) : status === 'third' ? (
+            <>
+              <span className="font-medium">{homeTeam.name}</span> finished third in Group {homeTeam.group} — it may still
+              slip through as one of the eight best third-placed teams. The path lights up once every group is done.
+            </>
           ) : (
             <>
               {homeTeam.name}&rsquo;s place isn&rsquo;t settled yet. Once Group {homeTeam.group} finishes, its path
@@ -164,8 +169,8 @@ function SlotLine({
   )
 }
 
-/** Is the home team in / out of the round of 32, or undecided? */
-function homeStatus(matches: Parameters<typeof computeGroupStandings>[0], homeCode: string | null): 'in' | 'out' | 'tbd' {
+/** Is the home team in / out of the round of 32, awaiting the best-thirds race, or undecided? */
+function homeStatus(matches: Parameters<typeof computeGroupStandings>[0], homeCode: string | null): 'in' | 'out' | 'third' | 'tbd' {
   if (!homeCode) return 'tbd'
   const team = teamByCode[homeCode]
   if (!team) return 'tbd'
@@ -174,8 +179,8 @@ function homeStatus(matches: Parameters<typeof computeGroupStandings>[0], homeCo
   if (finished < 6) return 'tbd'
   const standings = computeGroupStandings(matches, team.group, codes)
   const rank = standings.find((r) => r.code === homeCode)?.rank ?? 99
-  // Top 2 always advance. 3rd may advance as a best-third — treat as tbd-but-hopeful.
+  // Top 2 always advance; 3rd may still qualify as one of the eight best thirds.
   if (rank <= 2) return 'in'
-  if (rank === 3) return 'tbd'
+  if (rank === 3) return 'third'
   return 'out'
 }
