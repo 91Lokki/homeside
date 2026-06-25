@@ -7,16 +7,6 @@ export function Label({ children, className }: { children: ReactNode; className?
   return <span className={cn('label', className)}>{children}</span>
 }
 
-/** A small pulsing live indicator. */
-export function LiveDot({ className }: { className?: string }) {
-  return (
-    <span className={cn('relative inline-flex h-2 w-2', className)} aria-hidden>
-      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-team opacity-60" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-team" />
-    </span>
-  )
-}
-
 /** Recent form as small neutral cells; the home team's wins glow in its color. */
 export function FormDots({ form, accent = false }: { form: Result[]; accent?: boolean }) {
   if (!form.length) return <span className="text-faint text-2xs">—</span>
@@ -57,14 +47,13 @@ export function Divider({ className }: { className?: string }) {
 }
 
 /** A small score chip. */
-export function Score({ home, away, live = false }: { home: number | null; away: number | null; live?: boolean }) {
+export function Score({ home, away }: { home: number | null; away: number | null }) {
   const blank = home == null || away == null
   return (
     <span
-      aria-label={blank ? 'Not yet played' : `${home}–${away}${live ? ', live' : ''}`}
+      aria-label={blank ? 'Not yet played' : `${home}–${away}`}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-[8px] px-2 py-0.5 font-grotesk text-sm font-semibold tnum',
-        live ? 'bg-team-soft text-team' : 'bg-sunken text-ink',
+        'inline-flex items-center gap-1.5 rounded-[8px] px-2 py-0.5 font-grotesk text-sm font-semibold tnum bg-sunken text-ink',
       )}
     >
       {blank ? <span className="text-faint">vs</span> : <>{home}<span className="text-faint">–</span>{away}</>}

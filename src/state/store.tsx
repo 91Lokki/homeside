@@ -2,19 +2,22 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { SEED_MATCHES } from '@/data/fixtures'
 import { teamByCode } from '@/data/teams'
 import type { Match, Team } from '@/domain/types'
-import { fetchLiveMatches, mergeMatches } from '@/lib/api'
+import { fetchResults, mergeMatches } from '@/lib/api'
 import { useTeamColor, useTheme } from './theme'
 
 const TEAM_KEY = 'homeside.team'
-const POLL_MS = 45_000
+// Low-frequency results updater (NOT live): refresh on load, then every few
+// hours. World Cup results change a handful of times a day at most.
+const REFRESH_MS = 3 * 60 * 60 * 1000 // 3 hours
+const STALE_MS = 60 * 60 * 1000 // refetch on tab focus only if older than 1 hour
 
 interface AppCtx {
   homeCode: string | null
   homeTeam: Team | null
   setHomeCode: (code: string | null) => void
   matches: Match[]
-  /** true once live data has actually been merged in */
-  isLive: boolean
+  /** true once real results from the API have been merged over the seed */
+  connected: boolean
   lastUpdated: number | null
 }
 
@@ -23,8 +26,9 @@ const Ctx = createContext<AppCtx | null>(null)
 export function AppProvider({ children }: { children: ReactNode }) {
   const { isDark } = useTheme()
   const [homeCode, setHomeCodeState] = useState<string | null>(() => localStorage.getItem(TEAM_KEY))
-  const [live, setLive] = useState<Match[] | null>(null)
+  const [results, setResults] = useState<Match[] | null>(null)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
+  const lastFetch = useRef(0)
   const timer = useRef<number | null>(null)
 
   const setHomeCode = useCallback((code: string | null) => {
@@ -33,28 +37,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem(TEAM_KEY)
   }, [])
 
-  // Live polling — pauses when the tab is hidden (calm + rate-limit friendly).
+  // Pull real finished results occasionally. No in-match polling.
   useEffect(() => {
     let cancelled = false
-    const tick = async () => {
-      const result = await fetchLiveMatches()
+    const refresh = async () => {
+      const r = await fetchResults()
       if (cancelled) return
-      if (result) {
-        setLive(result)
+      lastFetch.current = Date.now()
+      if (r) {
+        setResults(r)
         setLastUpdated(Date.now())
       }
     }
-    const start = () => {
-      void tick()
-      timer.current = window.setInterval(() => {
-        if (document.visibilityState === 'visible') void tick()
-      }, POLL_MS)
-    }
-    start()
+
+    void refresh()
+    timer.current = window.setInterval(() => void refresh(), REFRESH_MS)
+
+    // If the tab has been away for a while, top up on return (still low-frequency).
     const onVisible = () => {
-      if (document.visibilityState === 'visible') void tick()
+      if (document.visibilityState === 'visible' && Date.now() - lastFetch.current > STALE_MS) {
+        void refresh()
+      }
     }
     document.addEventListener('visibilitychange', onVisible)
+
     return () => {
       cancelled = true
       if (timer.current) window.clearInterval(timer.current)
@@ -62,14 +68,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const matches = useMemo(() => (live ? mergeMatches(SEED_MATCHES, live) : SEED_MATCHES), [live])
+  // Real finished results overlay the seed snapshot; with no key we keep the seed.
+  const matches = useMemo(() => (results ? mergeMatches(SEED_MATCHES, results) : SEED_MATCHES), [results])
   const homeTeam = homeCode ? teamByCode[homeCode] ?? null : null
 
   useTeamColor(homeTeam?.color, isDark)
 
   const value = useMemo<AppCtx>(
-    () => ({ homeCode, homeTeam, setHomeCode, matches, isLive: live !== null, lastUpdated }),
-    [homeCode, homeTeam, setHomeCode, matches, live, lastUpdated],
+    () => ({ homeCode, homeTeam, setHomeCode, matches, connected: results !== null, lastUpdated }),
+    [homeCode, homeTeam, setHomeCode, matches, results, lastUpdated],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

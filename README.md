@@ -8,8 +8,8 @@ matches. Not a stats dashboard; a quiet companion for the summer.
   the real W/D/L record, the star player, and squad members that unlock as the
   bond grows.
 - **Schedule** — all 12 groups (A–L) with standings and fixtures in your local
-  time, live scores during matches, and a light report (goals, possession,
-  shots) for finished games.
+  time, real final scores, and a light report (goals, possession, shots) for
+  finished games.
 - **Knockout bracket** — the 32-team bracket (R32 → Final) using the official
   FIFA pairing rules, with your team's path highlighted.
 
@@ -40,9 +40,10 @@ npm install
 npm run dev          # http://localhost:5173  (runs on the seed snapshot)
 ```
 
-To exercise the **live** path locally, run the proxy with the Vercel CLI in a
-second terminal (it reads your key from `.env`) — the Vite dev server proxies
-`/api` to it:
+To exercise the **real-results** path locally, run the proxy with the Vercel CLI
+in a second terminal (it reads your key from `.env`) — the Vite dev server
+proxies `/api` to it. Results are fetched on load and refreshed every few hours
+(low-frequency; there is no in-match live polling):
 
 ```bash
 cp .env.example .env # then fill in API_FOOTBALL_KEY
@@ -88,7 +89,7 @@ api/            Vercel Edge proxy (key stays here): fixtures, standings, match, 
 src/
   data/         generated seed snapshot (teams, fixtures, bracket, squads, meta)
   domain/       pure logic: types, record/standings, results-only bond, bracket resolver
-  state/        theme (team colour + dark mode) and the live-polling store
+  state/        theme (team colour + dark mode) and the low-frequency results store
   components/   mascot (seeded SVG), ambient field, onboarding, match report, atoms
   screens/      home base · schedule · bracket
 scripts/        build-seed.mjs (research -> typed data)

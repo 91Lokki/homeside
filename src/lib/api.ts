@@ -26,11 +26,6 @@ async function getProxy(path: string): Promise<unknown[] | null> {
   }
 }
 
-/** True if the live API is configured (proxy returns real data). */
-export async function apiAvailable(): Promise<boolean> {
-  return (await getProxy('/api/fixtures')) !== null
-}
-
 /* --------------------------- name -> code mapping ------------------------- */
 
 const ALIASES: Record<string, TeamCode> = {
@@ -130,10 +125,18 @@ function normalizeFixture(af: AfFixture): Match | null {
   }
 }
 
-export async function fetchLiveMatches(): Promise<Match[] | null> {
+/**
+ * Fetch real, FINISHED match results from the proxy. This is a low-frequency
+ * results updater — not live: in-progress and scheduled fixtures are ignored, so
+ * only final scores ever reach the app. Returns null when the proxy has no key
+ * (the caller then keeps the real seed snapshot untouched).
+ */
+export async function fetchResults(): Promise<Match[] | null> {
   const raw = await getProxy('/api/fixtures')
   if (!raw) return null
-  return raw.map((x) => normalizeFixture(x as AfFixture)).filter((m): m is Match => m !== null)
+  return raw
+    .map((x) => normalizeFixture(x as AfFixture))
+    .filter((m): m is Match => m !== null && m.status === 'finished')
 }
 
 /* ------------------------------ merge with seed --------------------------- */

@@ -4,7 +4,7 @@ import { GROUP_IDS, TEAMS, teamByCode } from '@/data/teams'
 import { computeGroupStandings } from '@/domain/record'
 import type { GroupId, Match } from '@/domain/types'
 import { MatchReport } from '@/components/MatchReport'
-import { FormDots, Label, LiveDot, Score } from '@/components/ui/atoms'
+import { FormDots, Label, Score } from '@/components/ui/atoms'
 import { localDay, localTime, localZoneName } from '@/lib/time'
 import { useApp } from '@/state/store'
 import { cn } from '@/lib/utils'
@@ -132,7 +132,7 @@ function MatchRow({ match, homeCode }: { match: Match; homeCode: string | null }
   const [open, setOpen] = useState(false)
   const home = match.homeCode ? teamByCode[match.homeCode] : null
   const away = match.awayCode ? teamByCode[match.awayCode] : null
-  const expandable = match.status === 'finished' || match.status === 'live'
+  const expandable = match.status === 'finished'
   const involvesHome = match.homeCode === homeCode || match.awayCode === homeCode
 
   return (
@@ -142,21 +142,12 @@ function MatchRow({ match, homeCode }: { match: Match; homeCode: string | null }
         className={cn('flex w-full items-center gap-3 px-4 py-3 text-left', expandable && 'hover:bg-sunken/40')}
       >
         <span className="w-12 shrink-0 text-2xs tnum text-faint">
-          {match.status === 'finished' ? (
-            'FT'
-          ) : match.status === 'live' ? (
-            <span className="inline-flex items-center gap-1 text-team">
-              <LiveDot />
-              <span className="sr-only">Live</span>
-            </span>
-          ) : (
-            localTime(match.kickoff)
-          )}
+          {match.status === 'finished' ? 'FT' : localTime(match.kickoff)}
         </span>
         <span className={cn('flex-1 truncate text-right text-sm', match.homeCode === homeCode ? 'font-semibold text-team' : 'font-medium')}>
           {home?.name ?? match.homeLabel ?? '—'}
         </span>
-        <Score home={match.homeScore} away={match.awayScore} live={match.status === 'live'} />
+        <Score home={match.homeScore} away={match.awayScore} />
         <span className={cn('flex-1 truncate text-sm', match.awayCode === homeCode ? 'font-semibold text-team' : 'font-medium')}>
           {away?.name ?? match.awayLabel ?? '—'}
         </span>

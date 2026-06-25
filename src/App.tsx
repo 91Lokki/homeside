@@ -7,7 +7,6 @@ import { ThemeProvider } from '@/state/theme'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
-import { LiveDot } from '@/components/ui/atoms'
 import { cn } from '@/lib/utils'
 import { HomeBase } from '@/screens/HomeBase'
 import { Schedule } from '@/screens/Schedule'
@@ -28,7 +27,7 @@ export function App() {
 }
 
 function Shell() {
-  const { homeCode, homeTeam, setHomeCode, isLive } = useApp()
+  const { homeCode, homeTeam, setHomeCode, connected } = useApp()
   const [pickerOpen, setPickerOpen] = useState(false)
 
   // Onboarding gate — no home team yet, or the user chose to change it.
@@ -57,11 +56,6 @@ function Shell() {
           <Nav className="hidden sm:flex" />
 
           <div className="flex items-center gap-2.5">
-            {isLive && (
-              <span className="hidden items-center gap-1.5 text-2xs text-muted sm:flex">
-                <LiveDot /> live
-              </span>
-            )}
             <button
               onClick={() => setPickerOpen(true)}
               className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-3 transition-colors hover:border-ink/30"
@@ -92,8 +86,10 @@ function Shell() {
       <footer className="border-t pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-4 text-2xs text-faint sm:px-8">
           <span>
-            {isLive ? 'Live results via API-Football.' : `Snapshot as of ${DATA_META.asOf}.`} Growth reflects real matches
-            only.
+            {connected
+              ? 'Real results via API-Football, refreshed periodically.'
+              : `Snapshot as of ${DATA_META.asOf}.`}{' '}
+            Growth reflects real finished matches only.
           </span>
           <span>Homeside · an unofficial companion · original mascots</span>
         </div>

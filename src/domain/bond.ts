@@ -1,5 +1,5 @@
 import type { Match, Stage, TeamCode } from './types'
-import { finishedFor, liveMatchFor, resultFor, type Result } from './record'
+import { finishedFor, resultFor, type Result } from './record'
 
 /**
  * Bond — the heart of the app.
@@ -86,10 +86,7 @@ export function unlockedNotableForLevel(level: number): number {
 }
 
 export function moodFor(matches: Match[], code: TeamCode): { mood: Mood; lastResult: Result | null; lastMatch: Match | null } {
-  const live = liveMatchFor(matches, code)
-  if (live) {
-    return { mood: 'cheering', lastResult: null, lastMatch: live }
-  }
+  // Mood reflects the most recent FINISHED result only — there is no live state.
   const finished = finishedFor(matches, code)
   if (finished.length === 0) return { mood: 'new', lastResult: null, lastMatch: null }
   const last = finished[finished.length - 1]

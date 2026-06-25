@@ -2,11 +2,11 @@ import { Lock, MapPin } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
 import { computeBond, LEVELS, MAX_LEVEL, moodLine } from '@/domain/bond'
-import { liveMatchFor, nextMatchFor, recordFor, resultFor } from '@/domain/record'
+import { nextMatchFor, recordFor, resultFor } from '@/domain/record'
 import type { Match } from '@/domain/types'
 import { AmbientField } from '@/components/AmbientField'
 import { Mascot } from '@/components/mascot/Mascot'
-import { FormDots, Label, LiveDot, Score } from '@/components/ui/atoms'
+import { FormDots, Label, Score } from '@/components/ui/atoms'
 import { localDay, localTime, relativeKickoff } from '@/lib/time'
 import { useApp } from '@/state/store'
 import { useTheme } from '@/state/theme'
@@ -21,7 +21,6 @@ export function HomeBase() {
   const bond = computeBond(matches, code)
   const record = recordFor(matches, code)
   const squad = SQUADS[code]
-  const live = liveMatchFor(matches, code)
   const next = nextMatchFor(matches, code)
 
   return (
@@ -84,13 +83,7 @@ export function HomeBase() {
         <div className="flex flex-col gap-5">
           <RecordCard record={record} played={bond.playedCount} />
 
-          {live ? (
-            <LiveCard match={live} code={code} />
-          ) : next ? (
-            <NextCard match={next} code={code} />
-          ) : (
-            <LastCard matches={matches} code={code} />
-          )}
+          {next ? <NextCard match={next} code={code} /> : <LastCard matches={matches} code={code} />}
 
           {squad && <StarCard star={squad.star} />}
         </div>
@@ -153,32 +146,6 @@ function NextCard({ match, code }: { match: Match; code: string }) {
           <MapPin size={12} /> {match.venue}, {match.city}
         </p>
       )}
-    </section>
-  )
-}
-
-function LiveCard({ match, code }: { match: Match; code: string }) {
-  const opp = opponentOf(match, code)
-  const isHome = match.homeCode === code
-  return (
-    <section className="panel border-team p-5">
-      <div className="flex items-center justify-between">
-        <Label>
-          <span className="inline-flex items-center gap-1.5">
-            <LiveDot /> Live now
-          </span>
-        </Label>
-        <span className="text-2xs text-team tnum">{match.minute ? `${match.minute}'` : 'in play'}</span>
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        <p className="font-grotesk text-xl font-medium">vs {opp?.name ?? '—'}</p>
-        <Score
-          home={isHome ? match.homeScore : match.awayScore}
-          away={isHome ? match.awayScore : match.homeScore}
-          live
-        />
-      </div>
-      <p className="mt-2 text-xs text-muted">The mascot will settle once the match goes final.</p>
     </section>
   )
 }
