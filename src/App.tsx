@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { HomeBase } from '@/screens/HomeBase'
 import { Schedule } from '@/screens/Schedule'
 import { Bracket } from '@/screens/Bracket'
+import { Gallery } from '@/screens/Gallery'
 
 export function App() {
   return (
@@ -79,6 +80,7 @@ function Shell() {
           <Route path="/" element={<HomeBase />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/bracket" element={<Bracket />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="*" element={<HomeBase />} />
         </Routes>
       </main>
