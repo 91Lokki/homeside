@@ -1,0 +1,1912 @@
+{
+  "teams": [
+    {
+      "code": "ARG",
+      "name": "Argentina",
+      "star": {
+        "name": "Lionel Messi",
+        "position": "Forward",
+        "club": "Inter Miami",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Lautaro Martínez",
+          "position": "Forward",
+          "club": "Inter Milan",
+          "number": 22
+        },
+        {
+          "name": "Julián Álvarez",
+          "position": "Forward",
+          "club": "Atlético Madrid",
+          "number": 9
+        },
+        {
+          "name": "Emiliano Martínez",
+          "position": "Goalkeeper",
+          "club": "Aston Villa",
+          "number": 23
+        },
+        {
+          "name": "Enzo Fernández",
+          "position": "Midfielder",
+          "club": "Chelsea",
+          "number": 24
+        },
+        {
+          "name": "Alexis Mac Allister",
+          "position": "Midfielder",
+          "club": "Liverpool",
+          "number": 20
+        },
+        {
+          "name": "Cristian Romero",
+          "position": "Defender",
+          "club": "Tottenham Hotspur",
+          "number": 13
+        }
+      ]
+    },
+    {
+      "code": "FRA",
+      "name": "France",
+      "star": {
+        "name": "Kylian Mbappé",
+        "position": "Forward",
+        "club": "Real Madrid",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Ousmane Dembélé",
+          "position": "Forward",
+          "club": "Paris Saint-Germain",
+          "number": null
+        },
+        {
+          "name": "Michael Olise",
+          "position": "Forward",
+          "club": "Bayern Munich",
+          "number": null
+        },
+        {
+          "name": "Aurélien Tchouaméni",
+          "position": "Midfielder",
+          "club": "Real Madrid",
+          "number": null
+        },
+        {
+          "name": "William Saliba",
+          "position": "Defender",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Mike Maignan",
+          "position": "Goalkeeper",
+          "club": "AC Milan",
+          "number": null
+        },
+        {
+          "name": "Désiré Doué",
+          "position": "Forward",
+          "club": "Paris Saint-Germain",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "BRA",
+      "name": "Brazil",
+      "star": {
+        "name": "Vinícius Júnior",
+        "position": "Forward",
+        "club": "Real Madrid",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Raphinha",
+          "position": "Forward",
+          "club": "Barcelona",
+          "number": null
+        },
+        {
+          "name": "Neymar",
+          "position": "Forward",
+          "club": "Santos",
+          "number": null
+        },
+        {
+          "name": "Alisson",
+          "position": "Goalkeeper",
+          "club": "Liverpool",
+          "number": null
+        },
+        {
+          "name": "Marquinhos",
+          "position": "Defender",
+          "club": "Paris Saint-Germain",
+          "number": null
+        },
+        {
+          "name": "Bruno Guimarães",
+          "position": "Midfielder",
+          "club": "Newcastle United",
+          "number": null
+        },
+        {
+          "name": "Casemiro",
+          "position": "Midfielder",
+          "club": "Manchester United",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "ESP",
+      "name": "Spain",
+      "star": {
+        "name": "Lamine Yamal",
+        "position": "Forward",
+        "club": "Barcelona",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Pedri",
+          "position": "Midfielder",
+          "club": "Barcelona",
+          "number": null
+        },
+        {
+          "name": "Rodri",
+          "position": "Midfielder",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Mikel Oyarzabal",
+          "position": "Forward",
+          "club": "Real Sociedad",
+          "number": null
+        },
+        {
+          "name": "Marc Cucurella",
+          "position": "Defender",
+          "club": "Chelsea",
+          "number": null
+        },
+        {
+          "name": "Nico Williams",
+          "position": "Forward",
+          "club": "Athletic Bilbao",
+          "number": null
+        },
+        {
+          "name": "Pau Cubarsí",
+          "position": "Defender",
+          "club": "Barcelona",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "ENG",
+      "name": "England",
+      "star": {
+        "name": "Harry Kane",
+        "position": "Forward",
+        "club": "Bayern Munich",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Jude Bellingham",
+          "position": "Midfielder",
+          "club": "Real Madrid",
+          "number": null
+        },
+        {
+          "name": "Bukayo Saka",
+          "position": "Forward",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Declan Rice",
+          "position": "Midfielder",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Jordan Pickford",
+          "position": "Goalkeeper",
+          "club": "Everton",
+          "number": null
+        },
+        {
+          "name": "Marc Guéhi",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "John Stones",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "POR",
+      "name": "Portugal",
+      "star": {
+        "name": "Cristiano Ronaldo",
+        "position": "Forward",
+        "club": "Al Nassr",
+        "number": 7
+      },
+      "notableSquad": [
+        {
+          "name": "Bruno Fernandes",
+          "position": "Midfielder",
+          "club": "Manchester United",
+          "number": null
+        },
+        {
+          "name": "Vitinha",
+          "position": "Midfielder",
+          "club": "Paris Saint-Germain",
+          "number": null
+        },
+        {
+          "name": "Rúben Dias",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Bernardo Silva",
+          "position": "Midfielder",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Rafael Leão",
+          "position": "Forward",
+          "club": "AC Milan",
+          "number": null
+        },
+        {
+          "name": "Nuno Mendes",
+          "position": "Defender",
+          "club": "Paris Saint-Germain",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "GER",
+      "name": "Germany",
+      "star": {
+        "name": "Florian Wirtz",
+        "position": "Midfielder",
+        "club": "Liverpool",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Joshua Kimmich",
+          "position": "Defender",
+          "club": "Bayern Munich",
+          "number": null
+        },
+        {
+          "name": "Antonio Rüdiger",
+          "position": "Defender",
+          "club": "Real Madrid",
+          "number": null
+        },
+        {
+          "name": "Manuel Neuer",
+          "position": "Goalkeeper",
+          "club": "Bayern Munich",
+          "number": null
+        },
+        {
+          "name": "Kai Havertz",
+          "position": "Forward",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Jamal Musiala",
+          "position": "Midfielder",
+          "club": "Bayern Munich",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "NED",
+      "name": "Netherlands",
+      "star": {
+        "name": "Virgil van Dijk",
+        "position": "Defender",
+        "club": "Liverpool",
+        "number": 4
+      },
+      "notableSquad": [
+        {
+          "name": "Frenkie de Jong",
+          "position": "Midfielder",
+          "club": "Barcelona",
+          "number": null
+        },
+        {
+          "name": "Cody Gakpo",
+          "position": "Forward",
+          "club": "Liverpool",
+          "number": null
+        },
+        {
+          "name": "Memphis Depay",
+          "position": "Forward",
+          "club": "Corinthians",
+          "number": null
+        },
+        {
+          "name": "Denzel Dumfries",
+          "position": "Defender",
+          "club": "Inter Milan",
+          "number": null
+        },
+        {
+          "name": "Tijjani Reijnders",
+          "position": "Midfielder",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Donyell Malen",
+          "position": "Forward",
+          "club": "Roma",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "BEL",
+      "name": "Belgium",
+      "star": {
+        "name": "Kevin De Bruyne",
+        "position": "Midfielder",
+        "club": "Napoli",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Jeremy Doku",
+          "position": "Forward",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Romelu Lukaku",
+          "position": "Forward",
+          "club": "Napoli",
+          "number": null
+        },
+        {
+          "name": "Thibaut Courtois",
+          "position": "Goalkeeper",
+          "club": "Real Madrid",
+          "number": null
+        },
+        {
+          "name": "Youri Tielemans",
+          "position": "Midfielder",
+          "club": "Aston Villa",
+          "number": null
+        },
+        {
+          "name": "Leandro Trossard",
+          "position": "Forward",
+          "club": "Arsenal",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "USA",
+      "name": "United States",
+      "star": {
+        "name": "Christian Pulisic",
+        "position": "Forward",
+        "club": "AC Milan",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Weston McKennie",
+          "position": "Midfielder",
+          "club": "Juventus",
+          "number": null
+        },
+        {
+          "name": "Tyler Adams",
+          "position": "Midfielder",
+          "club": "AFC Bournemouth",
+          "number": null
+        },
+        {
+          "name": "Folarin Balogun",
+          "position": "Forward",
+          "club": "AS Monaco",
+          "number": null
+        },
+        {
+          "name": "Tim Weah",
+          "position": "Forward",
+          "club": "Marseille",
+          "number": null
+        },
+        {
+          "name": "Gio Reyna",
+          "position": "Midfielder",
+          "club": "Borussia Mönchengladbach",
+          "number": null
+        },
+        {
+          "name": "Ricardo Pepi",
+          "position": "Forward",
+          "club": "PSV Eindhoven",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "MEX",
+      "name": "Mexico",
+      "star": {
+        "name": "Edson Álvarez",
+        "position": "Defender",
+        "club": "Fenerbahçe",
+        "number": 4
+      },
+      "notableSquad": [
+        {
+          "name": "Santiago Giménez",
+          "position": "Forward",
+          "club": "AC Milan",
+          "number": 11
+        },
+        {
+          "name": "Raúl Jiménez",
+          "position": "Forward",
+          "club": "Fulham",
+          "number": 9
+        },
+        {
+          "name": "Guillermo Ochoa",
+          "position": "Goalkeeper",
+          "club": "AEL Limassol",
+          "number": 13
+        },
+        {
+          "name": "Johan Vásquez",
+          "position": "Defender",
+          "club": "Genoa",
+          "number": 5
+        },
+        {
+          "name": "Orbelín Pineda",
+          "position": "Midfielder",
+          "club": "AEK Athens",
+          "number": 17
+        },
+        {
+          "name": "Gilberto Mora",
+          "position": "Midfielder",
+          "club": "Tijuana",
+          "number": 19
+        }
+      ]
+    },
+    {
+      "code": "CAN",
+      "name": "Canada",
+      "star": {
+        "name": "Alphonso Davies",
+        "position": "Defender",
+        "club": "Bayern Munich",
+        "number": 19
+      },
+      "notableSquad": [
+        {
+          "name": "Jonathan David",
+          "position": "Forward",
+          "club": "Juventus",
+          "number": 10
+        },
+        {
+          "name": "Stephen Eustáquio",
+          "position": "Midfielder",
+          "club": "Los Angeles FC",
+          "number": 7
+        },
+        {
+          "name": "Cyle Larin",
+          "position": "Forward",
+          "club": "Southampton",
+          "number": 9
+        },
+        {
+          "name": "Alistair Johnston",
+          "position": "Defender",
+          "club": "Celtic",
+          "number": 2
+        },
+        {
+          "name": "Ismaël Koné",
+          "position": "Midfielder",
+          "club": "Sassuolo",
+          "number": 8
+        },
+        {
+          "name": "Dayne St. Clair",
+          "position": "Goalkeeper",
+          "club": "Inter Miami",
+          "number": 1
+        }
+      ]
+    },
+    {
+      "code": "CRO",
+      "name": "Croatia",
+      "star": {
+        "name": "Luka Modrić",
+        "position": "Midfielder",
+        "club": "AC Milan",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Joško Gvardiol",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Mateo Kovačić",
+          "position": "Midfielder",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Andrej Kramarić",
+          "position": "Forward",
+          "club": "Hoffenheim",
+          "number": null
+        },
+        {
+          "name": "Ivan Perišić",
+          "position": "Forward",
+          "club": "PSV Eindhoven",
+          "number": null
+        },
+        {
+          "name": "Mario Pašalić",
+          "position": "Midfielder",
+          "club": "Atalanta",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "URU",
+      "name": "Uruguay",
+      "star": {
+        "name": "Federico Valverde",
+        "position": "Midfielder",
+        "club": "Real Madrid",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Darwin Núñez",
+          "position": "Forward",
+          "club": "Liverpool",
+          "number": null
+        },
+        {
+          "name": "Ronald Araújo",
+          "position": "Defender",
+          "club": "Barcelona",
+          "number": null
+        },
+        {
+          "name": "Rodrigo Bentancur",
+          "position": "Midfielder",
+          "club": "Tottenham Hotspur",
+          "number": null
+        },
+        {
+          "name": "Manuel Ugarte",
+          "position": "Midfielder",
+          "club": "Manchester United",
+          "number": null
+        },
+        {
+          "name": "José María Giménez",
+          "position": "Defender",
+          "club": "Atlético Madrid",
+          "number": null
+        },
+        {
+          "name": "Fernando Muslera",
+          "position": "Goalkeeper",
+          "club": "Galatasaray",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "COL",
+      "name": "Colombia",
+      "star": {
+        "name": "Luis Díaz",
+        "position": "Forward",
+        "club": "Bayern Munich",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "James Rodríguez",
+          "position": "Midfielder",
+          "club": "Club León",
+          "number": 10
+        },
+        {
+          "name": "David Ospina",
+          "position": "Goalkeeper",
+          "club": "Atlético Nacional",
+          "number": 1
+        },
+        {
+          "name": "Jhon Durán",
+          "position": "Forward",
+          "club": "Al-Nassr",
+          "number": null
+        },
+        {
+          "name": "Daniel Muñoz",
+          "position": "Defender",
+          "club": "Crystal Palace",
+          "number": null
+        },
+        {
+          "name": "Richard Ríos",
+          "position": "Midfielder",
+          "club": "Benfica",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "ECU",
+      "name": "Ecuador",
+      "star": {
+        "name": "Moisés Caicedo",
+        "position": "Midfielder",
+        "club": "Chelsea",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Enner Valencia",
+          "position": "Forward",
+          "club": "Internacional",
+          "number": null
+        },
+        {
+          "name": "Piero Hincapié",
+          "position": "Defender",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Willian Pacho",
+          "position": "Defender",
+          "club": "Paris Saint-Germain",
+          "number": null
+        },
+        {
+          "name": "Pervis Estupiñán",
+          "position": "Defender",
+          "club": "AC Milan",
+          "number": null
+        },
+        {
+          "name": "Gonzalo Plata",
+          "position": "Forward",
+          "club": "Flamengo",
+          "number": null
+        },
+        {
+          "name": "Kendry Páez",
+          "position": "Midfielder",
+          "club": "Chelsea",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "PAR",
+      "name": "Paraguay",
+      "star": {
+        "name": "Miguel Almirón",
+        "position": "Midfielder",
+        "club": "Atlanta United",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Antonio Sanabria",
+          "position": "Forward",
+          "club": "Torino",
+          "number": null
+        },
+        {
+          "name": "Julio Enciso",
+          "position": "Forward",
+          "club": "Brighton & Hove Albion",
+          "number": null
+        },
+        {
+          "name": "Diego Gómez",
+          "position": "Midfielder",
+          "club": "Brighton & Hove Albion",
+          "number": null
+        },
+        {
+          "name": "Omar Alderete",
+          "position": "Defender",
+          "club": "Sunderland",
+          "number": null
+        },
+        {
+          "name": "Gustavo Gómez",
+          "position": "Defender",
+          "club": "Palmeiras",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "MAR",
+      "name": "Morocco",
+      "star": {
+        "name": "Achraf Hakimi",
+        "position": "Defender",
+        "club": "Paris Saint-Germain",
+        "number": 2
+      },
+      "notableSquad": [
+        {
+          "name": "Brahim Díaz",
+          "position": "Forward",
+          "club": "Real Madrid",
+          "number": null
+        },
+        {
+          "name": "Noussair Mazraoui",
+          "position": "Defender",
+          "club": "Manchester United",
+          "number": null
+        },
+        {
+          "name": "Nayef Aguerd",
+          "position": "Defender",
+          "club": "Marseille",
+          "number": null
+        },
+        {
+          "name": "Sofyan Amrabat",
+          "position": "Midfielder",
+          "club": "Real Betis",
+          "number": null
+        },
+        {
+          "name": "Bilal El Khannouss",
+          "position": "Midfielder",
+          "club": "Stuttgart",
+          "number": null
+        },
+        {
+          "name": "Ayoub El Kaabi",
+          "position": "Forward",
+          "club": "Olympiacos",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "SEN",
+      "name": "Senegal",
+      "star": {
+        "name": "Sadio Mané",
+        "position": "Forward",
+        "club": "Al Nassr",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Kalidou Koulibaly",
+          "position": "Defender",
+          "club": "Al-Hilal",
+          "number": null
+        },
+        {
+          "name": "Nicolas Jackson",
+          "position": "Forward",
+          "club": "Bayern Munich",
+          "number": null
+        },
+        {
+          "name": "Ismaïla Sarr",
+          "position": "Forward",
+          "club": "Crystal Palace",
+          "number": null
+        },
+        {
+          "name": "Idrissa Gana Gueye",
+          "position": "Midfielder",
+          "club": "Everton",
+          "number": null
+        },
+        {
+          "name": "Édouard Mendy",
+          "position": "Goalkeeper",
+          "club": "Al-Ahli",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "CIV",
+      "name": "Ivory Coast",
+      "star": {
+        "name": "Simon Adingra",
+        "position": "Forward",
+        "club": "Monaco",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Franck Kessié",
+          "position": "Midfielder",
+          "club": "Al-Ahli",
+          "number": null
+        },
+        {
+          "name": "Amad Diallo",
+          "position": "Forward",
+          "club": "Manchester United",
+          "number": null
+        },
+        {
+          "name": "Evan Ndicka",
+          "position": "Defender",
+          "club": "Roma",
+          "number": null
+        },
+        {
+          "name": "Ibrahim Sangaré",
+          "position": "Midfielder",
+          "club": "Nottingham Forest",
+          "number": null
+        },
+        {
+          "name": "Nicolas Pépé",
+          "position": "Forward",
+          "club": "Villarreal",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "EGY",
+      "name": "Egypt",
+      "star": {
+        "name": "Mohamed Salah",
+        "position": "Forward",
+        "club": "Liverpool",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Omar Marmoush",
+          "position": "Forward",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Mahmoud Trezeguet",
+          "position": "Forward",
+          "club": "Al Ahly",
+          "number": null
+        },
+        {
+          "name": "Mohamed Abdelmonem",
+          "position": "Defender",
+          "club": "Nice",
+          "number": null
+        },
+        {
+          "name": "Mohamed El Shenawy",
+          "position": "Goalkeeper",
+          "club": "Al Ahly",
+          "number": null
+        },
+        {
+          "name": "Ahmed Zizo",
+          "position": "Midfielder",
+          "club": "Al Ahly",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "ALG",
+      "name": "Algeria",
+      "star": {
+        "name": "Riyad Mahrez",
+        "position": "Forward",
+        "club": "Al-Ahli",
+        "number": 7
+      },
+      "notableSquad": [
+        {
+          "name": "Amine Gouiri",
+          "position": "Forward",
+          "club": "Marseille",
+          "number": null
+        },
+        {
+          "name": "Mohamed Amine Amoura",
+          "position": "Forward",
+          "club": "Wolfsburg",
+          "number": null
+        },
+        {
+          "name": "Rayan Aït-Nouri",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Ramy Bensebaini",
+          "position": "Defender",
+          "club": "Borussia Dortmund",
+          "number": null
+        },
+        {
+          "name": "Ibrahim Maza",
+          "position": "Midfielder",
+          "club": "Bayer Leverkusen",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "TUN",
+      "name": "Tunisia",
+      "star": {
+        "name": "Ellyes Skhiri",
+        "position": "Midfielder",
+        "club": "Eintracht Frankfurt",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Hannibal Mejbri",
+          "position": "Midfielder",
+          "club": "Burnley",
+          "number": null
+        },
+        {
+          "name": "Montassar Talbi",
+          "position": "Defender",
+          "club": "Lorient",
+          "number": null
+        },
+        {
+          "name": "Youssef Msakni",
+          "position": "Forward",
+          "club": "Al-Arabi",
+          "number": null
+        },
+        {
+          "name": "Rani Khedira",
+          "position": "Midfielder",
+          "club": "Union Berlin",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "GHA",
+      "name": "Ghana",
+      "star": {
+        "name": "Thomas Partey",
+        "position": "Midfielder",
+        "club": "Villarreal",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Mohammed Salisu",
+          "position": "Defender",
+          "club": "AS Monaco",
+          "number": null
+        },
+        {
+          "name": "Jordan Ayew",
+          "position": "Forward",
+          "club": "Leicester City",
+          "number": null
+        },
+        {
+          "name": "Antoine Semenyo",
+          "position": "Forward",
+          "club": "AFC Bournemouth",
+          "number": null
+        },
+        {
+          "name": "Iñaki Williams",
+          "position": "Forward",
+          "club": "Athletic Bilbao",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "CPV",
+      "name": "Cape Verde",
+      "star": {
+        "name": "Ryan Mendes",
+        "position": "Forward",
+        "club": "Iğdır FK",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Vozinha",
+          "position": "Goalkeeper",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Jamiro Monteiro",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Dailon Livramento",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "RSA",
+      "name": "South Africa",
+      "star": {
+        "name": "Teboho Mokoena",
+        "position": "Midfielder",
+        "club": "Mamelodi Sundowns",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Ronwen Williams",
+          "position": "Goalkeeper",
+          "club": "Mamelodi Sundowns",
+          "number": null
+        },
+        {
+          "name": "Lyle Foster",
+          "position": "Forward",
+          "club": "Burnley",
+          "number": null
+        },
+        {
+          "name": "Mbekezeli Mbokazi",
+          "position": "Defender",
+          "club": "Orlando Pirates",
+          "number": null
+        },
+        {
+          "name": "Oswin Appollis",
+          "position": "Forward",
+          "club": "Orlando Pirates",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "COD",
+      "name": "DR Congo",
+      "star": {
+        "name": "Yoane Wissa",
+        "position": "Forward",
+        "club": "Newcastle United",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Chancel Mbemba",
+          "position": "Defender",
+          "club": "Lille",
+          "number": null
+        },
+        {
+          "name": "Cédric Bakambu",
+          "position": "Forward",
+          "club": "Real Betis",
+          "number": null
+        },
+        {
+          "name": "Noah Sadiki",
+          "position": "Midfielder",
+          "club": "Sunderland",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "JPN",
+      "name": "Japan",
+      "star": {
+        "name": "Takefusa Kubo",
+        "position": "Forward",
+        "club": "Real Sociedad",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Ritsu Dōan",
+          "position": "Forward",
+          "club": "Eintracht Frankfurt",
+          "number": null
+        },
+        {
+          "name": "Ayase Ueda",
+          "position": "Forward",
+          "club": "Feyenoord",
+          "number": null
+        },
+        {
+          "name": "Daichi Kamada",
+          "position": "Midfielder",
+          "club": "Crystal Palace",
+          "number": null
+        },
+        {
+          "name": "Kō Itakura",
+          "position": "Defender",
+          "club": "Borussia Mönchengladbach",
+          "number": null
+        },
+        {
+          "name": "Wataru Endō",
+          "position": "Midfielder",
+          "club": "Liverpool",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "KOR",
+      "name": "South Korea",
+      "star": {
+        "name": "Son Heung-min",
+        "position": "Forward",
+        "club": "Los Angeles FC",
+        "number": 7
+      },
+      "notableSquad": [
+        {
+          "name": "Kim Min-jae",
+          "position": "Defender",
+          "club": "Bayern Munich",
+          "number": null
+        },
+        {
+          "name": "Lee Kang-in",
+          "position": "Midfielder",
+          "club": "Paris Saint-Germain",
+          "number": null
+        },
+        {
+          "name": "Hwang Hee-chan",
+          "position": "Forward",
+          "club": "Wolverhampton Wanderers",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "IRN",
+      "name": "Iran",
+      "star": {
+        "name": "Mehdi Taremi",
+        "position": "Forward",
+        "club": "Olympiacos",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Alireza Jahanbakhsh",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Mehdi Ghayedi",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Saeid Ezatolahi",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "AUS",
+      "name": "Australia",
+      "star": {
+        "name": "Mathew Ryan",
+        "position": "Goalkeeper",
+        "club": "Levante",
+        "number": 1
+      },
+      "notableSquad": [
+        {
+          "name": "Jackson Irvine",
+          "position": "Midfielder",
+          "club": "FC St. Pauli",
+          "number": null
+        },
+        {
+          "name": "Harry Souttar",
+          "position": "Defender",
+          "club": "Leicester City",
+          "number": null
+        },
+        {
+          "name": "Jordan Bos",
+          "position": "Defender",
+          "club": "Feyenoord",
+          "number": null
+        },
+        {
+          "name": "Nestory Irankunda",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Alessandro Circati",
+          "position": "Defender",
+          "club": "Parma",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "UZB",
+      "name": "Uzbekistan",
+      "star": {
+        "name": "Eldor Shomurodov",
+        "position": "Forward",
+        "club": "Roma",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Abdukodir Khusanov",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Abbosbek Fayzullaev",
+          "position": "Midfielder",
+          "club": "CSKA Moscow",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "QAT",
+      "name": "Qatar",
+      "star": {
+        "name": "Akram Afif",
+        "position": "Forward",
+        "club": "Al Sadd",
+        "number": 11
+      },
+      "notableSquad": [
+        {
+          "name": "Almoez Ali",
+          "position": "Forward",
+          "club": "Al Duhail",
+          "number": null
+        },
+        {
+          "name": "Hassan Al-Haydos",
+          "position": "Midfielder",
+          "club": "Al Sadd",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "KSA",
+      "name": "Saudi Arabia",
+      "star": {
+        "name": "Salem Al-Dawsari",
+        "position": "Forward",
+        "club": "Al-Hilal",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Firas Al-Buraikan",
+          "position": "Forward",
+          "club": "Al-Ahli",
+          "number": null
+        },
+        {
+          "name": "Nawaf Al-Aqidi",
+          "position": "Goalkeeper",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Saud Abdulhamid",
+          "position": "Defender",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "IRQ",
+      "name": "Iraq",
+      "star": {
+        "name": "Aymen Hussein",
+        "position": "Forward",
+        "club": "Al Karma",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Ali Al-Hamadi",
+          "position": "Forward",
+          "club": "Ipswich Town",
+          "number": null
+        },
+        {
+          "name": "Zidane Iqbal",
+          "position": "Midfielder",
+          "club": "Utrecht",
+          "number": null
+        },
+        {
+          "name": "Amir Al-Ammari",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Ali Jasim",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "JOR",
+      "name": "Jordan",
+      "star": {
+        "name": "Mousa Al-Tamari",
+        "position": "Forward",
+        "club": "Montpellier",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Ali Olwan",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Nizar Al-Rashdan",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Ehsan Haddad",
+          "position": "Defender",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "PAN",
+      "name": "Panama",
+      "star": {
+        "name": "Adalberto Carrasquilla",
+        "position": "Midfielder",
+        "club": "Pumas UNAM",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Aníbal Godoy",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Amir Murillo",
+          "position": "Defender",
+          "club": "Beşiktaş",
+          "number": null
+        },
+        {
+          "name": "Ismael Díaz",
+          "position": "Forward",
+          "club": "Club León",
+          "number": null
+        },
+        {
+          "name": "José Fajardo",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "CUW",
+      "name": "Curaçao",
+      "star": {
+        "name": "Tahith Chong",
+        "position": "Midfielder",
+        "club": "Sheffield United",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Leandro Bacuna",
+          "position": "Midfielder",
+          "club": "Iğdır FK",
+          "number": null
+        },
+        {
+          "name": "Juninho Bacuna",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Jurgen Locadia",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Eloy Room",
+          "position": "Goalkeeper",
+          "club": "Miami FC",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "HAI",
+      "name": "Haiti",
+      "star": {
+        "name": "Frantzdy Pierrot",
+        "position": "Forward",
+        "club": "Çaykur Rizespor",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Jean-Ricner Bellegarde",
+          "position": "Midfielder",
+          "club": "Wolverhampton Wanderers",
+          "number": null
+        },
+        {
+          "name": "Wilson Isidor",
+          "position": "Forward",
+          "club": "Sunderland",
+          "number": null
+        },
+        {
+          "name": "Duckens Nazon",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Jean-Kévin Duverne",
+          "position": "Defender",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "NZL",
+      "name": "New Zealand",
+      "star": {
+        "name": "Chris Wood",
+        "position": "Forward",
+        "club": "Nottingham Forest",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Liberato Cacace",
+          "position": "Defender",
+          "club": "Wrexham",
+          "number": null
+        },
+        {
+          "name": "Kosta Barbarouses",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Max Crocombe",
+          "position": "Goalkeeper",
+          "club": "Millwall",
+          "number": null
+        },
+        {
+          "name": "Tommy Smith",
+          "position": "Defender",
+          "club": "Braintree Town",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "NOR",
+      "name": "Norway",
+      "star": {
+        "name": "Erling Haaland",
+        "position": "Forward",
+        "club": "Manchester City",
+        "number": 9
+      },
+      "notableSquad": [
+        {
+          "name": "Martin Ødegaard",
+          "position": "Midfielder",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Alexander Sørloth",
+          "position": "Forward",
+          "club": "Atlético Madrid",
+          "number": null
+        },
+        {
+          "name": "Antonio Nusa",
+          "position": "Forward",
+          "club": "RB Leipzig",
+          "number": null
+        },
+        {
+          "name": "Kristoffer Ajer",
+          "position": "Defender",
+          "club": "Brentford",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "SCO",
+      "name": "Scotland",
+      "star": {
+        "name": "Scott McTominay",
+        "position": "Midfielder",
+        "club": "Napoli",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Andrew Robertson",
+          "position": "Defender",
+          "club": "Liverpool",
+          "number": null
+        },
+        {
+          "name": "John McGinn",
+          "position": "Midfielder",
+          "club": "Aston Villa",
+          "number": null
+        },
+        {
+          "name": "Kieran Tierney",
+          "position": "Defender",
+          "club": "Celtic",
+          "number": null
+        },
+        {
+          "name": "Angus Gunn",
+          "position": "Goalkeeper",
+          "club": null,
+          "number": 1
+        }
+      ]
+    },
+    {
+      "code": "AUT",
+      "name": "Austria",
+      "star": {
+        "name": "David Alaba",
+        "position": "Defender",
+        "club": "Real Madrid",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Marko Arnautović",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Konrad Laimer",
+          "position": "Midfielder",
+          "club": "Bayern Munich",
+          "number": null
+        },
+        {
+          "name": "Marcel Sabitzer",
+          "position": "Midfielder",
+          "club": "Borussia Dortmund",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "SUI",
+      "name": "Switzerland",
+      "star": {
+        "name": "Granit Xhaka",
+        "position": "Midfielder",
+        "club": "Sunderland",
+        "number": 10
+      },
+      "notableSquad": [
+        {
+          "name": "Manuel Akanji",
+          "position": "Defender",
+          "club": "Manchester City",
+          "number": null
+        },
+        {
+          "name": "Breel Embolo",
+          "position": "Forward",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Ricardo Rodríguez",
+          "position": "Defender",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "BIH",
+      "name": "Bosnia and Herzegovina",
+      "star": {
+        "name": "Edin Džeko",
+        "position": "Forward",
+        "club": "Schalke 04",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Ermedin Demirović",
+          "position": "Forward",
+          "club": "Stuttgart",
+          "number": null
+        },
+        {
+          "name": "Benjamin Tahirović",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        },
+        {
+          "name": "Armin Gigović",
+          "position": "Midfielder",
+          "club": null,
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "SWE",
+      "name": "Sweden",
+      "star": {
+        "name": "Alexander Isak",
+        "position": "Forward",
+        "club": "Liverpool",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Viktor Gyökeres",
+          "position": "Forward",
+          "club": "Arsenal",
+          "number": null
+        },
+        {
+          "name": "Anthony Elanga",
+          "position": "Forward",
+          "club": "Newcastle United",
+          "number": null
+        },
+        {
+          "name": "Benjamin Nygren",
+          "position": "Forward",
+          "club": "Celtic",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "TUR",
+      "name": "Turkey",
+      "star": {
+        "name": "Arda Güler",
+        "position": "Midfielder",
+        "club": "Real Madrid",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Hakan Çalhanoğlu",
+          "position": "Midfielder",
+          "club": "Inter Milan",
+          "number": null
+        },
+        {
+          "name": "Kenan Yıldız",
+          "position": "Forward",
+          "club": "Juventus",
+          "number": null
+        },
+        {
+          "name": "Ferdi Kadıoğlu",
+          "position": "Defender",
+          "club": "Brighton & Hove Albion",
+          "number": null
+        },
+        {
+          "name": "Kerem Aktürkoğlu",
+          "position": "Forward",
+          "club": "Fenerbahçe",
+          "number": null
+        }
+      ]
+    },
+    {
+      "code": "CZE",
+      "name": "Czech Republic",
+      "star": {
+        "name": "Patrik Schick",
+        "position": "Forward",
+        "club": "Bayer Leverkusen",
+        "number": null
+      },
+      "notableSquad": [
+        {
+          "name": "Tomáš Souček",
+          "position": "Midfielder",
+          "club": "West Ham United",
+          "number": null
+        },
+        {
+          "name": "Adam Hložek",
+          "position": "Forward",
+          "club": "Hoffenheim",
+          "number": null
+        }
+      ]
+    }
+  ],
+  "notes": "All 48 teams and their Group A-L placements are confirmed via Wikipedia and FIFA.com. The four play-off slots resolved to Bosnia and Herzegovina, Sweden, Turkey and Czech Republic (UEFA), plus DR Congo and Iraq (via the FIFA inter-confederation play-off). 26-man World Cup 2026 squads are CONFIRMED via official squad announcements (FIFA.com, ESPN, Olympics.com, FourFourTwo, UEFA, national FAs) for all 48 teams; every star and notable-member entry below is drawn from a cited source.\n\nSHIRT NUMBERS: Confirmed only for a subset and otherwise set to null (not guessed). Full confirmed number lists: Argentina, Mexico, Canada (from Wikipedia squads page). Individually confirmed: Ronaldo 7, Hakimi 2, Salah 10, Mahrez 7, Haaland 9, Son 7, Afif 11, Almoez/others null, Al-Dawsari 10, Edson Alvarez 4, Davies 19, Messi 10, Mbappe 10, Van Dijk 4, Modric 10, Xhaka 10, Ryan (AUS) 1, Scotland GK Angus Gunn 1, James Rodriguez 10, Ospina 1. All other numbers are null because no source confirmed them.\n\nSQUADS NOT FULLY CONFIRMED / CAVEATS (source-based):\n- Japan: Kaoru Mitoma (Brighton) omitted injured; star listed is Takefusa Kubo. Captain Wataru Endo was selected but reportedly withdrew injured at the start of the tournament (Itakura took the captaincy) - Endo still listed as a notable member.\n- Iran: Sardar Azmoun dropped (reported non-football/political reasons); star is Mehdi Taremi. Several Iran squad members' current clubs were not stated in the sources consulted (set to null).\n- Ghana: Mohammed Kudus (Tottenham) ruled out injured; the established star listed is Thomas Partey. One search source erroneously placed Antoine Semenyo at Manchester City - he plays for AFC Bournemouth (corrected here).\n- Ivory Coast: Sebastien Haller omitted; star listed is Simon Adingra (reported moving to Monaco from Brighton).\n- Jordan: qualifying top scorer Yazan Al-Naimat ruled out (ACL injury); star is Mousa Al-Tamari.\n- Uruguay: Luis Suarez retired/omitted for the first time since 2010; star is Federico Valverde.\n- Cape Verde, Curacao, Haiti, Iraq, Qatar, Saudi Arabia, Jordan, DR Congo, Panama, Bosnia, Switzerland, Austria, New Zealand: star and notable players are source-confirmed, but several individual club affiliations were not stated in sources (set to null rather than guessed). Tahith Chong is listed as Curacao's star and reported at Sheffield United (one source conflated him with the Netherlands squad - he is a Curacao international).\n- Some club fields reflect 2025-26 transfers reported in sources (e.g., Memphis Depay at Corinthians, Sadio Mane at Al Nassr, Son Heung-min at LAFC, Luis Diaz at Bayern Munich, Scott McTominay at Napoli, Kalidou Koulibaly at Al-Hilal, Granit Xhaka at Sunderland, Edin Dzeko at Schalke). Where a player's exact current club could not be confirmed, it is left null.\n\n'star' = the single best-known/most prominent player per team (current form and/or all-time stature), per the task. A null number simply means the value was not confirmed by a source - no values were invented.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_qualification",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_draw",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_squads",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/argentina-squad-announced",
+    "https://www.espn.com/soccer/story/_/id/48904313/lionel-messi-argentina-2026-world-cup-squad",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/france-world-cup-squad-named",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/brazil-squad-announcement-carlo-ancelotti",
+    "https://www.espn.com/soccer/story/_/id/48870392/spain-world-cup-2026-squad-confirmed-lamine-yamal-stars-no-real-madrid-players",
+    "https://www.englandfootball.com/articles/2026/May/22/england-mens-world-cup-2026-squad-named-by-thomas-tuchel-20262205",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/cristiano-ronaldo-roberto-martinez-portugal-squad-announcement",
+    "https://www.uefa.com/european-qualifiers/news/02a6-20d1594eb137-0095e9baf9f5-1000--germany-at-the-world-cup-2026-squad-fixtures-group-and-hi/",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/netherlands-ronald-koeman-squad-announced",
+    "https://worldcuppass.com/belgium-world-cup-squad-2026/",
+    "https://www.ussoccer.com/stories/2026/05/usmnt/us-mens-national-team-head-coach-mauricio-pochettino-names-26-player-roster-for-fifa-world-cup-2026",
+    "https://www.fifa.com/en/articles/croatia-squad-named",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-uruguay-players-squad-key-stats-schedule",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-colombia-players-squad-list-key-stats-schedule",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/ecuador-squad-announcement",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/paraguay-squad-announcement-gustavo-alfaro",
+    "https://www.espn.com/espn/story/_/id/48883710/achraf-hakimi-brahim-diaz-headline-morocco-squad-fifa-world-cup-youssef-en-nesyri-out",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/senegal-world-cup-squad-announcement-pape-thiaw",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/cote-divoire-squad-announcement-emerse-fae",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-mohamed-salah-and-egypt-chase-first-ever-quarter-final-berth-all-players-full-squad-list-key-stats-and-schedule",
+    "https://www.espn.com/soccer/team/squad/_/id/624/algeria",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/tunisia-squad-named-sabri-lamouchi",
+    "https://www.ghanafa.org/carlos-queiroz-names-2026-fifa-world-cup-squad",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/articles/cabo-verde-squad-announcement-world-cup-bubista",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/south-africa-hugo-broos-squad-announced",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/congo-dr-squad-announcement-sebastien-desabre",
+    "https://www.fifa.com/en/news/articles/japan-squad-announcement",
+    "https://heavy.com/sports/soccer/world-cup/south-korea-best-players-2026-world-cup/",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/ir-iran-squad-named",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-australia-players-squad-list-key-stats-schedule",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-uzbekistan-all-players-full-squad-list-key-stats-schedule",
+    "https://thepeninsulaqatar.com/article/02/06/2026/afif-and-almoez-to-spearhead-qatars-26-player-squad-for-fifa-world-cup",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/georgios-donis-saudi-arabia-squad",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-iraq-players-squad-list-key-stats-schedule",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/jordan-preliminary-squad",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/panama-squad-announcement-thomas-christiansen",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/curacao-squad-announcement-dick-advocaat",
+    "https://heavy.com/sports/soccer/world-cup/haiti-best-players-2026-world-cup-squad/",
+    "https://www.espn.com/soccer/story/_/id/48764554/chris-wood-headlines-new-zealand-2026-world-cup-squad",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/norway-squad-announcement-stale-solbakken",
+    "https://www.espn.com/soccer/story/_/id/48769157/meet-scotland-2026-world-cup-squad-all-26-players-picked-steve-clarke-why",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/austria-ralf-rangnick-world-cup-squad",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-switzerland-players-squad-list-key-stats-schedule",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/bosnia-and-herzegovina-sergej-barbarez-names-squad",
+    "https://www.fifa.com/en/articles/sweden-squad-announcement-world-cup-graham-potter",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/turkiye-preliminary-world-cup-squad-announced",
+    "https://www.olympics.com/en/news/fifa-world-cup-2026-czechia-players-squad-list-key-stats-schedule",
+    "https://en.wikipedia.org/wiki/Ryan_Mendes"
+  ]
+}

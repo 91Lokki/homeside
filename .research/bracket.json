@@ -1,0 +1,128 @@
+{
+  "format": "FIFA World Cup 2026 knockout bracket — Round of 32 slot structure, third-place seeding rule, and fixed bracket progression path",
+  "thirdPlaceRule": "The 8 best third-placed teams are first RANKED across all 12 groups using FIFA's group-stage criteria (Article 13 of the official tournament regulations), in this order: (1) points; (2) goal difference; (3) goals scored; (4) team conduct/disciplinary (fair-play) score from yellow/red cards; (5) FIFA/Coca-Cola Men's World Ranking. (Head-to-head does NOT apply because the teams are from different groups. Drawing of lots is no longer the final tiebreak for 2026 — the FIFA World Ranking is.) The 8 qualifying thirds do NOT fall into fixed slots based on rank. Instead, FIFA uses a PRE-DETERMINED MAPPING TABLE (Annex C of the tournament regulations) that lists all 495 possible combinations (12 choose 8 = 495) of which 8 of the 12 groups supply a qualifying third-placed team, and for each combination assigns those eight thirds to the eight designated Round of 32 slots. The eight group winners that face a third-placed team are the winners of Groups A, C, D, E, G, I, K and L (matches 74, 77, 79, 80, 81, 82, 85, 87). Each such slot draws its third-placed team from a fixed pool of five specified groups, e.g. Match 74 = '3rd from Group A/B/C/D/F', Match 79 = '3rd from Group C/E/F/H/I'. The Annex C table is engineered so that, whichever 8 groups actually supply a qualifying third, each of the eight slots receives exactly one of them with no group facing its own runner-up/winner inappropriately.",
+  "progression": "FIXED BRACKET PATH (match numbers per official FIFA schedule). ROUND OF 16 (matches 89-96): M89 = W74 v W77 (Jul 4, Lincoln Financial Field, Philadelphia); M90 = W73 v W75 (Jul 4, NRG Stadium, Houston); M91 = W76 v W78 (Jul 5, MetLife Stadium, East Rutherford); M92 = W79 v W80 (Jul 5, Estadio Azteca, Mexico City); M93 = W83 v W84 (Jul 6, AT&T Stadium, Arlington); M94 = W81 v W82 (Jul 6, Lumen Field, Seattle); M95 = W86 v W88 (Jul 7, Mercedes-Benz Stadium, Atlanta); M96 = W85 v W87 (Jul 7, BC Place, Vancouver). QUARTERFINALS (97-100): M97 = W89 v W90 (Jul 9, Gillette Stadium, Foxborough); M98 = W93 v W94 (Jul 10, SoFi Stadium, Inglewood); M99 = W91 v W92 (Jul 11, Hard Rock Stadium, Miami Gardens); M100 = W95 v W96 (Jul 11, Arrowhead Stadium, Kansas City). SEMIFINALS (101-102): M101 = W97 v W98 (Jul 14, AT&T Stadium, Arlington); M102 = W99 v W100 (Jul 15, Mercedes-Benz Stadium, Atlanta). THIRD-PLACE PLAY-OFF: M103 = L101 v L102 (Jul 18, Hard Rock Stadium, Miami Gardens). FINAL: M104 = W101 v W102 (Jul 19, MetLife Stadium, East Rutherford). So a Round-of-32 winner's path to the final is: R32 (73-88) -> R16 (89-96) -> QF (97-100) -> SF (101/102) -> Final (104), per the wiring above.",
+  "r32": [
+    {
+      "matchNo": 73,
+      "slotHome": "Runner-up Group A",
+      "slotAway": "Runner-up Group B",
+      "kickoffUtc": "2026-06-28T19:00:00Z",
+      "venue": "SoFi Stadium, Inglewood (Los Angeles)"
+    },
+    {
+      "matchNo": 74,
+      "slotHome": "Winner Group E",
+      "slotAway": "Third Place Group A/B/C/D/F",
+      "kickoffUtc": "2026-06-29T20:30:00Z",
+      "venue": "Gillette Stadium, Foxborough (Boston)"
+    },
+    {
+      "matchNo": 75,
+      "slotHome": "Winner Group F",
+      "slotAway": "Runner-up Group C",
+      "kickoffUtc": "2026-06-30T01:00:00Z",
+      "venue": "Estadio BBVA, Guadalupe (Monterrey)"
+    },
+    {
+      "matchNo": 76,
+      "slotHome": "Winner Group C",
+      "slotAway": "Runner-up Group F",
+      "kickoffUtc": "2026-06-29T17:00:00Z",
+      "venue": "NRG Stadium, Houston"
+    },
+    {
+      "matchNo": 77,
+      "slotHome": "Winner Group I",
+      "slotAway": "Third Place Group C/D/F/G/H",
+      "kickoffUtc": "2026-06-30T21:00:00Z",
+      "venue": "MetLife Stadium, East Rutherford (New York/New Jersey)"
+    },
+    {
+      "matchNo": 78,
+      "slotHome": "Runner-up Group E",
+      "slotAway": "Runner-up Group I",
+      "kickoffUtc": "2026-06-30T17:00:00Z",
+      "venue": "AT&T Stadium, Arlington (Dallas)"
+    },
+    {
+      "matchNo": 79,
+      "slotHome": "Winner Group A",
+      "slotAway": "Third Place Group C/E/F/H/I",
+      "kickoffUtc": "2026-07-01T01:00:00Z",
+      "venue": "Estadio Azteca, Mexico City"
+    },
+    {
+      "matchNo": 80,
+      "slotHome": "Winner Group L",
+      "slotAway": "Third Place Group E/H/I/J/K",
+      "kickoffUtc": "2026-07-01T16:00:00Z",
+      "venue": "Mercedes-Benz Stadium, Atlanta"
+    },
+    {
+      "matchNo": 81,
+      "slotHome": "Winner Group D",
+      "slotAway": "Third Place Group B/E/F/I/J",
+      "kickoffUtc": "2026-07-02T00:00:00Z",
+      "venue": "Levi's Stadium, Santa Clara (San Francisco Bay Area)"
+    },
+    {
+      "matchNo": 82,
+      "slotHome": "Winner Group G",
+      "slotAway": "Third Place Group A/E/H/I/J",
+      "kickoffUtc": "2026-07-01T20:00:00Z",
+      "venue": "Lumen Field, Seattle"
+    },
+    {
+      "matchNo": 83,
+      "slotHome": "Runner-up Group K",
+      "slotAway": "Runner-up Group L",
+      "kickoffUtc": "2026-07-02T23:00:00Z",
+      "venue": "BMO Field, Toronto"
+    },
+    {
+      "matchNo": 84,
+      "slotHome": "Winner Group H",
+      "slotAway": "Runner-up Group J",
+      "kickoffUtc": "2026-07-02T19:00:00Z",
+      "venue": "SoFi Stadium, Inglewood (Los Angeles)"
+    },
+    {
+      "matchNo": 85,
+      "slotHome": "Winner Group B",
+      "slotAway": "Third Place Group E/F/G/I/J",
+      "kickoffUtc": "2026-07-03T03:00:00Z",
+      "venue": "BC Place, Vancouver"
+    },
+    {
+      "matchNo": 86,
+      "slotHome": "Winner Group J",
+      "slotAway": "Runner-up Group H",
+      "kickoffUtc": "2026-07-03T22:00:00Z",
+      "venue": "Hard Rock Stadium, Miami Gardens"
+    },
+    {
+      "matchNo": 87,
+      "slotHome": "Winner Group K",
+      "slotAway": "Third Place Group D/E/I/J/L",
+      "kickoffUtc": "2026-07-04T01:30:00Z",
+      "venue": "Arrowhead Stadium, Kansas City"
+    },
+    {
+      "matchNo": 88,
+      "slotHome": "Runner-up Group D",
+      "slotAway": "Runner-up Group G",
+      "kickoffUtc": "2026-07-03T18:00:00Z",
+      "venue": "AT&T Stadium, Arlington (Dallas)"
+    }
+  ],
+  "notes": "FORMAT: 48 teams, 12 groups (A-L). 32 qualifiers = 12 group winners + 12 runners-up + 8 best third-placed teams. Single-elimination from Round of 32 (matches 73-88), played 28 Jun - 3 Jul 2026.\n\nSOURCE CONSISTENCY: The R32 slot structure, full bracket wiring (R16->QF->SF->Final), venues and match numbers are CONFIRMED and consistent across Wikipedia, ESPN and Sky Sports. Kickoff times are reported by sources in local time / UTC offsets; I converted each to UTC. Sources give offsets as: Pacific (UTC-7, PDT), Mountain/Central-Mexico Monterrey (UTC-6, listed by ESPN as 'UTC-6' for Estadio BBVA), Central (UTC-5), Eastern (UTC-4), and Mexico City (UTC-6 CST, no DST). Note Mexico City is on UTC-6 year-round; ESPN listed Azteca matches as 'UTC-6', which I used. Minor uncertainty (+/- 1 hr) is possible on a few cross-border kickoffs due to DST/offset labeling in sources, but all dates and the local clock times are confirmed.\n\nRESOLVED DISCREPANCY: One ESPN extraction initially showed Match 82's third-place pool as 'A/H/I/J' (4 groups); Sky Sports, a second ESPN read, and a direct search all confirm it is 'A/E/H/I/J' (5 groups), matching the pattern that every third-place slot draws from exactly five groups. I used 'A/E/H/I/J'.\n\nTEAM NAMES NOT INCLUDED: Per the honesty rule, I did NOT fill any slot with actual team names. Some sources interleave specific nations (e.g., 'Mexico' as Group A winner, 'USA' as Group D winner, 'Brazil' as Group C winner, 'Germany' as Group E winner, 'Argentina' as Group J winner) reflecting in-progress standings, and one source (CBS) showed clearly hypothetical/projected matchups that conflicted with others. Since group standings as of 25 Jun 2026 could not be definitively confirmed match-by-match, all slots are given as structural definitions (Winner/Runner-up/Third Place of group X) only.\n\nANNEX C: The exact 495-row mapping table (which specific qualifying-group combination sends which third to which slot) is in FIFA's official tournament regulations (Annex C) and was not reproduced in full by the public sources fetched; the five-group pool per slot listed above is the published summary of that table.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage",
+    "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket",
+    "https://www.skysports.com/football/news/12098/13556636/world-cup-2026-bracket-and-knockout-fixtures-whos-facing-who-in-the-last-32-and-route-to-final",
+    "https://www.tntsports.co.uk/football/world-cup/2026/third-place-teams-round-32-how-many-tie-break-rules_sto23310473/story.shtml",
+    "https://www.cbssports.com/soccer/news/2026-fifa-world-cup-bracket-knockout-stage/",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/standings"
+  ]
+}

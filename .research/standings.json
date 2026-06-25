@@ -1,0 +1,611 @@
+{
+  "standings": [
+    {
+      "group": "A",
+      "rows": [
+        {
+          "team": "Mexico",
+          "code": "MEX",
+          "played": 3,
+          "win": 3,
+          "draw": 0,
+          "loss": 0,
+          "gf": 6,
+          "ga": 0,
+          "points": 9
+        },
+        {
+          "team": "South Africa",
+          "code": "RSA",
+          "played": 3,
+          "win": 1,
+          "draw": 1,
+          "loss": 1,
+          "gf": 2,
+          "ga": 3,
+          "points": 4
+        },
+        {
+          "team": "South Korea",
+          "code": "KOR",
+          "played": 3,
+          "win": 1,
+          "draw": 0,
+          "loss": 2,
+          "gf": 2,
+          "ga": 3,
+          "points": 3
+        },
+        {
+          "team": "Czechia",
+          "code": "CZE",
+          "played": 3,
+          "win": 0,
+          "draw": 1,
+          "loss": 2,
+          "gf": 2,
+          "ga": 6,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "rows": [
+        {
+          "team": "Switzerland",
+          "code": "SUI",
+          "played": 3,
+          "win": 2,
+          "draw": 1,
+          "loss": 0,
+          "gf": 7,
+          "ga": 3,
+          "points": 7
+        },
+        {
+          "team": "Canada",
+          "code": "CAN",
+          "played": 3,
+          "win": 1,
+          "draw": 1,
+          "loss": 1,
+          "gf": 8,
+          "ga": 3,
+          "points": 4
+        },
+        {
+          "team": "Bosnia and Herzegovina",
+          "code": "BIH",
+          "played": 3,
+          "win": 1,
+          "draw": 1,
+          "loss": 1,
+          "gf": 5,
+          "ga": 6,
+          "points": 4
+        },
+        {
+          "team": "Qatar",
+          "code": "QAT",
+          "played": 3,
+          "win": 0,
+          "draw": 1,
+          "loss": 2,
+          "gf": 2,
+          "ga": 10,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "group": "C",
+      "rows": [
+        {
+          "team": "Brazil",
+          "code": "BRA",
+          "played": 3,
+          "win": 2,
+          "draw": 1,
+          "loss": 0,
+          "gf": 7,
+          "ga": 1,
+          "points": 7
+        },
+        {
+          "team": "Morocco",
+          "code": "MAR",
+          "played": 3,
+          "win": 2,
+          "draw": 1,
+          "loss": 0,
+          "gf": 6,
+          "ga": 3,
+          "points": 7
+        },
+        {
+          "team": "Scotland",
+          "code": "SCO",
+          "played": 3,
+          "win": 1,
+          "draw": 0,
+          "loss": 2,
+          "gf": 1,
+          "ga": 4,
+          "points": 3
+        },
+        {
+          "team": "Haiti",
+          "code": "HAI",
+          "played": 3,
+          "win": 0,
+          "draw": 0,
+          "loss": 3,
+          "gf": 2,
+          "ga": 8,
+          "points": 0
+        }
+      ]
+    },
+    {
+      "group": "D",
+      "rows": [
+        {
+          "team": "United States",
+          "code": "USA",
+          "played": 2,
+          "win": 2,
+          "draw": 0,
+          "loss": 0,
+          "gf": 6,
+          "ga": 1,
+          "points": 6
+        },
+        {
+          "team": "Australia",
+          "code": "AUS",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 2,
+          "ga": 2,
+          "points": 3
+        },
+        {
+          "team": "Paraguay",
+          "code": "PAR",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 2,
+          "ga": 4,
+          "points": 3
+        },
+        {
+          "team": "Türkiye",
+          "code": "TUR",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 0,
+          "ga": 3,
+          "points": 0
+        }
+      ]
+    },
+    {
+      "group": "E",
+      "rows": [
+        {
+          "team": "Germany",
+          "code": "GER",
+          "played": 2,
+          "win": 2,
+          "draw": 0,
+          "loss": 0,
+          "gf": 9,
+          "ga": 2,
+          "points": 6
+        },
+        {
+          "team": "Ivory Coast",
+          "code": "CIV",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 2,
+          "ga": 2,
+          "points": 3
+        },
+        {
+          "team": "Ecuador",
+          "code": "ECU",
+          "played": 2,
+          "win": 0,
+          "draw": 1,
+          "loss": 1,
+          "gf": 0,
+          "ga": 1,
+          "points": 1
+        },
+        {
+          "team": "Curaçao",
+          "code": "CUW",
+          "played": 2,
+          "win": 0,
+          "draw": 1,
+          "loss": 1,
+          "gf": 1,
+          "ga": 7,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "group": "F",
+      "rows": [
+        {
+          "team": "Netherlands",
+          "code": "NED",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 7,
+          "ga": 3,
+          "points": 4
+        },
+        {
+          "team": "Japan",
+          "code": "JPN",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 6,
+          "ga": 2,
+          "points": 4
+        },
+        {
+          "team": "Sweden",
+          "code": "SWE",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 6,
+          "ga": 6,
+          "points": 3
+        },
+        {
+          "team": "Tunisia",
+          "code": "TUN",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 1,
+          "ga": 9,
+          "points": 0
+        }
+      ]
+    },
+    {
+      "group": "G",
+      "rows": [
+        {
+          "team": "Egypt",
+          "code": "EGY",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 4,
+          "ga": 2,
+          "points": 4
+        },
+        {
+          "team": "Iran",
+          "code": "IRN",
+          "played": 2,
+          "win": 0,
+          "draw": 2,
+          "loss": 0,
+          "gf": 2,
+          "ga": 2,
+          "points": 2
+        },
+        {
+          "team": "Belgium",
+          "code": "BEL",
+          "played": 2,
+          "win": 0,
+          "draw": 2,
+          "loss": 0,
+          "gf": 1,
+          "ga": 1,
+          "points": 2
+        },
+        {
+          "team": "New Zealand",
+          "code": "NZL",
+          "played": 2,
+          "win": 0,
+          "draw": 1,
+          "loss": 1,
+          "gf": 3,
+          "ga": 5,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "group": "H",
+      "rows": [
+        {
+          "team": "Spain",
+          "code": "ESP",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 4,
+          "ga": 0,
+          "points": 4
+        },
+        {
+          "team": "Uruguay",
+          "code": "URU",
+          "played": 2,
+          "win": 0,
+          "draw": 2,
+          "loss": 0,
+          "gf": 3,
+          "ga": 3,
+          "points": 2
+        },
+        {
+          "team": "Cape Verde",
+          "code": "CPV",
+          "played": 2,
+          "win": 0,
+          "draw": 2,
+          "loss": 0,
+          "gf": 2,
+          "ga": 2,
+          "points": 2
+        },
+        {
+          "team": "Saudi Arabia",
+          "code": "KSA",
+          "played": 2,
+          "win": 0,
+          "draw": 1,
+          "loss": 1,
+          "gf": 1,
+          "ga": 5,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "group": "I",
+      "rows": [
+        {
+          "team": "France",
+          "code": "FRA",
+          "played": 2,
+          "win": 2,
+          "draw": 0,
+          "loss": 0,
+          "gf": 6,
+          "ga": 1,
+          "points": 6
+        },
+        {
+          "team": "Norway",
+          "code": "NOR",
+          "played": 2,
+          "win": 2,
+          "draw": 0,
+          "loss": 0,
+          "gf": 7,
+          "ga": 3,
+          "points": 6
+        },
+        {
+          "team": "Senegal",
+          "code": "SEN",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 3,
+          "ga": 6,
+          "points": 0
+        },
+        {
+          "team": "Iraq",
+          "code": "IRQ",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 1,
+          "ga": 7,
+          "points": 0
+        }
+      ]
+    },
+    {
+      "group": "J",
+      "rows": [
+        {
+          "team": "Argentina",
+          "code": "ARG",
+          "played": 2,
+          "win": 2,
+          "draw": 0,
+          "loss": 0,
+          "gf": 5,
+          "ga": 0,
+          "points": 6
+        },
+        {
+          "team": "Austria",
+          "code": "AUT",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 3,
+          "ga": 3,
+          "points": 3
+        },
+        {
+          "team": "Algeria",
+          "code": "ALG",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 2,
+          "ga": 4,
+          "points": 3
+        },
+        {
+          "team": "Jordan",
+          "code": "JOR",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 2,
+          "ga": 5,
+          "points": 0
+        }
+      ]
+    },
+    {
+      "group": "K",
+      "rows": [
+        {
+          "team": "Colombia",
+          "code": "COL",
+          "played": 2,
+          "win": 2,
+          "draw": 0,
+          "loss": 0,
+          "gf": 4,
+          "ga": 1,
+          "points": 6
+        },
+        {
+          "team": "Portugal",
+          "code": "POR",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 6,
+          "ga": 1,
+          "points": 4
+        },
+        {
+          "team": "DR Congo",
+          "code": "COD",
+          "played": 2,
+          "win": 0,
+          "draw": 1,
+          "loss": 1,
+          "gf": 1,
+          "ga": 2,
+          "points": 1
+        },
+        {
+          "team": "Uzbekistan",
+          "code": "UZB",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 1,
+          "ga": 8,
+          "points": 0
+        }
+      ]
+    },
+    {
+      "group": "L",
+      "rows": [
+        {
+          "team": "England",
+          "code": "ENG",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 4,
+          "ga": 2,
+          "points": 4
+        },
+        {
+          "team": "Ghana",
+          "code": "GHA",
+          "played": 2,
+          "win": 1,
+          "draw": 1,
+          "loss": 0,
+          "gf": 1,
+          "ga": 0,
+          "points": 4
+        },
+        {
+          "team": "Croatia",
+          "code": "CRO",
+          "played": 2,
+          "win": 1,
+          "draw": 0,
+          "loss": 1,
+          "gf": 3,
+          "ga": 4,
+          "points": 3
+        },
+        {
+          "team": "Panama",
+          "code": "PAN",
+          "played": 2,
+          "win": 0,
+          "draw": 0,
+          "loss": 2,
+          "gf": 0,
+          "ga": 2,
+          "points": 0
+        }
+      ]
+    }
+  ],
+  "asOf": "2026-06-25",
+  "notes": "Matchday state as of 2026-06-25: Groups A, B, C are COMPLETE (all 3 matches per team played; final matchday was June 24). Groups D, E, F, G, H, I, J, K, L have each played only 2 of 3 matches; their final matchday is scheduled for June 25 (D, E, F), June 26 (G, H, I), or June 27 (J, K, L) and had NOT been played at the snapshot, so those tables are mid-group and ranks may change.\\n\\nVerification method: Primary standings source was FOX Sports' live standings page. EVERY figure was independently reconstructed and confirmed from the individual match results published on the per-group Wikipedia pages (2026_FIFA_World_Cup_Group_A through _Group_L), and point totals were additionally cross-checked against NBC Sports and Yahoo Sports. All 12 groups reconciled exactly.\\n\\nReliability caveat / honesty note: This is a future-dated scenario and the WebFetch summarizer produced demonstrably fabricated standings ROWS for several incomplete groups on the Wikipedia per-group pages (e.g., it rendered \\\"Played 3\\\" tables with inflated goal totals for Groups E, F, G even though only 2 matches had been played and the listed match results proved otherwise). I therefore did NOT trust summarized table rows where they conflicted with the concrete match-result lists; I rebuilt each table from confirmed individual scores instead. The values reported here are the ones that reconcile across the match results plus the FOX live table.\\n\\nTie-break ordering within groups (where points are equal) is reported exactly as published by FOX Sports: Group B (Canada above Bosnia, both 4 pts), Group C (Brazil above Morocco, both 7 pts), Group D (Australia above Paraguay, both 3 pts), Group G (Iran above Belgium, both 2 pts), Group H (Uruguay above Cape Verde, both 2 pts), Group I (France above Norway, both 6 pts), Group J (Austria above Algeria, both 3 pts), Group L (England above Ghana, both 4 pts). FIFA's official tie-breakers (goal difference, then goals scored, then head-to-head, then fair-play/conduct points) determine these; the published order was used directly rather than recomputed.\\n\\nTeam codes are standard FIFA 3-letter codes (e.g., ALG for Algeria, KSA for Saudi Arabia, COD for DR Congo). \\\"Czechia\\\" = Czech Republic. No knockout-qualification status is asserted here since most groups are unfinished.",
+  "sources": [
+    "https://www.foxsports.com/soccer/fifa-world-cup/standings",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_A",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_B",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_C",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_D",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_E",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_F",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_G",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_H",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_I",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_J",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_K",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_L",
+    "https://www.nbcsports.com/soccer/news/2026-world-cup-group-stage-table-full-standings-for-all-12-groups",
+    "https://sports.yahoo.com/soccer/article/2026-world-cup-results-standings-and-schedule-live-scores-group-stage-updates-and-how-to-watch-050724193.html"
+  ]
+}

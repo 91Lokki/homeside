@@ -1,0 +1,267 @@
+{
+  "groups": [
+    {
+      "id": "A",
+      "teams": [
+        {
+          "name": "Mexico",
+          "code": "MEX"
+        },
+        {
+          "name": "South Africa",
+          "code": "RSA"
+        },
+        {
+          "name": "South Korea",
+          "code": "KOR"
+        },
+        {
+          "name": "Czechia",
+          "code": "CZE"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "teams": [
+        {
+          "name": "Canada",
+          "code": "CAN"
+        },
+        {
+          "name": "Bosnia and Herzegovina",
+          "code": "BIH"
+        },
+        {
+          "name": "Qatar",
+          "code": "QAT"
+        },
+        {
+          "name": "Switzerland",
+          "code": "SUI"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "teams": [
+        {
+          "name": "Brazil",
+          "code": "BRA"
+        },
+        {
+          "name": "Morocco",
+          "code": "MAR"
+        },
+        {
+          "name": "Haiti",
+          "code": "HAI"
+        },
+        {
+          "name": "Scotland",
+          "code": "SCO"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "teams": [
+        {
+          "name": "United States",
+          "code": "USA"
+        },
+        {
+          "name": "Paraguay",
+          "code": "PAR"
+        },
+        {
+          "name": "Australia",
+          "code": "AUS"
+        },
+        {
+          "name": "Türkiye",
+          "code": "TUR"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "teams": [
+        {
+          "name": "Germany",
+          "code": "GER"
+        },
+        {
+          "name": "Curaçao",
+          "code": "CUW"
+        },
+        {
+          "name": "Côte d'Ivoire",
+          "code": "CIV"
+        },
+        {
+          "name": "Ecuador",
+          "code": "ECU"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "teams": [
+        {
+          "name": "Netherlands",
+          "code": "NED"
+        },
+        {
+          "name": "Japan",
+          "code": "JPN"
+        },
+        {
+          "name": "Sweden",
+          "code": "SWE"
+        },
+        {
+          "name": "Tunisia",
+          "code": "TUN"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "teams": [
+        {
+          "name": "Belgium",
+          "code": "BEL"
+        },
+        {
+          "name": "Egypt",
+          "code": "EGY"
+        },
+        {
+          "name": "Iran",
+          "code": "IRN"
+        },
+        {
+          "name": "New Zealand",
+          "code": "NZL"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "teams": [
+        {
+          "name": "Spain",
+          "code": "ESP"
+        },
+        {
+          "name": "Cabo Verde",
+          "code": "CPV"
+        },
+        {
+          "name": "Saudi Arabia",
+          "code": "KSA"
+        },
+        {
+          "name": "Uruguay",
+          "code": "URU"
+        }
+      ]
+    },
+    {
+      "id": "I",
+      "teams": [
+        {
+          "name": "France",
+          "code": "FRA"
+        },
+        {
+          "name": "Senegal",
+          "code": "SEN"
+        },
+        {
+          "name": "Iraq",
+          "code": "IRQ"
+        },
+        {
+          "name": "Norway",
+          "code": "NOR"
+        }
+      ]
+    },
+    {
+      "id": "J",
+      "teams": [
+        {
+          "name": "Argentina",
+          "code": "ARG"
+        },
+        {
+          "name": "Algeria",
+          "code": "ALG"
+        },
+        {
+          "name": "Austria",
+          "code": "AUT"
+        },
+        {
+          "name": "Jordan",
+          "code": "JOR"
+        }
+      ]
+    },
+    {
+      "id": "K",
+      "teams": [
+        {
+          "name": "Portugal",
+          "code": "POR"
+        },
+        {
+          "name": "DR Congo",
+          "code": "COD"
+        },
+        {
+          "name": "Uzbekistan",
+          "code": "UZB"
+        },
+        {
+          "name": "Colombia",
+          "code": "COL"
+        }
+      ]
+    },
+    {
+      "id": "L",
+      "teams": [
+        {
+          "name": "England",
+          "code": "ENG"
+        },
+        {
+          "name": "Croatia",
+          "code": "CRO"
+        },
+        {
+          "name": "Ghana",
+          "code": "GHA"
+        },
+        {
+          "name": "Panama",
+          "code": "PAN"
+        }
+      ]
+    }
+  ],
+  "notes": "Complete official FIFA World Cup 2026 group draw (drawn 5 Dec 2025, Washington D.C.). Verified: 12 groups (A-L) x 4 teams = 48 teams total. Team assignments are consistent across the Wikipedia 2026 FIFA World Cup draw article, the main 2026 FIFA World Cup article, the Group A article, and multiple news sources (NBC, ESPN, Sky Sports).\n\nPlayoff qualifiers (all confirmed and correctly placed): UEFA play-off winners = Bosnia and Herzegovina (BIH, Group B; beat Italy on penalties), Czechia (CZE, Group A), Sweden (SWE, Group F), Türkiye (TUR, Group D). Inter-confederation play-off winners = Iraq (IRQ, Group I) and DR Congo (COD, Group K). Italy did NOT qualify.\n\nFIFA 3-letter codes: those for the host nations / Pot-1 seeds (MEX, CAN, USA, BRA, GER, NED, BEL, ESP, FRA, ARG, POR, ENG) are standard, long-established FIFA codes. All other codes were verified against Wikipedia's List of FIFA country codes. Notable/easily-confused codes confirmed: South Africa=RSA, South Korea (Korea Republic)=KOR, Czechia=CZE, Curaçao=CUW, Côte d'Ivoire (Ivory Coast)=CIV, Cabo Verde (Cape Verde)=CPV, DR Congo=COD, Saudi Arabia=KSA, Switzerland=SUI, Türkiye=TUR, Algeria=ALG (FIFA uses ALG, not ALG's ISO 'DZA').\n\nNaming notes: Group A team 4 is listed by FIFA/Wikipedia as \"Czechia\" (formerly Czech Republic); Group D team 4 as \"Türkiye\" (Turkey); Group E as \"Côte d'Ivoire\" (Ivory Coast) and \"Curaçao\"; Group H as \"Cabo Verde\" (Cape Verde). All names/codes refer to the same teams.\n\nWithin-group order above reflects pot order where available (Pot 1 listed first); FIFA's official standings ordering would reflect live results, which were not used for the draw composition.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_draw",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_A",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_qualification_(inter-confederation_play-offs)",
+    "https://www.uefa.com/european-qualifiers/news/029f-1f318027c4dd-8e9bab478b48-1000--world-cup-2026-which-european-teams-have-qualified/",
+    "https://en.wikipedia.org/wiki/List_of_FIFA_country_codes",
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/world-cup-2026-who-has-qualified",
+    "https://www.nbcsports.com/soccer/news/2026-world-cup-group-stage-table-full-standings-for-all-12-groups"
+  ]
+}

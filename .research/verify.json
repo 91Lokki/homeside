@@ -1,0 +1,29 @@
+[
+  {
+    "verdict": "FULLY CORRECT. The candidate 2026 FIFA World Cup group draw is verified accurate. All 12 groups (A-L), all 48 team-to-group assignments, and all 48 FIFA three-letter codes are confirmed against independent authoritative sources (ESPN and NBC Sports for group membership; Soccerphile's FIFA country-code list for codes) — sources distinct from the candidate's primarily-Wikipedia citations.\n\nGROUP MEMBERSHIP (every group matches exactly):\nA: Mexico, South Africa, South Korea, Czechia — OK\nB: Canada, Bosnia and Herzegovina, Qatar, Switzerland — OK\nC: Brazil, Morocco, Haiti, Scotland — OK\nD: United States, Paraguay, Australia, Türkiye — OK\nE: Germany, Curaçao, Côte d'Ivoire (Ivory Coast), Ecuador — OK\nF: Netherlands, Japan, Sweden, Tunisia — OK\nG: Belgium, Egypt, Iran, New Zealand — OK\nH: Spain, Cabo Verde (Cape Verde), Saudi Arabia, Uruguay — OK\nI: France, Senegal, Iraq, Norway — OK\nJ: Argentina, Algeria, Austria, Jordan — OK\nK: Portugal, DR Congo, Uzbekistan, Colombia — OK\nL: England, Croatia, Ghana, Panama — OK\nNo team is in the wrong group; no team is missing or extra. Total = 12 groups x 4 = 48 teams.\n\nFIFA CODES (all confirmed correct via Soccerphile, independent of Wikipedia): The non-obvious/easily-confused codes all check out — South Africa=RSA, South Korea=KOR, Czechia=CZE, Switzerland=SUI, Türkiye=TUR, Côte d'Ivoire=CIV, Curaçao=CUW, Cabo Verde=CPV, Saudi Arabia=KSA, DR Congo=COD, Algeria=ALG (FIFA uses ALG, not ISO DZA), plus HAI, PAR, UZB, IRQ, JOR, QAT, PAN, GHA, SEN, NOR, SWE, TUN, ECU, EGY, IRN, NZL, URU, COL, AUT, SCO, MAR, BIH. Standard host/Pot-1 codes (MEX, CAN, USA, BRA, GER, NED, BEL, ESP, FRA, ARG, POR, ENG) are long-established and uncontroversial. No code errors found.\n\nNOTE ON ORDERING: ESPN's listing matches the candidate's pot-style ordering, while NBC Sports lists teams in live-standings order (e.g., Switzerland shown first in Group B, Colombia first in Group K). This is only a display-order difference; the four-team membership of every group is identical across all sources. The verification covers group membership and codes only, not within-group standings.",
+    "discrepancies": [],
+    "sources": [
+      "https://www.espn.com/soccer/story/_/id/47108758/2026-fifa-world-cup-format-tiebreakers-fixtures-schedule",
+      "https://www.nbcsports.com/soccer/news/2026-world-cup-group-stage-table-full-standings-for-all-12-groups",
+      "https://www.soccerphile.com/world-cup-2026/fifa-country-codes",
+      "https://en.wikipedia.org/wiki/List_of_FIFA_country_codes"
+    ]
+  },
+  {
+    "verdict": "VERIFIED — NO DISCREPANCIES FOUND. All 48 matches marked \"finished\" in the candidate data have scores that exactly match an independent authoritative source (ESPN's official 2026 FIFA World Cup fixtures/results page), which is a DIFFERENT source from the candidate's primary sourcing (per-group Wikipedia articles). All 24 matches marked \"scheduled\" with null scores were independently confirmed to be not-yet-played at the 2026-06-25 snapshot. No finished match was mislabeled as scheduled, and no scheduled match was mislabeled as finished. Note resolved: NBC/Yahoo headlines phrased the South Africa vs South Korea result as \"South Korea outlasts South Africa\" / \"stunner,\" which could read as contradicting the data, but ESPN, FOX Sports, FIFA match-centre, and VAVEL all confirm South Africa won 1-0 (Maseko 63'), matching the candidate (RSA 1, KOR 0). The candidate data is accurate.",
+    "discrepancies": [],
+    "asOf": "2026-06-25",
+    "sources": [
+      "https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket",
+      "https://www.espn.com/soccer/match/_/gameId/760466/south-korea-south-africa",
+      "https://www.foxsports.com/soccer/fifa-world-cup-men-south-africa-vs-south-korea-jun-24-2026-game-boxscore-647669",
+      "https://www.espn.com/soccer/story/_/id/49123488/us-clinches-group-d-10-man-paraguay-edges-turkey",
+      "https://www.espn.com/soccer/story/_/id/49172732/world-cup-2026-today-blog-25-06-2026-live-updates-news-fixtures-schedule-results-scotland-brazil-ecuador-germany-japan-sweden",
+      "https://www.nbcnews.com/sports/soccer/live-blog/fifa-world-cup-games-2026-june-24-live-updates-rcna351554",
+      "https://bolavip.com/en/world-cup/2026-world-cup-group-a-final-standings-updated-after-czechia-vs-mexico-and-south-africa-vs-south-korea",
+      "https://bolavip.com/en/world-cup/2026-world-cup-group-b-final-standings-updated-after-canada-vs-switzerland-and-qatar-vs-bosnia-and-herzegovina",
+      "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021445",
+      "https://www.olympics.com/en/news/fifa-world-cup-2026-every-match-result-thursday-25-june-live-scores"
+    ]
+  }
+]

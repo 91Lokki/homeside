@@ -1,0 +1,390 @@
+{
+  "teams": [
+    {
+      "code": "CAN",
+      "name": "Canada",
+      "primaryHex": "#D52B1E",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Maple leaf",
+      "symbolNote": "The maple leaf is Canada's central national emblem, featured on its flag."
+    },
+    {
+      "code": "MEX",
+      "name": "Mexico",
+      "primaryHex": "#006847",
+      "secondaryHex": "#CE1126",
+      "symbol": "Golden eagle",
+      "symbol_note": "The golden eagle appears on Mexico's coat of arms and flag.",
+      "symbolNote": "The golden eagle appears on Mexico's coat of arms and flag."
+    },
+    {
+      "code": "USA",
+      "name": "United States",
+      "primaryHex": "#3C3B6E",
+      "secondaryHex": "#B22234",
+      "symbol": "Bald eagle",
+      "symbolNote": "The bald eagle is the national bird and emblem of the United States."
+    },
+    {
+      "code": "AUS",
+      "name": "Australia",
+      "primaryHex": "#00843D",
+      "secondaryHex": "#FFCD00",
+      "symbol": "Kangaroo",
+      "symbolNote": "The kangaroo is an iconic native animal and national symbol of Australia."
+    },
+    {
+      "code": "IRN",
+      "name": "Iran",
+      "primaryHex": "#239F40",
+      "secondaryHex": "#DA0000",
+      "symbol": "Cheetah (Asiatic cheetah)",
+      "symbolNote": "The Asiatic cheetah is a beloved endangered native animal, long used by Iran's team."
+    },
+    {
+      "code": "IRQ",
+      "name": "Iraq",
+      "primaryHex": "#007A3D",
+      "secondaryHex": "#CE1126",
+      "symbol": "Date palm",
+      "symbolNote": "The date palm is a cherished cultural emblem of Iraq's landscape and heritage."
+    },
+    {
+      "code": "JPN",
+      "name": "Japan",
+      "primaryHex": "#BC002D",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Red-crowned crane",
+      "symbolNote": "The crane is a graceful symbol of longevity and good fortune in Japan."
+    },
+    {
+      "code": "JOR",
+      "name": "Jordan",
+      "primaryHex": "#007A3D",
+      "secondaryHex": "#CE1126",
+      "symbol": "Oryx (Arabian oryx)",
+      "symbolNote": "The Arabian oryx is a gentle desert antelope native to Jordan's wilds."
+    },
+    {
+      "code": "QAT",
+      "name": "Qatar",
+      "primaryHex": "#8A1538",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Oryx (Arabian oryx)",
+      "symbolNote": "The Arabian oryx is Qatar's national animal and official mascot inspiration."
+    },
+    {
+      "code": "KSA",
+      "name": "Saudi Arabia",
+      "primaryHex": "#006C35",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Date palm",
+      "symbolNote": "The date palm crowns Saudi Arabia's emblem, symbolizing vitality and growth."
+    },
+    {
+      "code": "KOR",
+      "name": "South Korea",
+      "primaryHex": "#CD2E3A",
+      "secondaryHex": "#0047A0",
+      "symbol": "Tiger",
+      "symbolNote": "The tiger is Korea's traditional guardian animal and longtime team mascot."
+    },
+    {
+      "code": "UZB",
+      "name": "Uzbekistan",
+      "primaryHex": "#1EB53A",
+      "secondaryHex": "#0099B5",
+      "symbol": "Khumo (Huma bird)",
+      "symbolNote": "The mythical Huma bird on Uzbekistan's emblem symbolizes freedom and happiness."
+    },
+    {
+      "code": "ALG",
+      "name": "Algeria",
+      "primaryHex": "#006233",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Fennec fox",
+      "symbolNote": "The fennec fox of the Sahara is Algeria's national animal and team nickname."
+    },
+    {
+      "code": "CPV",
+      "name": "Cape Verde",
+      "primaryHex": "#003893",
+      "secondaryHex": "#CF2027",
+      "symbol": "Cory's shearwater (seabird)",
+      "symbolNote": "This Atlantic island seabird nests in Cape Verde and lends its name to the team."
+    },
+    {
+      "code": "COD",
+      "name": "DR Congo",
+      "primaryHex": "#007FFF",
+      "secondaryHex": "#F7D618",
+      "symbol": "Leopard",
+      "symbolNote": "The leopard is DR Congo's national animal and the team's nickname, the Leopards."
+    },
+    {
+      "code": "EGY",
+      "name": "Egypt",
+      "primaryHex": "#CE1126",
+      "secondaryHex": "#000000",
+      "symbol": "Lotus flower",
+      "symbolNote": "The lotus is an ancient Egyptian emblem of rebirth and the sun."
+    },
+    {
+      "code": "GHA",
+      "name": "Ghana",
+      "primaryHex": "#006B3F",
+      "secondaryHex": "#FCD116",
+      "symbol": "Black star",
+      "symbolNote": "The black star on Ghana's flag is its national symbol and team name."
+    },
+    {
+      "code": "CIV",
+      "name": "Ivory Coast",
+      "primaryHex": "#FF8200",
+      "secondaryHex": "#009E60",
+      "symbol": "Elephant",
+      "symbolNote": "The elephant is Ivory Coast's national symbol and the team's nickname."
+    },
+    {
+      "code": "MAR",
+      "name": "Morocco",
+      "primaryHex": "#C1272D",
+      "secondaryHex": "#006233",
+      "symbol": "Lion (Atlas lion)",
+      "symbolNote": "The Atlas lion is Morocco's emblematic animal and the team nickname."
+    },
+    {
+      "code": "SEN",
+      "name": "Senegal",
+      "primaryHex": "#00853F",
+      "secondaryHex": "#FDEF42",
+      "symbol": "Lion (Lion of Teranga)",
+      "symbolNote": "The lion is Senegal's national symbol and the team's beloved nickname."
+    },
+    {
+      "code": "RSA",
+      "name": "South Africa",
+      "primaryHex": "#007749",
+      "secondaryHex": "#FFB81C",
+      "symbol": "Springbok / Protea flower",
+      "symbolNote": "The protea (national flower) and springbok are gentle South African emblems."
+    },
+    {
+      "code": "TUN",
+      "name": "Tunisia",
+      "primaryHex": "#E70013",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Eagle of Carthage",
+      "symbolNote": "The eagle is Tunisia's team symbol, echoing ancient Carthage."
+    },
+    {
+      "code": "CUW",
+      "name": "Curaçao",
+      "primaryHex": "#002B7F",
+      "secondaryHex": "#F9E814",
+      "symbol": "Flamingo",
+      "symbolNote": "The flamingo is a vivid emblem of Curaçao's Caribbean coastal wildlife."
+    },
+    {
+      "code": "HAI",
+      "name": "Haiti",
+      "primaryHex": "#00209F",
+      "secondaryHex": "#D21034",
+      "symbol": "Hispaniolan trogon",
+      "symbolNote": "This colorful native bird is Haiti's national bird and a gentle emblem."
+    },
+    {
+      "code": "PAN",
+      "name": "Panama",
+      "primaryHex": "#005293",
+      "secondaryHex": "#DA121A",
+      "symbol": "Harpy eagle",
+      "symbolNote": "The harpy eagle is Panama's national bird and a proud natural emblem."
+    },
+    {
+      "code": "ARG",
+      "name": "Argentina",
+      "primaryHex": "#75AADB",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Sun of May",
+      "symbolNote": "The radiant Sun of May on Argentina's flag is its iconic national emblem."
+    },
+    {
+      "code": "BRA",
+      "name": "Brazil",
+      "primaryHex": "#FFDF00",
+      "secondaryHex": "#009C3B",
+      "symbol": "Toucan",
+      "symbolNote": "The colorful toucan is a friendly emblem of Brazil's rainforests."
+    },
+    {
+      "code": "COL",
+      "name": "Colombia",
+      "primaryHex": "#FCD116",
+      "secondaryHex": "#003893",
+      "symbol": "Andean condor",
+      "symbolNote": "The Andean condor is Colombia's national bird, featured on its coat of arms."
+    },
+    {
+      "code": "ECU",
+      "name": "Ecuador",
+      "primaryHex": "#FFDD00",
+      "secondaryHex": "#034EA2",
+      "symbol": "Andean condor",
+      "symbolNote": "The condor crowns Ecuador's coat of arms as its national bird."
+    },
+    {
+      "code": "PAR",
+      "name": "Paraguay",
+      "primaryHex": "#D52B1E",
+      "secondaryHex": "#0038A8",
+      "symbol": "Bellbird (campana)",
+      "symbolNote": "The bare-throated bellbird is Paraguay's national bird with a distinctive call."
+    },
+    {
+      "code": "URU",
+      "name": "Uruguay",
+      "primaryHex": "#7FB3D5",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Sun of May",
+      "symbolNote": "The Sun of May on Uruguay's flag is a shared, gentle national emblem."
+    },
+    {
+      "code": "NZL",
+      "name": "New Zealand",
+      "primaryHex": "#000000",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Kiwi bird",
+      "symbolNote": "The flightless kiwi is New Zealand's affectionate national symbol."
+    },
+    {
+      "code": "AUT",
+      "name": "Austria",
+      "primaryHex": "#ED2939",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Edelweiss flower",
+      "symbolNote": "The alpine edelweiss is a treasured Austrian mountain flower."
+    },
+    {
+      "code": "BEL",
+      "name": "Belgium",
+      "primaryHex": "#E30613",
+      "secondaryHex": "#FAE042",
+      "symbol": "Lion (Flemish lion)",
+      "symbolNote": "The lion is Belgium's heraldic emblem and the team's nickname, Red Devils aside."
+    },
+    {
+      "code": "BIH",
+      "name": "Bosnia and Herzegovina",
+      "primaryHex": "#002395",
+      "secondaryHex": "#FFCC00",
+      "symbol": "Golden lily (Lilium bosniacum)",
+      "symbolNote": "The native golden lily is a historic Bosnian national emblem."
+    },
+    {
+      "code": "CRO",
+      "name": "Croatia",
+      "primaryHex": "#FF0000",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Red-and-white checkerboard (šahovnica)",
+      "symbolNote": "The checkerboard is Croatia's iconic heraldic pattern, gentle and instantly recognizable."
+    },
+    {
+      "code": "CZE",
+      "name": "Czech Republic",
+      "primaryHex": "#D7141A",
+      "secondaryHex": "#11457E",
+      "symbol": "Linden leaf",
+      "symbolNote": "The linden tree leaf is the Czechs' cherished national tree symbol."
+    },
+    {
+      "code": "ENG",
+      "name": "England",
+      "primaryHex": "#FFFFFF",
+      "secondaryHex": "#CE1124",
+      "symbol": "Three lions / red rose",
+      "symbolNote": "The three lions crest and Tudor rose are classic English emblems."
+    },
+    {
+      "code": "FRA",
+      "name": "France",
+      "primaryHex": "#0055A4",
+      "secondaryHex": "#EF4135",
+      "symbol": "Rooster (Gallic rooster)",
+      "symbolNote": "The Gallic rooster is France's traditional national emblem and team mascot."
+    },
+    {
+      "code": "GER",
+      "name": "Germany",
+      "primaryHex": "#000000",
+      "secondaryHex": "#DD0000",
+      "symbol": "Eagle (Bundesadler)",
+      "symbolNote": "The eagle is Germany's coat-of-arms emblem worn on the national crest."
+    },
+    {
+      "code": "NED",
+      "name": "Netherlands",
+      "primaryHex": "#FF6200",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Tulip",
+      "symbolNote": "The tulip is the Netherlands' beloved floral emblem alongside its orange color."
+    },
+    {
+      "code": "NOR",
+      "name": "Norway",
+      "primaryHex": "#BA0C2F",
+      "secondaryHex": "#00205B",
+      "symbol": "Elk / moose",
+      "symbolNote": "The elk is a gentle iconic animal of Norway's northern forests."
+    },
+    {
+      "code": "POR",
+      "name": "Portugal",
+      "primaryHex": "#FF0000",
+      "secondaryHex": "#006600",
+      "symbol": "Rooster of Barcelos",
+      "symbolNote": "The colorful Barcelos rooster is a cheerful Portuguese folk emblem."
+    },
+    {
+      "code": "SCO",
+      "name": "Scotland",
+      "primaryHex": "#0065BF",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Thistle",
+      "symbolNote": "The thistle is Scotland's national flower and longstanding emblem."
+    },
+    {
+      "code": "ESP",
+      "name": "Spain",
+      "primaryHex": "#C60B1E",
+      "secondaryHex": "#FFC400",
+      "symbol": "Bull (gentle silhouette)",
+      "symbolNote": "The bull is a widely recognized Spanish cultural silhouette; depicted friendly."
+    },
+    {
+      "code": "SWE",
+      "name": "Sweden",
+      "primaryHex": "#006AA7",
+      "secondaryHex": "#FECC00",
+      "symbol": "Elk / moose",
+      "symbolNote": "The moose is a beloved gentle animal of the Swedish forests."
+    },
+    {
+      "code": "SUI",
+      "name": "Switzerland",
+      "primaryHex": "#D52B1E",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Edelweiss flower",
+      "symbolNote": "The alpine edelweiss is a classic, gentle Swiss mountain emblem."
+    },
+    {
+      "code": "TUR",
+      "name": "Turkey",
+      "primaryHex": "#E30A17",
+      "secondaryHex": "#FFFFFF",
+      "symbol": "Crescent moon and star / tulip",
+      "symbolNote": "The crescent and star (and the native tulip) are recognizable Turkish emblems."
+    }
+  ],
+  "notes": "All 48 teams confirmed qualified for FIFA World Cup 2026 (hosts USA/Canada/Mexico) cross-checked across FIFA.com, Wikipedia, and ESPN: UEFA 16, CAF 10, AFC 9, CONMEBOL 6, CONCACAF 6, OFC 1. Debutants: Cape Verde (CPV), Curaçao (CUW), Jordan (JOR), Uzbekistan (UZB). FIFA 3-letter codes verified against Soccerphile's WC2026 code list and cross-checked with Wikipedia's \"List of FIFA country codes\" (note FIFA-specific codes that differ from ISO: Saudi Arabia=KSA, South Africa=RSA, Iran=IRN, DR Congo=COD, Curaçao=CUW, Cape Verde=CPV, Ivory Coast=CIV, Portugal=POR, Switzerland=SUI, Germany=GER, Netherlands=NED).\n\nHONESTY NOTE: No match scores, standings, or draw/group placements were invented or reported. Per the task, those were not requested in the output fields; the only items returned are stable factual/cultural attributes (FIFA codes, national colors, national emblems), not live sports results.\n\nColors: primaryHex is the dominant kit/branding color, secondaryHex a complementary identity color, both drawn from each nation's flag and traditional home kit. A few notable kit-vs-flag nuances: Netherlands primary is \"Oranje\" orange (not its flag's red/white/blue); Italy-style note N/A; Argentina/Uruguay use sky blue (celeste); Australia branding leans green-and-gold (kit) rather than flag colors; New Zealand \"All Whites\" branding is black/white. Hex values are conventional/widely-used approximations of each nation's color identity and may differ slightly from any single official kit-manufacturer spec for the 2026 edition.\n\nSymbols: each is a gentle natural or cultural emblem chosen to avoid offensive or crude stereotypes, suitable for an original cartoon mascot loosely inspired by the country (animals, birds, flowers, or heraldic motifs). Where a country shares an emblem with a neighbor (e.g., Andean condor for Colombia and Ecuador; Sun of May for Argentina and Uruguay; edelweiss for Austria and Switzerland; elk/moose for Norway and Sweden), this reflects genuine shared cultural/natural heritage. For Spain a friendly bull silhouette is suggested rather than any bullfighting imagery.\n\nSources used:\n- https://en.wikipedia.org/wiki/2026_FIFA_World_Cup\n- https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_qualification\n- https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/world-cup-2026-who-has-qualified\n- https://www.espn.com/soccer/story/_/id/48871263/world-cup-2026-key-players-facts-expectations-fixtures-odds-all-48-teams\n- https://www.soccerphile.com/world-cup-2026/fifa-country-codes\n- https://en.wikipedia.org/wiki/List_of_FIFA_country_codes"
+}
