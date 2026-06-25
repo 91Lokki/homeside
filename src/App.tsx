@@ -4,6 +4,7 @@ import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { DATA_META } from '@/data/meta'
 import { AppProvider, useApp } from '@/state/store'
 import { ThemeProvider } from '@/state/theme'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { LiveDot } from '@/components/ui/atoms'
@@ -14,13 +15,15 @@ import { Bracket } from '@/screens/Bracket'
 
 export function App() {
   return (
-    <ThemeProvider>
-      <AppProvider>
-        <BrowserRouter>
-          <Shell />
-        </BrowserRouter>
-      </AppProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <Shell />
+          </BrowserRouter>
+        </AppProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 
