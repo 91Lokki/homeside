@@ -110,3 +110,20 @@ export function lighten(hex: string, t: number): string {
 export function darken(hex: string, t: number): string {
   return mixHex(hex, '#000000', t)
 }
+
+/**
+ * Adjust a team color into a readable *accent* for text/lines on the current
+ * background. Light colors (yellow, white) get darkened for the gallery-white
+ * canvas; dark colors (black, navy) get lightened for dark mode. The team's true
+ * color is preserved separately (for fills like the mascot and bond bar).
+ */
+export function accentOn(hex: string, dark: boolean): string {
+  let c = hex
+  let guard = 0
+  if (!dark) {
+    while (luminance(c) > 0.42 && guard++ < 24) c = mixHex(c, '#000000', 0.1)
+  } else {
+    while (luminance(c) < 0.46 && guard++ < 24) c = mixHex(c, '#ffffff', 0.1)
+  }
+  return c
+}
