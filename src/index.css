@@ -19,6 +19,7 @@
     --hairline: rgba(20, 20, 16, 0.10);
     /* the one accent (neutral until a home team is chosen) */
     --team: #4a4a45;
+    --team-pure: #4a4a45;
     --team-soft: rgba(74, 74, 69, 0.08);
     --team-ink: #ffffff;
     /* motion */
@@ -36,6 +37,7 @@
     --faint: #67675f;
     --hairline: rgba(255, 255, 255, 0.11);
     --team: #b8b8b0;
+    --team-pure: #b8b8b0;
     --team-soft: rgba(184, 184, 176, 0.10);
     --team-ink: #0e0e0c;
 

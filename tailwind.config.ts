@@ -47,6 +47,7 @@ export default {
         hairline: 'var(--hairline)',
         // The single accent — the team color and a soft tint of it.
         team: 'var(--team)',
+        'team-pure': 'var(--team-pure)',
         'team-soft': 'var(--team-soft)',
         'team-ink': 'var(--team-ink)',
       },
