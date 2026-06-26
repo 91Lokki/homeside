@@ -74,7 +74,7 @@ export function Home() {
       )}
 
       <p className="mt-6 text-2xs text-faint">
-        Results & stats from Highlightly. Snapshot baseline {DATA_META.asOf}. Knockouts grade as real matches are played.
+        Results & stats from ESPN (free, no key). Snapshot baseline {DATA_META.asOf}. Knockouts grade as real matches are played.
       </p>
     </div>
   )

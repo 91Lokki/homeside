@@ -1,31 +1,27 @@
 {
-  "provider": "Highlightly (soccer.highlightly.net)",
-  "baseUrl": "https://soccer.highlightly.net",
-  "authHeaderName": "x-rapidapi-key: <YOUR_KEY>  (direct platform — do NOT send x-rapidapi-host)",
-  "leagueId": "1635",
+  "provider": "ESPN (site.api.espn.com) — free public API, no key, no quota",
+  "baseUrl": "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world",
+  "authHeaderName": "(none — ESPN's site API needs no key or auth)",
+  "leagueId": "fifa.world",
   "season": "2026",
-  "rateLimitNotes": "Free tier: 100 requests/day. Response header x-ratelimit-requests-remaining reports the remaining daily quota; a 429 body reads 'You have breached your daily request limits.' (resets daily). The key is server-side only (env HIGHLIGHTLY_KEY), proxied via /api — never sent to the browser, logs, or disk. Production caches via Vercel's CDN (s-maxage); local dev has no CDN, so vite.config.ts disk-caches /api responses to node_modules/.cache honouring the same s-maxage. Live in-play polling is window-gated to the knockout stage only.",
+  "rateLimitNotes": "No published key/auth and no daily quota — effectively unlimited for a personal app, but UNOFFICIAL: the response shape can change without notice, so normalisers are defensive and we cache (Vercel CDN in prod, a disk cache in dev). Be a good citizen: don't hammer it.",
   "endpoints": [
     {
-      "purpose": "World Cup matches — schedule + results (the low-frequency results feed)",
-      "path": "/matches",
-      "exampleQuery": "/matches?leagueId=1635&season=2026&limit=100&offset=0  (optionally &date=YYYY-MM-DD for a single match day's short-cached live poll)",
-      "responseNotes": "data[] of matches + pagination.totalCount. Each match: id, round (e.g. 'Round of 16'), date (ISO), state{description (FT/AET/Penalties/…), clock, score{current '1 - 0', penalties}}, homeTeam{name}, awayTeam{name}. Only FINISHED matches are surfaced to the app; in-play scores are never shown."
+      "purpose": "All matches (schedule + results + LIVE status) — one date-range call covers the whole tournament",
+      "path": "/scoreboard",
+      "exampleQuery": "/scoreboard?dates=20260611-20260719&limit=400  (or ?dates=YYYYMMDD for one day)",
+      "responseNotes": "events[] each: id (the event id used by /summary), date, season{slug: 'group-stage'|'round-of-32'|… -> stage}, competitions[0].{status.type.state (pre|in|post), competitors[]{homeAway, team.displayName, score, shootoutScore}}. state 'in' gives a live clock + score."
     },
     {
-      "purpose": "Single match detail — event timeline (fantasy scoring + goal timeline)",
-      "path": "/matches/{id}",
-      "responseNotes": "events[] each: time (e.g. '45+1'; a shootout kick is timed '120+N'), team{name}, type (Goal / Own Goal / Penalty / Missed Penalty / Yellow Card / Red Card / Substitution / …), player, playerNumber, assist."
-    },
-    {
-      "purpose": "Single match statistics — per-team box score (ability-card radar + match report)",
-      "path": "/statistics/{id}",
-      "responseNotes": "per-team blocks; statistics[] of {displayName,value}: Possession (a fraction, ×100 for %), 'Shots within penalty area' + 'Shots outside penalty area' (sum = total shots), 'Shots on target', 'Expected Goals', 'Expected Assists', 'Key Passes', 'Fouls', 'Yellow cards', 'Red cards', 'Goalkeeper saves'."
+      "purpose": "Single match box score + goal/card timeline (radar + match report + fantasy)",
+      "path": "/summary",
+      "exampleQuery": "/summary?event=760422",
+      "responseNotes": "boxscore.teams[].statistics[] {name,displayValue,value}: possessionPct, totalShots, shotsOnTarget, foulsCommitted, yellowCards, redCards, saves, … (NO xG/xA/key passes -> radar Creativity stays null). keyEvents[] {type.text (Goal/Yellow Card/…), clock.displayValue, team.displayName, participants[0]=scorer, participants[1]=assist, text}. header.competitions[0].competitors[] for final + shootout score."
     }
   ],
-  "notes": "Supersedes the earlier API-Football research — the app switched to Highlightly. This API is used at RUNTIME only, for the dynamic knockout stage. The SEED (group-stage results, standings, schedule) is NOT from this API: it is compiled from public web sources (see fixtures.json / groups.json `sources`). The ability card's Attack/Defense come from those static seed scores with zero API; the richer axes fill in from knockout box scores.",
+  "notes": "The app migrated from Highlightly to ESPN to drop the API key + daily quota entirely. The SEED (group results/standings/schedule) is still compiled from public web sources (see fixtures.json/groups.json sources); ESPN supplies the live runtime data and the baked group-stage box scores (scripts/fetch-espn.mjs -> src/data/teamStats.ts). PENDING refinement: penalty-shootout detection for knockout fantasy scoring (ESPN's shootout event shape — verify when the first KO shootout occurs).",
   "sources": [
-    "https://soccer.highlightly.net",
-    "https://highlightly.net"
+    "https://site.api.espn.com",
+    "https://gist.github.com/akeaswaran/b48b02f1c94f873c6655e7129910fc3b"
   ]
 }

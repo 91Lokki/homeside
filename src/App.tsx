@@ -95,7 +95,7 @@ function Shell() {
       <footer className="border-t pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-4 text-2xs text-faint sm:px-8">
           <span>
-            {connected ? 'Real results & stats via Highlightly.' : `Snapshot as of ${DATA_META.asOf}.`} Scored from real
+            {connected ? 'Real results & stats via ESPN.' : `Snapshot as of ${DATA_META.asOf}.`} Scored from real
             finished matches only — no simulation.
           </span>
           <span>Homeside · an unofficial 2026 companion</span>

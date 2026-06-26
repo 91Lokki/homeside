@@ -9,8 +9,8 @@ export const DATA_META = {
   totalGroupMatches: 72,
   thirdPlaceRule: "The 8 best third-placed teams are first RANKED across all 12 groups using FIFA's group-stage criteria (Article 13 of the official tournament regulations), in this order: (1) points; (2) goal difference; (3) goals scored; (4) team conduct/disciplinary (fair-play) score from yellow/red cards; (5) FIFA/Coca-Cola Men's World Ranking. (Head-to-head does NOT apply because the teams are from different groups. Drawing of lots is no longer the final tiebreak for 2026 — the FIFA World Ranking is.) The 8 qualifying thirds do NOT fall into fixed slots based on rank. Instead, FIFA uses a PRE-DETERMINED MAPPING TABLE (Annex C of the tournament regulations) that lists all 495 possible combinations (12 choose 8 = 495) of which 8 of the 12 groups supply a qualifying third-placed team, and for each combination assigns those eight thirds to the eight designated Round of 32 slots. The eight group winners that face a third-placed team are the winners of Groups A, C, D, E, G, I, K and L (matches 74, 77, 79, 80, 81, 82, 85, 87). Each such slot draws its third-placed team from a fixed pool of five specified groups, e.g. Match 74 = '3rd from Group A/B/C/D/F', Match 79 = '3rd from Group C/E/F/H/I'. The Annex C table is engineered so that, whichever 8 groups actually supply a qualifying third, each of the eight slots receives exactly one of them with no group facing its own runner-up/winner inappropriately.",
   api: {
-    provider: "Highlightly (soccer.highlightly.net)",
-    leagueId: "1635",
+    provider: "ESPN (site.api.espn.com) — free public API, no key, no quota",
+    leagueId: "fifa.world",
     season: "2026",
   },
   seedSources: [

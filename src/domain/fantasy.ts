@@ -3,10 +3,10 @@ import type { Stage, TeamCode } from './types'
 
 /**
  * 5-player knockout fantasy (solo). Scoring uses ONLY signals reliably present in
- * Highlightly's free tier: goals (by position), assists, clean sheets, cards, own
- * goals, in-play penalties scored/missed, shootout kicks scored/missed, and GK
- * saves (team stat). No appearance/minutes/keeper-save points (the data plan can't
- * supply them). Nothing is ever fabricated.
+ * the live ESPN feed: goals (by position), assists, clean sheets, cards, own goals,
+ * in-play penalties scored/missed, shootout kicks scored/missed, and GK saves (team
+ * stat). No appearance/minutes points (the data can't reliably supply them).
+ * Nothing is ever fabricated.
  */
 
 /* ------------------------------ positions & slots ------------------------- */
@@ -97,10 +97,14 @@ export const SCORING_RULES: { label: string; value: string }[] = [
 
 /* ----------------------------- shootout detection ------------------------- */
 /**
- * A penalty-shootout kick. Highlightly timestamps shootout kicks as "120+N" and
- * only emits them when the match actually went to a shootout (score.penalties
- * present). In-play penalties — including extra-time ones — carry a normal minute
- * ("23", "80", "118"). Isolated + unit-tested (see scripts/test-fantasy.mjs).
+ * A penalty-shootout kick — only ever true when the match actually went to a
+ * shootout (hadShootout). The original Highlightly feed timestamped shootout kicks
+ * as "120+N"; the test fixture in scripts/test-fantasy.mjs covers that.
+ *
+ * PENDING (no knockout shootout has occurred yet on the live ESPN feed): confirm
+ * ESPN's shootout-kick event shape and extend the match below, so shootout kicks
+ * score +2/−1 separately and never touch clean sheets. Until then this stays
+ * conservative (a normal-minute in-play penalty is never mistaken for a shootout).
  */
 export function isShootoutKick(rawTime: string, hadShootout: boolean): boolean {
   return hadShootout && /^120\+\d+$/.test((rawTime || '').trim())

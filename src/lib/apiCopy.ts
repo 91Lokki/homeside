@@ -11,7 +11,7 @@ export function liveDataNote(status: ApiStatus): string {
     case 'error':
       return 'The live data feed is temporarily unavailable. It will fill in automatically once the feed is back.'
     case 'no-key':
-      return 'Live data isn’t connected yet — once the Highlightly key is set, goals, possession and shots appear here.'
+      return 'Live data isn’t connected yet — goals, possession and shots appear here once it is.'
     case 'ok':
       return 'This match isn’t in the live data feed yet.'
   }

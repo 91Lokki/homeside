@@ -261,9 +261,8 @@ export function Fantasy() {
           ))}
         </div>
         <p className="mt-3 text-2xs text-faint">
-          Scored from real Highlightly box-score events. Shootout kicks (+2 / −1) are detected separately from in-play
-          penalties and never affect clean sheets. Player matching is best-effort by team + name/number; unmatched
-          scorers are logged.
+          Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team +
+          name. Knockout scoring grades as each real match finishes.
         </p>
       </section>
 
