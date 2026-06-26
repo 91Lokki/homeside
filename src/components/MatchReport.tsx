@@ -3,18 +3,14 @@ import { teamByCode } from '@/data/teams'
 import type { Match } from '@/domain/types'
 import { fetchMatchReport, type ApiStatus, type MatchReport as Report } from '@/lib/api'
 import { liveDataNote } from '@/lib/apiCopy'
-import { cn } from '@/lib/utils'
-import { Label } from './ui/atoms'
 
 /** The match report — goal timeline + Apple-Sports-style stat comparison. ESPN data. */
 export function MatchReport({
   match,
-  accentCode,
   apiStatus,
   healthKnown,
 }: {
   match: Match
-  accentCode?: string | null
   apiStatus: ApiStatus
   healthKnown: boolean
 }) {
@@ -64,54 +60,65 @@ export function MatchReport({
   if (!report) return null
 
   const goals = report.events.filter((e) => e.type === 'Goal' || e.type === 'Own Goal')
-  const accent: 'home' | 'away' | null =
-    accentCode && match.homeCode === accentCode ? 'home' : accentCode && match.awayCode === accentCode ? 'away' : null
   const homeColor = (match.homeCode && teamByCode[match.homeCode]?.color) || '#9aa0aa'
   const awayColor = (match.awayCode && teamByCode[match.awayCode]?.color) || '#5b606b'
+  // An own goal is shown on the side that benefited (the scoreline), not the scorer's team.
+  const sideOf = (g: (typeof goals)[number]) => {
+    const home = g.team === match.homeCode
+    return g.type === 'Own Goal' ? (home ? 'away' : 'home') : home ? 'home' : 'away'
+  }
+  const homeGoals = goals.filter((g) => sideOf(g) === 'home')
+  const awayGoals = goals.filter((g) => sideOf(g) === 'away')
+  const bars: [string, typeof report.possession, string][] = [
+    ['Possession %', report.possession, '%'],
+    ['Shots', report.shots, ''],
+    ['Shots on Goal', report.shotsOnTarget, ''],
+    ['Corner Kicks', report.corners, ''],
+    ['Total Passes', report.passes, ''],
+    ['Passing Accuracy %', report.passAcc, '%'],
+    ['Offsides', report.offsides, ''],
+    ['Fouls', report.fouls, ''],
+    ['Yellow Cards', report.cards, ''],
+  ]
 
   return (
-    <div className="space-y-5 px-5 py-5">
-      {/* goal timeline */}
-      <div>
-        <Label>Goals</Label>
-        {goals.length === 0 ? (
-          <p className="mt-2 text-xs text-faint">No goals.</p>
-        ) : (
-          <ul className="mt-2.5 space-y-2">
-            {goals.map((g, i) => {
-              const isHome = g.team === match.homeCode
-              const isAccent = (isHome && accent === 'home') || (!isHome && accent === 'away')
-              return (
-                <li key={i} className={cn('flex items-center gap-2.5 text-sm', isHome ? 'justify-start' : 'flex-row-reverse text-right')}>
-                  <span
-                    className={cn(
-                      'grid h-6 min-w-[30px] place-items-center rounded-md px-1.5 font-grotesk text-2xs font-semibold tnum',
-                      isAccent ? 'bg-team text-team-ink' : 'bg-sunken text-muted',
-                    )}
-                  >
-                    {g.minute}&rsquo;
-                  </span>
-                  <span className="truncate font-medium">
-                    {g.player || 'Goal'}
-                    {g.detail.includes('penalty') && <span className="text-faint"> (pen)</span>}
-                    {g.detail.includes('own goal') && <span className="text-faint"> (og)</span>}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
+    <div className="px-5 pb-6 pt-1 text-ink">
+      {goals.length > 0 && (
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 pb-4">
+          <div className="space-y-1 text-right">{homeGoals.map((g, i) => <GoalLine key={i} g={g} />)}</div>
+          <div className="pt-1"><Ball /></div>
+          <div className="space-y-1 text-left">{awayGoals.map((g, i) => <GoalLine key={i} g={g} />)}</div>
+        </div>
+      )}
 
-      {/* stat comparison — each team in its own colour */}
-      <div className="space-y-3.5 border-t border-white/10 pt-4">
-        <CompareBar label="Possession" home={report.possession.home} away={report.possession.away} homeColor={homeColor} awayColor={awayColor} unit="%" />
-        <CompareBar label="Shots" home={report.shots.home} away={report.shots.away} homeColor={homeColor} awayColor={awayColor} />
-        <CompareBar label="On target" home={report.shotsOnTarget.home} away={report.shotsOnTarget.away} homeColor={homeColor} awayColor={awayColor} />
-        <CompareBar label="Corners" home={report.corners.home} away={report.corners.away} homeColor={homeColor} awayColor={awayColor} />
-        <CompareBar label="Fouls" home={report.fouls.home} away={report.fouls.away} homeColor={homeColor} awayColor={awayColor} />
+      <div className="rounded-[16px] bg-black/[0.04] p-4 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10">
+        <p className="mb-3.5 text-center text-sm font-bold">Team Stats</p>
+        <div className="space-y-3.5">
+          {bars.map(([label, p, unit]) => (
+            <CompareBar key={label} label={label} home={p.home} away={p.away} homeColor={homeColor} awayColor={awayColor} unit={unit} />
+          ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+function GoalLine({ g }: { g: { player: string; minute: number | null; detail: string } }) {
+  return (
+    <p className="text-sm leading-snug">
+      <span className="font-medium text-ink">{g.player || 'Goal'}</span> <span className="tnum text-muted">{g.minute}&rsquo;</span>
+      {g.detail.includes('penalty') && <span className="text-faint"> (pen)</span>}
+      {g.detail.includes('own goal') && <span className="text-faint"> (OG)</span>}
+    </p>
+  )
+}
+
+function Ball() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" className="text-ink" aria-hidden="true">
+      <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 6.8l3.4 2.5-1.3 4h-4.2l-1.3-4z" fill="currentColor" />
+    </svg>
   )
 }
 
@@ -138,9 +145,9 @@ function CompareBar({
   return (
     <div>
       <div className="flex items-center justify-between text-[15px] tnum">
-        <span className="font-grotesk font-bold text-white">{h}{unit}</span>
-        <span className="text-2xs uppercase tracking-label text-white/40">{label}</span>
-        <span className="font-grotesk font-bold text-white">{a}{unit}</span>
+        <span className="font-grotesk font-bold text-ink">{h}{unit}</span>
+        <span className="text-2xs uppercase tracking-label text-faint">{label}</span>
+        <span className="font-grotesk font-bold text-ink">{a}{unit}</span>
       </div>
       <div className="mt-1.5 flex h-[5px] items-center gap-1">
         <div className="flex h-full justify-end" style={{ flexBasis: `${(h / total) * 100}%` }}>

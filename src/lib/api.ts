@@ -257,13 +257,18 @@ async function fetchSummary(fixtureId: number): Promise<any | null> {
 
 /* ------------------------------ match report ------------------------------ */
 
+type Pair = { home: number | null; away: number | null }
 export interface MatchReport {
   events: ReportEvent[]
-  possession: { home: number | null; away: number | null }
-  shots: { home: number | null; away: number | null }
-  shotsOnTarget: { home: number | null; away: number | null }
-  corners: { home: number | null; away: number | null }
-  fouls: { home: number | null; away: number | null }
+  possession: Pair
+  shots: Pair
+  shotsOnTarget: Pair
+  corners: Pair
+  passes: Pair
+  passAcc: Pair
+  offsides: Pair
+  fouls: Pair
+  cards: Pair
 }
 
 interface ReportEvent {
@@ -303,14 +308,20 @@ export async function fetchMatchReport(
   }
   const home = homeCode ?? null
   const away = awayCode ?? null
+  const pair = (name: string) => ({ home: espnStat(blockFor(home), name), away: espnStat(blockFor(away), name) })
+  const pct = (v: number | null) => (v == null ? null : Math.round(v <= 1 ? v * 100 : v))
 
   return {
     events,
     possession: { home: poss(home), away: poss(away) },
-    shots: { home: espnStat(blockFor(home), 'totalShots'), away: espnStat(blockFor(away), 'totalShots') },
-    shotsOnTarget: { home: espnStat(blockFor(home), 'shotsOnTarget'), away: espnStat(blockFor(away), 'shotsOnTarget') },
-    corners: { home: espnStat(blockFor(home), 'wonCorners'), away: espnStat(blockFor(away), 'wonCorners') },
-    fouls: { home: espnStat(blockFor(home), 'foulsCommitted'), away: espnStat(blockFor(away), 'foulsCommitted') },
+    shots: pair('totalShots'),
+    shotsOnTarget: pair('shotsOnTarget'),
+    corners: pair('wonCorners'),
+    passes: pair('totalPasses'),
+    passAcc: { home: pct(espnStat(blockFor(home), 'passPct')), away: pct(espnStat(blockFor(away), 'passPct')) },
+    offsides: pair('offsides'),
+    fouls: pair('foulsCommitted'),
+    cards: pair('yellowCards'),
   }
 }
 
