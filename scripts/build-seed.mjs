@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
 const R = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, '.research', f), 'utf8'))
-const OUT = path.join(ROOT, 'src', 'data')
+// OUT defaults to src/data; SEED_OUT lets a dry run write to a temp dir for diffing.
+const OUT = process.env.SEED_OUT || path.join(ROOT, 'src', 'data')
 fs.mkdirSync(OUT, { recursive: true })
 
 const groups = R('groups.json')
@@ -77,22 +78,7 @@ for (const g of groups.groups) {
   })
 }
 
-/* ------------------------------- squads ----------------------------------- */
-const SQUADS = {}
-for (const code of TEAMS.map((t) => t.code)) {
-  const s = starByCode[code]
-  if (!s) continue
-  const player = (p) => ({
-    name: p.name,
-    position: shortPos(p.position),
-    number: p.number ?? null,
-    ...(p.club ? { club: p.club } : {}),
-  })
-  SQUADS[code] = {
-    star: player(s.star),
-    notable: (s.notableSquad || []).map(player),
-  }
-}
+/* squads are generated separately by scripts/build-squads.mjs (full rosters). */
 
 /* ------------------------------- fixtures --------------------------------- */
 function splitVenue(v) {
@@ -196,11 +182,8 @@ fs.writeFileSync(
   `${banner()}import type { Team } from '@/domain/types'\n\nexport const TEAMS: Team[] = ${JSON.stringify(TEAMS, null, 2)}\n\nexport const teamByCode: Record<string, Team> = Object.fromEntries(\n  TEAMS.map((t) => [t.code, t]),\n)\n\nexport const GROUP_IDS = [${[...new Set(TEAMS.map((t) => t.group))].map((g) => `'${g}'`).join(', ')}] as const\n`,
 )
 
-// squads.ts
-fs.writeFileSync(
-  path.join(OUT, 'squads.ts'),
-  `${banner()}import type { Squad } from '@/domain/types'\n\nexport const SQUADS: Record<string, Squad> = ${JSON.stringify(SQUADS, null, 2)}\n`,
-)
+// squads.ts is owned by scripts/build-squads.mjs (the full 26-per-team rosters);
+// this generator must NOT write it, or it would clobber them with a thin shape.
 
 writeTs('fixtures.ts', 'SEED_MATCHES', SEED_MATCHES, 'Match[]')
 writeTs('bracket.ts', 'BRACKET', BRACKET, 'BracketMatch[]')
@@ -208,7 +191,7 @@ writeTs('bracket.ts', 'BRACKET', BRACKET, 'BracketMatch[]')
 // meta.ts
 fs.writeFileSync(
   path.join(OUT, 'meta.ts'),
-  `${banner()}\nexport const DATA_META = {\n  asOf: ${JSON.stringify(fixtures.asOf)},\n  finishedCount: ${SEED_MATCHES.filter((m) => m.status === 'finished').length},\n  totalGroupMatches: ${SEED_MATCHES.length},\n  thirdPlaceRule: ${JSON.stringify(bracket.thirdPlaceRule)},\n  api: {\n    provider: 'API-Football',\n    leagueId: ${JSON.stringify(apiRef.leagueId ?? '1')},\n    season: ${JSON.stringify(apiRef.season ?? '2026')},\n  },\n  sources: ${JSON.stringify((groups.sources || []).concat(fixtures.sources || []).slice(0, 8), null, 2)},\n} as const\n`,
+  `${banner()}\nexport const DATA_META = {\n  asOf: ${JSON.stringify(fixtures.asOf)},\n  finishedCount: ${SEED_MATCHES.filter((m) => m.status === 'finished').length},\n  totalGroupMatches: ${SEED_MATCHES.length},\n  thirdPlaceRule: ${JSON.stringify(bracket.thirdPlaceRule)},\n  api: {\n    provider: ${JSON.stringify(apiRef.provider ?? 'Highlightly')},\n    leagueId: ${JSON.stringify(apiRef.leagueId ?? '1635')},\n    season: ${JSON.stringify(apiRef.season ?? '2026')},\n  },\n  seedSources: ${JSON.stringify((groups.sources || []).concat(fixtures.sources || []).slice(0, 8), null, 2)},\n} as const\n`,
 )
 
 // index.ts
@@ -217,8 +200,8 @@ fs.writeFileSync(
   `export * from './teams'\nexport * from './squads'\nexport * from './fixtures'\nexport * from './bracket'\nexport * from './meta'\n`,
 )
 
-console.log('Wrote src/data: teams(%d), squads(%d), matches(%d finished %d), bracket(%d), meta',
-  TEAMS.length, Object.keys(SQUADS).length, SEED_MATCHES.length,
+console.log('Wrote src/data: teams(%d), matches(%d finished %d), bracket(%d), meta (squads.ts left to build-squads.mjs)',
+  TEAMS.length, SEED_MATCHES.length,
   SEED_MATCHES.filter((m) => m.status === 'finished').length, BRACKET.length)
 
 // quick light-primary report

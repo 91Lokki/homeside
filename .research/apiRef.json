@@ -1,65 +1,31 @@
 {
-  "provider": "API-Football (api-sports.io). Same API also resold on RapidAPI as \"API-Football\" by the api-sports provider.",
-  "baseUrl": "Direct (api-sports.io): https://v3.football.api-sports.io  |  Via RapidAPI: https://api-football-v1.p.rapidapi.com/v3",
-  "authHeaderName": "Direct api-sports.io: x-apisports-key: <YOUR_KEY>. Via RapidAPI: two headers instead — x-rapidapi-key: <YOUR_KEY> and x-rapidapi-host: api-football-v1.p.rapidapi.com",
-  "leagueId": "1",
+  "provider": "Highlightly (soccer.highlightly.net)",
+  "baseUrl": "https://soccer.highlightly.net",
+  "authHeaderName": "x-rapidapi-key: <YOUR_KEY>  (direct platform — do NOT send x-rapidapi-host)",
+  "leagueId": "1635",
   "season": "2026",
-  "rateLimitNotes": "Free tier: 100 requests per day and 10 requests per minute (per API-Football's rate-limit docs and FreeAPIHub summary). All endpoints are accessible on the free plan. Each response includes rate-limit headers: x-ratelimit-requests-limit (daily allocation), x-ratelimit-requests-remaining (remaining for the day), X-RateLimit-Limit (per-minute max), X-RateLimit-Remaining (per-minute remaining). Note: live/in-play data updates every ~15s, but at 100 req/day the free tier cannot poll live matches frequently — API-Football recommends ~1 call/min only while a fixture is in progress (which alone would exhaust the free daily quota in ~1.7 hours), otherwise 1 call/day. Exceeding the per-minute cap or generating abnormal traffic can get access throttled or blocked by their firewall without notice. For a real live companion app, a paid plan is effectively required; the free tier is suited to development/testing only. The exact free per-minute figure (10/min) is reported by secondary sources; confirm against your dashboard since plan terms can change.",
+  "rateLimitNotes": "Free tier: 100 requests/day. Response header x-ratelimit-requests-remaining reports the remaining daily quota; a 429 body reads 'You have breached your daily request limits.' (resets daily). The key is server-side only (env HIGHLIGHTLY_KEY), proxied via /api — never sent to the browser, logs, or disk. Production caches via Vercel's CDN (s-maxage); local dev has no CDN, so vite.config.ts disk-caches /api responses to node_modules/.cache honouring the same s-maxage. Live in-play polling is window-gated to the knockout stage only.",
   "endpoints": [
     {
-      "purpose": "(a) Fixtures by league + season — full World Cup schedule (all 104 matches: date, kickoff time in UTC, venue, status, fixture_id, teams, score)",
-      "path": "/fixtures",
-      "exampleQuery": "/fixtures?league=1&season=2026  (optionally add &round=Group%20A or &team={teamId} or &date=2026-06-25). Round names come from /fixtures/rounds?league=1&season=2026",
-      "responseNotes": "response[] array; each item has fixture{id,date,timestamp,venue{id,name,city},status{long,short,elapsed}}, league{id,season,round}, teams{home,away}, goals{home,away}, score{halftime,fulltime,extratime,penalty}. fixture.id is the master key used by all sub-endpoints below. response[].fixture.status.short = NS/1H/HT/2H/FT etc."
+      "purpose": "World Cup matches — schedule + results (the low-frequency results feed)",
+      "path": "/matches",
+      "exampleQuery": "/matches?leagueId=1635&season=2026&limit=100&offset=0  (optionally &date=YYYY-MM-DD for a single match day's short-cached live poll)",
+      "responseNotes": "data[] of matches + pagination.totalCount. Each match: id, round (e.g. 'Round of 16'), date (ISO), state{description (FT/AET/Penalties/…), clock, score{current '1 - 0', penalties}}, homeTeam{name}, awayTeam{name}. Only FINISHED matches are surfaced to the app; in-play scores are never shown."
     },
     {
-      "purpose": "(b) Live (in-play) fixtures across the tournament",
-      "path": "/fixtures",
-      "exampleQuery": "/fixtures?live=all  (all in-play matches) OR /fixtures?live=1 (in-play matches filtered to World Cup league id 1; multiple leagues dash-separated, e.g. live=1-2-3)",
-      "responseNotes": "Same fixture object shape as (a) but only currently in-play matches; status.elapsed gives current minute. Data refreshed roughly every 15 seconds upstream. Mind the free-tier quota when polling."
+      "purpose": "Single match detail — event timeline (fantasy scoring + goal timeline)",
+      "path": "/matches/{id}",
+      "responseNotes": "events[] each: time (e.g. '45+1'; a shootout kick is timed '120+N'), team{name}, type (Goal / Own Goal / Penalty / Missed Penalty / Yellow Card / Red Card / Substitution / …), player, playerNumber, assist."
     },
     {
-      "purpose": "(c) Fixture events — goals, cards, substitutions with the minute",
-      "path": "/fixtures/events",
-      "exampleQuery": "/fixtures/events?fixture={fixtureId}  (optionally &team={teamId}, &player={playerId}, &type=Goal|Card|subst)",
-      "responseNotes": "response[] array of events; each has time{elapsed,extra}, team{id,name}, player{id,name}, assist{id,name}, type (Goal/Card/subst/Var), detail (e.g. 'Normal Goal','Yellow Card','Red Card','Penalty'), comments. Use time.elapsed (+ time.extra for stoppage) for the minute."
-    },
-    {
-      "purpose": "(d) Fixture statistics — possession, shots, etc. (per team)",
-      "path": "/fixtures/statistics",
-      "exampleQuery": "/fixtures/statistics?fixture={fixtureId}  (optionally &team={teamId} for one side, &type=Ball%20Possession for a single stat)",
-      "responseNotes": "response[] is one entry per team; each has team{id,name} and statistics[] = array of {type,value} pairs. Types include 'Ball Possession' (e.g. '55%'), 'Shots on Goal','Total Shots','Shots off Goal','Blocked Shots','Fouls','Corner Kicks','Offsides','Yellow Cards','Red Cards','Passes %','expected_goals'. value may be string/number/null."
-    },
-    {
-      "purpose": "(e) Standings — group tables (12 groups A–L for WC 2026 group stage)",
-      "path": "/standings",
-      "exampleQuery": "/standings?league=1&season=2026  (optionally &team={teamId})",
-      "responseNotes": "response[0].league.standings is an array of group tables (one inner array per group). Each row: rank, team{id,name,logo}, points, goalsDiff, group (e.g. 'Group A'), form, status, description (e.g. qualification note), all{played,win,draw,lose,goals{for,against}}, home{...}, away{...}, update timestamp."
-    },
-    {
-      "purpose": "(f) Squads / players by team",
-      "path": "/players/squads  (quick full roster) — alternatively /players for paginated profiles+stats",
-      "exampleQuery": "/players/squads?team={teamId}  (current registered roster, names + player IDs; NO season param on this endpoint). For full profiles/stats with pagination: /players?team={teamId}&season=2026&page=1, or by competition /players?league=1&season=2026&page=1",
-      "responseNotes": "/players/squads: response[0].team{id,name} + players[] each {id,name,age,number,position,photo}. /players: paginated (response[].player{...bio...} + statistics[]); check the paging{current,total} object and loop pages — costs one request per page (watch the free quota)."
-    },
-    {
-      "purpose": "(g) Lineups by fixture — starting XI, formation, substitutes, coach",
-      "path": "/fixtures/lineups",
-      "exampleQuery": "/fixtures/lineups?fixture={fixtureId}  (optionally &team={teamId})",
-      "responseNotes": "response[] one entry per team; each has team{id,name,colors}, coach{id,name}, formation (e.g. '4-3-3'), startXI[] and substitutes[] where each is {player{id,name,number,pos,grid}}. grid gives pitch position (row:col). Available shortly before kickoff once lineups are published."
+      "purpose": "Single match statistics — per-team box score (ability-card radar + match report)",
+      "path": "/statistics/{id}",
+      "responseNotes": "per-team blocks; statistics[] of {displayName,value}: Possession (a fraction, ×100 for %), 'Shots within penalty area' + 'Shots outside penalty area' (sum = total shots), 'Shots on target', 'Expected Goals', 'Expected Assists', 'Key Passes', 'Fouls', 'Yellow cards', 'Red cards', 'Goalkeeper saves'."
     }
   ],
+  "notes": "Supersedes the earlier API-Football research — the app switched to Highlightly. This API is used at RUNTIME only, for the dynamic knockout stage. The SEED (group-stage results, standings, schedule) is NOT from this API: it is compiled from public web sources (see fixtures.json / groups.json `sources`). The ability card's Attack/Defense come from those static seed scores with zero API; the richer axes fill in from knockout box scores.",
   "sources": [
-    "https://www.api-football.com/news/post/fifa-world-cup-2026-guide-to-using-data-with-api-sports",
-    "https://www.api-football.com/documentation-v3",
-    "https://api-sports.io/documentation/football/v3",
-    "https://www.api-football.com/news/post/how-ratelimit-works",
-    "https://www.api-football.com/news/post/football-players-squads",
-    "https://www.api-football.com/news/post/how-to-get-all-fixtures-data-from-one-league",
-    "https://www.api-football.com/news/post/how-to-get-started-with-api-football-the-complete-beginners-guide",
-    "https://www.api-football.com/news/post/fifa-world-cup-2026-using-api-sports-widgets",
-    "https://freeapihub.com/apis/api-football",
-    "https://dlthub.com/context/source/api-football",
-    "https://rapidapi.com/api-sports/api/api-football"
+    "https://soccer.highlightly.net",
+    "https://highlightly.net"
   ]
 }
