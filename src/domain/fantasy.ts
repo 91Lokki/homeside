@@ -13,7 +13,9 @@ import type { Stage, TeamCode } from './types'
 export type PosCat = 'GK' | 'DEF' | 'MID' | 'ATT'
 export type Slot = 'GK' | 'DEF' | 'MID' | 'ATT' | 'FLEX'
 export const SLOTS: Slot[] = ['GK', 'DEF', 'MID', 'ATT', 'FLEX']
-export const SLOT_LABEL: Record<Slot, string> = { GK: 'Goalkeeper', DEF: 'Defender', MID: 'Midfielder', ATT: 'Attacker', FLEX: 'Flex' }
+export const SLOT_LABEL: Record<Slot, string> = { GK: 'Goalkeeper', DEF: 'Defender', MID: 'Midfielder', ATT: 'Forward', FLEX: 'Flex' }
+/** Short position label shown on chips/rows (forwards read as FWD, not ATT). */
+export const POS_ABBR: Record<PosCat, string> = { GK: 'GK', DEF: 'DEF', MID: 'MID', ATT: 'FWD' }
 /** Position categories each slot accepts (Flex = any outfielder). */
 export const SLOT_ALLOWS: Record<Slot, PosCat[]> = { GK: ['GK'], DEF: ['DEF'], MID: ['MID'], ATT: ['ATT'], FLEX: ['DEF', 'MID', 'ATT'] }
 

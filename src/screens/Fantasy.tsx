@@ -7,6 +7,7 @@ import {
   FREE_TRANSFERS,
   ROUND_LABEL,
   ROUNDS,
+  POS_ABBR,
   SCORING_RULES,
   SLOTS,
   SLOT_LABEL,
@@ -191,7 +192,7 @@ export function Fantasy() {
                   </div>
                   <p className="mt-1 flex items-center gap-1.5 text-2xs text-faint">
                     <Flag code={pick.teamCode} size={15} />
-                    {pick.position} · {team?.name ?? pick.teamCode}
+                    {POS_ABBR[pick.position] ?? pick.position} · {team?.name ?? pick.teamCode}
                   </p>
                   {out && (
                     <span className="mt-2 inline-block rounded-[5px] bg-sunken px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-label text-faint">

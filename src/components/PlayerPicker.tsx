@@ -3,9 +3,8 @@ import { Search, X } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
 import { Flag } from './Flag'
-import { posCat, SLOT_ALLOWS, SLOT_LABEL, playerKey, type FantasyPick, type PosCat, type Slot } from '@/domain/fantasy'
+import { posCat, POS_ABBR, SLOT_ALLOWS, SLOT_LABEL, playerKey, type FantasyPick, type PosCat, type Slot } from '@/domain/fantasy'
 import type { TeamCode } from '@/domain/types'
-import { Label } from './ui/atoms'
 import { cn } from '@/lib/utils'
 
 interface PoolPlayer {
@@ -65,36 +64,47 @@ export function PlayerPicker({
   }, [query, allowed, taken])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-canvas/97 backdrop-blur-sm">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-6 sm:px-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label>Pick your {SLOT_LABEL[slot].toLowerCase()}</Label>
-            <p className="mt-1 text-sm text-muted">
-              {slot === 'FLEX' ? 'Any outfielder (defender, midfielder or attacker).' : 'Search any player — no suggestions, your call.'}
-            </p>
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
+      {/* dimmed, blurred backdrop — tap to dismiss */}
+      <button aria-label="Close" onClick={onClose} className="absolute inset-0 cursor-default bg-black/45 backdrop-blur-md" />
+
+      {/* the sheet: an opaque, rim-lit glass card (no drop shadow per the system) */}
+      <div className="relative z-10 flex max-h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[28px] bg-canvas ring-1 ring-inset ring-black/[0.08] dark:ring-white/12 sm:max-h-[82vh] sm:rounded-[28px]">
+        <div className="shrink-0 px-5 pt-5 sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-grotesk text-xl font-bold tracking-tight text-ink">Pick your {SLOT_LABEL[slot].toLowerCase()}</h2>
+              <p className="mt-1 text-2xs text-muted">
+                {slot === 'FLEX' ? 'Any outfielder — defender, midfielder or forward.' : 'Search any player — no suggestions, your call.'}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/[0.04] text-muted ring-1 ring-inset ring-black/[0.06] hover:text-ink dark:bg-white/[0.06] dark:ring-white/10"
+            >
+              <X size={16} />
+            </button>
           </div>
-          <button onClick={onClose} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full border text-muted hover:text-ink">
-            <X size={16} />
-          </button>
+
+          <div className="mt-4 flex items-center gap-2.5 rounded-pill bg-black/[0.04] px-4 py-3 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
+            <Search size={16} className="shrink-0 text-faint" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, club or country…"
+              className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-faint"
+            />
+          </div>
+          <p className="mt-2.5 px-1 text-2xs text-faint">{results.length} available</p>
         </div>
 
-        <div className="mt-5 flex items-center gap-2 rounded-pill border bg-surface px-4 py-2.5">
-          <Search size={16} className="text-faint" />
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, club or country…"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-faint"
-          />
-        </div>
-
-        <div className="mt-4 flex-1 overflow-y-auto">
+        <div className="mt-1 flex-1 overflow-y-auto px-2 pb-3 sm:px-3">
           {results.length === 0 ? (
-            <p className="px-2 py-6 text-sm text-faint">No players match.</p>
+            <p className="px-3 py-8 text-center text-sm text-faint">No players match.</p>
           ) : (
-            <ul className="divide-y">
+            <ul>
               {results.map((p) => {
                 const full = isCountryFull?.(p.teamCode) ?? false
                 return (
@@ -102,18 +112,25 @@ export function PlayerPicker({
                     <button
                       disabled={full}
                       onClick={() => onPick({ slot, name: p.name, teamCode: p.teamCode, position: p.pos, number: p.number })}
-                      className={cn('flex w-full items-center gap-3 px-2 py-2.5 text-left', full ? 'cursor-not-allowed opacity-40' : 'hover:bg-sunken/50')}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors',
+                        full ? 'cursor-not-allowed opacity-40' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
+                      )}
                     >
-                      <Flag code={p.teamCode} size={28} className="shrink-0" />
+                      <Flag code={p.teamCode} size={32} className="shrink-0" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium">{p.name}</span>
+                        <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
                         <span className="block truncate text-2xs text-faint">
-                          {p.pos} · {p.teamName}
+                          <span className="font-semibold tracking-label text-muted">{POS_ABBR[p.pos] ?? p.pos}</span> · {p.teamName}
                           {p.club ? ` · ${p.club}` : ''}
                           {full && <span className="text-amber-600 dark:text-amber-500"> · country quota full</span>}
                         </span>
                       </span>
-                      {p.number != null && <span className="font-grotesk text-xs text-faint tnum">{p.number}</span>}
+                      {p.number != null && (
+                        <span className="grid h-6 min-w-[1.5rem] shrink-0 place-items-center rounded-full bg-black/[0.05] px-1.5 font-grotesk text-xs tnum text-faint dark:bg-white/[0.08]">
+                          {p.number}
+                        </span>
+                      )}
                     </button>
                   </li>
                 )
