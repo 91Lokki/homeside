@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TEAMS } from '@/data/teams'
-import type { Mood } from '@/domain/bond'
+import type { Mood } from '@/domain/mood'
 import { Mascot } from '@/components/mascot/Mascot'
 import { MASCOT_ART } from '@/components/mascot/art'
 import { Segmented } from '@/components/ui/Segmented'
@@ -35,7 +35,7 @@ export function Gallery() {
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
         {TEAMS.map((t) => (
           <div key={t.code} className="flex flex-col items-center rounded-card border bg-surface p-2">
-            <Mascot code={t.code} color={t.color} color2={t.color2} symbol={t.symbol} mood={mood} level={4} size={120} animate={false} />
+            <Mascot code={t.code} color={t.color} color2={t.color2} symbol={t.symbol} mood={mood} size={120} animate={false} />
             <p className="mt-1 truncate text-xs font-medium">{t.name}</p>
             <p className="text-2xs text-faint">
               {t.code}

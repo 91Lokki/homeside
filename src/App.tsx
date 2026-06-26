@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { CalendarDays, Home, Trophy } from 'lucide-react'
+import { CalendarDays, GitFork, Hexagon, Home as HomeIcon, Users } from 'lucide-react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { DATA_META } from '@/data/meta'
 import { AppProvider, useApp } from '@/state/store'
+import { GamesProvider } from '@/state/games'
 import { ThemeProvider } from '@/state/theme'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
-import { HomeBase } from '@/screens/HomeBase'
+import { Home } from '@/screens/Home'
+import { Predict } from '@/screens/Predict'
+import { Fantasy } from '@/screens/Fantasy'
+import { Team } from '@/screens/Team'
 import { Schedule } from '@/screens/Schedule'
-import { Bracket } from '@/screens/Bracket'
 import { Gallery } from '@/screens/Gallery'
 
 export function App() {
@@ -18,9 +21,11 @@ export function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <AppProvider>
-          <BrowserRouter>
-            <Shell />
-          </BrowserRouter>
+          <GamesProvider>
+            <BrowserRouter>
+              <Shell />
+            </BrowserRouter>
+          </GamesProvider>
         </AppProvider>
       </ThemeProvider>
     </ErrorBoundary>
@@ -60,7 +65,7 @@ function Shell() {
             <button
               onClick={() => setPickerOpen(true)}
               className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-3 transition-colors hover:border-ink/30"
-              title="Change home team"
+              title="Change team"
             >
               <span
                 className="grid h-7 w-7 place-items-center rounded-full font-grotesk text-[10px] font-bold"
@@ -77,23 +82,23 @@ function Shell() {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-24 pt-6 sm:px-8">
         <Routes>
-          <Route path="/" element={<HomeBase />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/predict" element={<Predict />} />
+          <Route path="/fantasy" element={<Fantasy />} />
+          <Route path="/team" element={<Team />} />
           <Route path="/schedule" element={<Schedule />} />
-          <Route path="/bracket" element={<Bracket />} />
           <Route path="/gallery" element={<Gallery />} />
-          <Route path="*" element={<HomeBase />} />
+          <Route path="*" element={<Home />} />
         </Routes>
       </main>
 
       <footer className="border-t pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-4 text-2xs text-faint sm:px-8">
           <span>
-            {connected
-              ? 'Real results via Highlightly, refreshed periodically.'
-              : `Snapshot as of ${DATA_META.asOf}.`}{' '}
-            Growth reflects real finished matches only.
+            {connected ? 'Real results & stats via Highlightly.' : `Snapshot as of ${DATA_META.asOf}.`} Scored from real
+            finished matches only — no simulation.
           </span>
-          <span>Homeside · an unofficial companion · original mascots</span>
+          <span>Homeside · an unofficial 2026 companion</span>
         </div>
       </footer>
 
@@ -101,6 +106,14 @@ function Shell() {
     </div>
   )
 }
+
+const TABS = [
+  { to: '/', label: 'Home', short: 'Home', end: true, icon: HomeIcon },
+  { to: '/predict', label: 'Predict', short: 'Predict', end: false, icon: GitFork },
+  { to: '/fantasy', label: 'Fantasy', short: 'Fantasy', end: false, icon: Users },
+  { to: '/team', label: 'Team', short: 'Team', end: false, icon: Hexagon },
+  { to: '/schedule', label: 'Schedule', short: 'Sched', end: false, icon: CalendarDays },
+]
 
 function BottomNav() {
   return (
@@ -117,7 +130,7 @@ function BottomNav() {
                 cn('flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors', isActive ? 'text-team' : 'text-faint')
               }
             >
-              <Icon size={19} strokeWidth={2} />
+              <Icon size={18} strokeWidth={2} />
               {t.short}
             </NavLink>
           )
@@ -126,12 +139,6 @@ function BottomNav() {
     </nav>
   )
 }
-
-const TABS = [
-  { to: '/', label: 'Home base', short: 'Home', end: true, icon: Home },
-  { to: '/schedule', label: 'Schedule', short: 'Schedule', end: false, icon: CalendarDays },
-  { to: '/bracket', label: 'Bracket', short: 'Bracket', end: false, icon: Trophy },
-]
 
 function Nav({ className }: { className?: string }) {
   return (
@@ -142,10 +149,7 @@ function Nav({ className }: { className?: string }) {
           to={t.to}
           end={t.end}
           className={({ isActive }) =>
-            cn(
-              'relative rounded-pill px-3 py-1.5 text-sm font-medium transition-colors sm:px-4',
-              isActive ? 'text-ink' : 'text-faint hover:text-muted',
-            )
+            cn('relative rounded-pill px-3 py-1.5 text-sm font-medium transition-colors', isActive ? 'text-ink' : 'text-faint hover:text-muted')
           }
         >
           {({ isActive }) => (

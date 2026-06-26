@@ -1,4 +1,4 @@
-import type { Mood } from '@/domain/bond'
+import type { Mood } from '@/domain/mood'
 import { rgba } from '@/lib/prng'
 
 /**

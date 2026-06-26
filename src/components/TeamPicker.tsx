@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ArrowLeft, Search, X } from 'lucide-react'
 import { GROUP_IDS, TEAMS } from '@/data/teams'
-import { SQUADS } from '@/data/squads'
 import type { Team } from '@/domain/types'
 import { readableInkOn } from '@/lib/prng'
 import { cn } from '@/lib/utils'
@@ -95,7 +94,6 @@ export function TeamPicker({
 }
 
 function MeetView({ team, onBack, onConfirm, isCurrent }: { team: Team; onBack: () => void; onConfirm: () => void; isCurrent: boolean }) {
-  const squad = SQUADS[team.code]
   const ink = readableInkOn(team.color)
 
   return (
@@ -106,27 +104,19 @@ function MeetView({ team, onBack, onConfirm, isCurrent }: { team: Team; onBack: 
 
       <div className="grid items-center gap-10 sm:grid-cols-2">
         <div className="order-2 flex justify-center sm:order-1">
-          <Mascot code={team.code} color={team.color} color2={team.color2} symbol={team.symbol} level={2} mood="new" size={300} />
+          <Mascot code={team.code} color={team.color} color2={team.color2} symbol={team.symbol} mood="new" size={260} />
         </div>
 
         <div className="order-1 sm:order-2">
-          <Label>Group {team.group} · meet your mascot</Label>
+          <Label>Group {team.group} · your home team</Label>
           <h1 className="mt-3 font-grotesk text-4xl font-medium tracking-tight">{team.name}</h1>
           {team.nameTC && <p className="mt-1 font-tc text-lg text-muted">{team.nameTC}</p>}
 
           <p className="mt-5 max-w-sm text-muted">
-            A calm companion, tinted in {team.name}&rsquo;s colors and shaped by its{' '}
-            <span className="text-ink">{team.symbol.toLowerCase()}</span>. It grows only as the team plays — win, draw, or
-            lose, you&rsquo;ll keep it company.
+            This is your home base — its little mascot, tinted in {team.name}&rsquo;s colors and shaped by its{' '}
+            <span className="text-ink">{team.symbol.toLowerCase()}</span>, plus an ability card built from real stats. Then
+            play the bracket prediction and fantasy games.
           </p>
-
-          {squad && (
-            <p className="mt-5 text-sm">
-              <span className="text-faint">Star to follow · </span>
-              <span className="font-medium">{squad.star.name}</span>
-              <span className="text-faint"> · {squad.star.position}</span>
-            </p>
-          )}
 
           <button
             onClick={onConfirm}

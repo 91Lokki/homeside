@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { Mood } from '@/domain/bond'
+import type { Mood } from '@/domain/mood'
 import { darken, lighten, luminance, mixHex } from '@/lib/prng'
 import { clamp } from '@/lib/utils'
 

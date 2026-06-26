@@ -65,10 +65,11 @@ export interface Player {
   club?: string
 }
 
-export interface Squad {
-  star: Player
-  /** Curated notable members that unlock as the bond grows. */
-  notable: Player[]
+/** A team's full tournament roster (researched from public sources, not the API). */
+export interface TeamSquad {
+  players: Player[]
+  /** false when the roster couldn't be fully confirmed from a reliable source. */
+  verified: boolean
 }
 
 /** A single row in a group table (computed from finished matches, or from API). */

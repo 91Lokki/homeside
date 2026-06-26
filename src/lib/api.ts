@@ -285,3 +285,100 @@ export async function fetchMatchReport(
     return null
   }
 }
+
+/* --------------------- rich match detail (radar + fantasy) ---------------- */
+
+export interface MatchEvent {
+  minute: number | null
+  teamCode: TeamCode | null
+  type: string // "Goal" | "Own Goal" | "Penalty" | "Yellow Card" | "Red Card" | "Substitution" | ...
+  player: string
+  playerNumber: number | null
+  assist: string | null
+}
+
+export interface TeamMatchStats {
+  code: TeamCode
+  goalsFor: number
+  goalsAgainst: number
+  cleanSheet: boolean
+  possession: number | null // %
+  shots: number | null
+  shotsOnTarget: number | null
+  xg: number | null
+  xa: number | null
+  keyPasses: number | null
+  fouls: number | null
+  yellow: number | null
+  red: number | null
+}
+
+export interface MatchDetail {
+  fixtureId: number
+  home: TeamCode | null
+  away: TeamCode | null
+  events: MatchEvent[]
+  teamStats: Partial<Record<TeamCode, TeamMatchStats>>
+}
+
+/**
+ * The full box score for one finished match — raw events (for fantasy scoring)
+ * plus per-team stats + goals (for the radar). Reads the hard-cached /api/match
+ * once; both games share this. Returns null when unavailable (no key / not played).
+ */
+export async function fetchMatchDetail(fixtureId: number): Promise<MatchDetail | null> {
+  try {
+    const res = await fetch(`/api/match?fixture=${fixtureId}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    if (data.source !== 'highlightly') return null
+
+    const detail = Array.isArray(data.match) ? data.match[0] : data.match
+    if (!detail) return null
+    const blocks: HlStatBlock[] = Array.isArray(data.statistics) ? data.statistics : (data.statistics?.data ?? [])
+
+    const home = codeFromName(detail.homeTeam?.name)
+    const away = codeFromName(detail.awayTeam?.name)
+    const score = parseScore(detail.state?.score?.current)
+    const homeGoals = score ? score.home : null
+    const awayGoals = score ? score.away : null
+
+    const events: MatchEvent[] = (detail.events ?? []).map((e: any) => ({
+      minute: parseMinute(e?.time),
+      teamCode: codeFromName(e?.team?.name),
+      type: e?.type ?? '',
+      player: e?.player ?? '',
+      playerNumber: typeof e?.playerNumber === 'number' ? e.playerNumber : null,
+      assist: e?.assist ?? null,
+    }))
+
+    const teamStats: Partial<Record<TeamCode, TeamMatchStats>> = {}
+    const build = (code: TeamCode | null, gf: number | null, ga: number | null) => {
+      if (!code) return
+      const possRaw = statVal(blocks, code, 'Possession')
+      const inside = statVal(blocks, code, 'Shots within penalty area')
+      const outside = statVal(blocks, code, 'Shots outside penalty area')
+      teamStats[code] = {
+        code,
+        goalsFor: gf ?? 0,
+        goalsAgainst: ga ?? 0,
+        cleanSheet: ga === 0,
+        possession: possRaw == null ? null : Math.round(possRaw * 100),
+        shots: inside == null && outside == null ? null : (inside ?? 0) + (outside ?? 0),
+        shotsOnTarget: statVal(blocks, code, 'Shots on target'),
+        xg: statVal(blocks, code, 'Expected Goals'),
+        xa: statVal(blocks, code, 'Expected Assists'),
+        keyPasses: statVal(blocks, code, 'Key Passes'),
+        fouls: statVal(blocks, code, 'Fouls'),
+        yellow: statVal(blocks, code, 'Yellow cards'),
+        red: statVal(blocks, code, 'Red cards'),
+      }
+    }
+    build(home, homeGoals, awayGoals)
+    build(away, awayGoals, homeGoals)
+
+    return { fixtureId, home, away, events, teamStats }
+  } catch {
+    return null
+  }
+}
