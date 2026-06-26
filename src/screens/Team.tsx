@@ -17,26 +17,59 @@ export function Team() {
   const { homeTeam, matches, apiStatus, healthKnown } = useApp()
   const code = homeTeam?.code ?? ''
 
+  const finished = useMemo(() => (code ? finishedFor(matches, code) : []), [matches, code])
+
+  // Results-based stats from the real final scores — ZERO API. The group stage is
+  // static (seed-sourced), so this powers Attack & Defense for every finished
+  // match without a single request; the live box score (knockouts) enriches the
+  // remaining axes when it's available. Other axes stay null — never fabricated.
+  const resultStats = useMemo<Record<string, TeamMatchStats>>(() => {
+    const out: Record<string, TeamMatchStats> = {}
+    for (const m of finished) {
+      const gf = m.homeCode === code ? m.homeScore : m.awayScore
+      const ga = m.homeCode === code ? m.awayScore : m.homeScore
+      if (gf == null || ga == null) continue
+      out[m.id] = {
+        code,
+        goalsFor: gf,
+        goalsAgainst: ga,
+        cleanSheet: ga === 0,
+        possession: null,
+        shots: null,
+        shotsOnTarget: null,
+        xg: null,
+        xa: null,
+        keyPasses: null,
+        fouls: null,
+        yellow: null,
+        red: null,
+        gkSaves: null,
+      }
+    }
+    return out
+  }, [finished, code])
+
+  // Only finished matches that carry a real API id (knockouts / API-merged) cost
+  // a box-score fetch — group matches are served entirely from the static seed.
   const fixtureIds = useMemo(
-    () =>
-      code
-        ? finishedFor(matches, code)
-            .map((m) => m.apiFixtureId)
-            .filter((x): x is number => typeof x === 'number')
-        : [],
-    [matches, code],
+    () => finished.map((m) => m.apiFixtureId).filter((x): x is number => typeof x === 'number'),
+    [finished],
   )
   const { details, loading } = useMatchDetails(fixtureIds)
 
+  // Per match, prefer the richer live box score; otherwise the results-based stats.
   const stats = useMemo<TeamMatchStats[]>(
-    () => fixtureIds.map((id) => details[id]?.teamStats[code]).filter((s): s is TeamMatchStats => !!s),
-    [fixtureIds, details, code],
+    () =>
+      finished
+        .map((m) => (m.apiFixtureId ? details[m.apiFixtureId]?.teamStats[code] : undefined) ?? resultStats[m.id])
+        .filter((s): s is TeamMatchStats => !!s),
+    [finished, details, resultStats, code],
   )
   const ratings = useMemo(() => computeRatings(stats), [stats])
 
   if (!homeTeam) return null
   const mood = moodFor(matches, code).mood
-  const noData = fixtureIds.length === 0 || (!loading && stats.length === 0)
+  const noData = stats.length === 0
 
   return (
     <div className="animate-fade-in">
