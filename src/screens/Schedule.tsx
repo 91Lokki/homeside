@@ -84,7 +84,7 @@ export function Schedule() {
 
   return (
     <div className="animate-fade-in text-white">
-      <div className="relative z-10 mx-auto max-w-md">
+      <div className="relative z-10 mx-auto max-w-2xl">
         <h1 className="font-grotesk text-3xl font-bold tracking-tight">World Cup</h1>
         <p className="mt-1 text-sm text-white/60">{group ? `Following ${homeTeam?.name} · Group ${group}` : '2026'}</p>
 

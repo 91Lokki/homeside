@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { teamByCode } from '@/data/teams'
 import type { Match } from '@/domain/types'
 import { fetchMatchReport, type ApiStatus, type MatchReport as Report } from '@/lib/api'
 import { liveDataNote } from '@/lib/apiCopy'
@@ -65,6 +66,8 @@ export function MatchReport({
   const goals = report.events.filter((e) => e.type === 'Goal' || e.type === 'Own Goal')
   const accent: 'home' | 'away' | null =
     accentCode && match.homeCode === accentCode ? 'home' : accentCode && match.awayCode === accentCode ? 'away' : null
+  const homeColor = (match.homeCode && teamByCode[match.homeCode]?.color) || '#9aa0aa'
+  const awayColor = (match.awayCode && teamByCode[match.awayCode]?.color) || '#5b606b'
 
   return (
     <div className="space-y-5 px-5 py-5">
@@ -100,13 +103,13 @@ export function MatchReport({
         )}
       </div>
 
-      {/* stat comparison */}
-      <div className="space-y-3 border-t pt-4">
-        <CompareBar label="Possession" home={report.possession.home} away={report.possession.away} accent={accent} unit="%" />
-        <CompareBar label="Shots" home={report.shots.home} away={report.shots.away} accent={accent} />
-        <CompareBar label="On target" home={report.shotsOnTarget.home} away={report.shotsOnTarget.away} accent={accent} />
-        <CompareBar label="Corners" home={report.corners.home} away={report.corners.away} accent={accent} />
-        <CompareBar label="Fouls" home={report.fouls.home} away={report.fouls.away} accent={accent} />
+      {/* stat comparison — each team in its own colour */}
+      <div className="space-y-3.5 border-t border-white/10 pt-4">
+        <CompareBar label="Possession" home={report.possession.home} away={report.possession.away} homeColor={homeColor} awayColor={awayColor} unit="%" />
+        <CompareBar label="Shots" home={report.shots.home} away={report.shots.away} homeColor={homeColor} awayColor={awayColor} />
+        <CompareBar label="On target" home={report.shotsOnTarget.home} away={report.shotsOnTarget.away} homeColor={homeColor} awayColor={awayColor} />
+        <CompareBar label="Corners" home={report.corners.home} away={report.corners.away} homeColor={homeColor} awayColor={awayColor} />
+        <CompareBar label="Fouls" home={report.fouls.home} away={report.fouls.away} homeColor={homeColor} awayColor={awayColor} />
       </div>
     </div>
   )
@@ -116,34 +119,35 @@ function CompareBar({
   label,
   home,
   away,
-  accent,
+  homeColor,
+  awayColor,
   unit = '',
 }: {
   label: string
   home: number | null
   away: number | null
-  accent: 'home' | 'away' | null
+  homeColor: string
+  awayColor: string
   unit?: string
 }) {
   if (home == null && away == null) return null
   const h = home ?? 0
   const a = away ?? 0
   const total = h + a || 1
-  const fill = (side: 'home' | 'away') => (accent === side ? 'bg-team' : 'bg-muted/60')
 
   return (
     <div>
-      <div className="flex items-center justify-between text-sm tnum">
-        <span className={cn('font-grotesk font-semibold', accent === 'home' ? 'text-team' : 'text-ink')}>{h}{unit}</span>
-        <span className="text-2xs uppercase tracking-label text-faint">{label}</span>
-        <span className={cn('font-grotesk font-semibold', accent === 'away' ? 'text-team' : 'text-ink')}>{a}{unit}</span>
+      <div className="flex items-center justify-between text-[15px] tnum">
+        <span className="font-grotesk font-bold text-white">{h}{unit}</span>
+        <span className="text-2xs uppercase tracking-label text-white/40">{label}</span>
+        <span className="font-grotesk font-bold text-white">{a}{unit}</span>
       </div>
-      <div className="mt-1.5 flex h-1.5 items-center gap-1">
+      <div className="mt-1.5 flex h-[5px] items-center gap-1">
         <div className="flex h-full justify-end" style={{ flexBasis: `${(h / total) * 100}%` }}>
-          <div className={cn('h-full w-full rounded-l-full', fill('home'))} />
+          <div className="h-full w-full rounded-l-full" style={{ background: homeColor }} />
         </div>
         <div className="flex h-full flex-1 justify-start">
-          <div className={cn('h-full w-full rounded-r-full', fill('away'))} />
+          <div className="h-full w-full rounded-r-full" style={{ background: awayColor }} />
         </div>
       </div>
     </div>
