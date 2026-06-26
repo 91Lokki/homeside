@@ -3,8 +3,13 @@ import { teamByCode } from '@/data/teams'
 import type { Match } from '@/domain/types'
 import { fetchMatchReport, type ApiStatus, type MatchReport as Report } from '@/lib/api'
 import { liveDataNote } from '@/lib/apiCopy'
+import { cn } from '@/lib/utils'
 
-/** The match report — goal timeline + Apple-Sports-style stat comparison. ESPN data. */
+/**
+ * The match report — a center-rail goal timeline + Apple-Sports-style split stat
+ * tracks. Renders inline beneath a finished fixture, inside its glass day-panel,
+ * so it never repeats the score line and never wraps itself in another box.
+ */
 export function MatchReport({
   match,
   apiStatus,
@@ -63,12 +68,16 @@ export function MatchReport({
   const homeColor = (match.homeCode && teamByCode[match.homeCode]?.color) || '#9aa0aa'
   const awayColor = (match.awayCode && teamByCode[match.awayCode]?.color) || '#5b606b'
   // An own goal is shown on the side that benefited (the scoreline), not the scorer's team.
-  const sideOf = (g: (typeof goals)[number]) => {
+  const sideOf = (g: (typeof goals)[number]): 'home' | 'away' => {
     const home = g.team === match.homeCode
     return g.type === 'Own Goal' ? (home ? 'away' : 'home') : home ? 'home' : 'away'
   }
-  const homeGoals = goals.filter((g) => sideOf(g) === 'home')
-  const awayGoals = goals.filter((g) => sideOf(g) === 'away')
+  // Every goal hangs off one shared center rail in time order, on the side it counted
+  // for. A 3-vs-1 reads as a single chronological story — never two lopsided columns.
+  const timeline = goals
+    .map((g) => ({ ...g, side: sideOf(g) }))
+    .sort((x, y) => (x.minute ?? 999) - (y.minute ?? 999))
+
   const bars: [string, typeof report.possession, string][] = [
     ['Possession %', report.possession, '%'],
     ['Shots', report.shots, ''],
@@ -80,49 +89,117 @@ export function MatchReport({
     ['Fouls', report.fouls, ''],
     ['Yellow Cards', report.cards, ''],
   ]
+  const hasStats = bars.some(([, p]) => p.home != null || p.away != null)
 
   return (
-    <div className="px-5 pb-6 pt-1 text-ink">
-      {goals.length > 0 && (
-        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 pb-4">
-          <div className="space-y-1 text-right">{homeGoals.map((g, i) => <GoalLine key={i} g={g} />)}</div>
-          <div className="pt-1"><Ball /></div>
-          <div className="space-y-1 text-left">{awayGoals.map((g, i) => <GoalLine key={i} g={g} />)}</div>
-        </div>
+    <div className="px-5 pb-7 pt-3 text-ink">
+      {timeline.length > 0 && (
+        <section className="relative pb-1">
+          {/* The faint vertical rail the whole match hangs from. */}
+          <div className="pointer-events-none absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-black/[0.08] dark:bg-white/[0.12]" />
+          <ul className="flex flex-col gap-3.5">
+            {timeline.map((g, i) => (
+              <GoalRow
+                key={i}
+                player={g.player}
+                minute={g.minute}
+                detail={g.detail}
+                side={g.side}
+                color={g.side === 'home' ? homeColor : awayColor}
+              />
+            ))}
+          </ul>
+        </section>
       )}
 
-      <div className="rounded-[16px] bg-black/[0.04] p-4 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10">
-        <p className="mb-3.5 text-center text-sm font-bold">Team Stats</p>
-        <div className="space-y-3.5">
-          {bars.map(([label, p, unit]) => (
-            <CompareBar key={label} label={label} home={p.home} away={p.away} homeColor={homeColor} awayColor={awayColor} unit={unit} />
-          ))}
-        </div>
-      </div>
+      {hasStats && (
+        <section
+          className={cn(timeline.length > 0 && 'mt-7 border-t border-black/5 pt-7 dark:border-white/[0.07]')}
+        >
+          <p className="mb-6 text-center text-2xs uppercase tracking-label text-faint">Team Stats</p>
+          <div className="flex flex-col gap-5">
+            {bars.map(([label, p, unit]) => (
+              <CompareTrack
+                key={label}
+                label={label}
+                home={p.home}
+                away={p.away}
+                homeColor={homeColor}
+                awayColor={awayColor}
+                unit={unit}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }
 
-function GoalLine({ g }: { g: { player: string; minute: number | null; detail: string } }) {
+/** One goal pinned to the center rail on the side it counted for, in time order. */
+function GoalRow({
+  player,
+  minute,
+  detail,
+  side,
+  color,
+}: {
+  player: string
+  minute: number | null
+  detail: string
+  side: 'home' | 'away'
+  color: string
+}) {
+  const isHome = side === 'home'
+  const tag = detail.includes('own goal') ? '(OG)' : detail.includes('penalty') ? '(pen)' : ''
+
+  const name = (
+    <span className="truncate text-sm font-medium text-ink">
+      {player || 'Goal'}
+      {tag && <span className="ml-1 font-normal text-faint">{tag}</span>}
+    </span>
+  )
+  const min = minute != null && (
+    <span className="shrink-0 font-grotesk text-xs tnum text-muted">{minute}’</span>
+  )
+
+  // The marker sits on the rail, ringed in the page color so it reads as "on" the
+  // line. The scorer hugs the rail from the correct side; the far half stays empty.
+  const marker = (
+    <span
+      className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-canvas"
+      style={{ background: color }}
+      aria-hidden="true"
+    />
+  )
+
   return (
-    <p className="text-sm leading-snug">
-      <span className="font-medium text-ink">{g.player || 'Goal'}</span> <span className="tnum text-muted">{g.minute}&rsquo;</span>
-      {g.detail.includes('penalty') && <span className="text-faint"> (pen)</span>}
-      {g.detail.includes('own goal') && <span className="text-faint"> (OG)</span>}
-    </p>
+    <li className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      {isHome ? (
+        <div className="flex min-w-0 items-center justify-end gap-2">
+          {name}
+          {min}
+        </div>
+      ) : (
+        <span aria-hidden="true" />
+      )}
+
+      {marker}
+
+      {!isHome ? (
+        <div className="flex min-w-0 items-center gap-2">
+          {min}
+          {name}
+        </div>
+      ) : (
+        <span aria-hidden="true" />
+      )}
+    </li>
   )
 }
 
-function Ball() {
-  return (
-    <svg viewBox="0 0 24 24" width="15" height="15" className="text-ink" aria-hidden="true">
-      <circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M12 6.8l3.4 2.5-1.3 4h-4.2l-1.3-4z" fill="currentColor" />
-    </svg>
-  )
-}
-
-function CompareBar({
+/** A single full-width split track: the two team colors meet at the proportional point. */
+function CompareTrack({
   label,
   home,
   away,
@@ -140,24 +217,41 @@ function CompareBar({
   if (home == null && away == null) return null
   const h = home ?? 0
   const a = away ?? 0
-  const total = h + a || 1
+  const total = h + a
+  const empty = total === 0
+  // Home's fraction of the always-full-width track; an even split (incl. equal
+  // non-zero values) sits at 50%, and 0-0 falls through to a neutral empty track.
+  const homePct = empty ? 50 : (h / total) * 100
 
   return (
     <div>
-      <div className="flex items-center justify-between text-[15px] tnum">
-        <span className="font-grotesk font-bold text-ink">{h}{unit}</span>
+      <div className="flex items-baseline justify-between">
+        <span className="font-grotesk text-base font-bold tnum text-ink">
+          {home != null ? `${h}${unit}` : '—'}
+        </span>
         <span className="text-2xs uppercase tracking-label text-faint">{label}</span>
-        <span className="font-grotesk font-bold text-ink">{a}{unit}</span>
+        <span className="font-grotesk text-base font-bold tnum text-ink">
+          {away != null ? `${a}${unit}` : '—'}
+        </span>
       </div>
-      <div className="mt-2 flex items-center gap-1.5">
-        <div
-          className="h-[7px] rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15"
-          style={{ flexBasis: `${(h / total) * 100}%`, minWidth: '7px', background: homeColor }}
-        />
-        <div
-          className="h-[7px] rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15"
-          style={{ flexBasis: `${(a / total) * 100}%`, minWidth: '7px', background: awayColor }}
-        />
+
+      <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full">
+        {empty ? (
+          // 0-0 (or no recorded contest) — a calm neutral track, never a lone dot.
+          <div className="absolute inset-0 bg-black/[0.06] dark:bg-white/[0.08]" />
+        ) : (
+          <>
+            {/* Away color fills the whole track; home color overlays from the left. */}
+            <div className="absolute inset-0" style={{ background: awayColor }} />
+            <div className="absolute inset-y-0 left-0" style={{ width: `${homePct}%`, background: homeColor }} />
+            {/* A 1px notch in the page color keeps the meeting point clean. */}
+            <div
+              className="absolute inset-y-0 w-px -translate-x-1/2 bg-canvas"
+              style={{ left: `${homePct}%` }}
+              aria-hidden="true"
+            />
+          </>
+        )}
       </div>
     </div>
   )
