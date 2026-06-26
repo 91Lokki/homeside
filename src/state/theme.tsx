@@ -28,13 +28,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
-  // The Apple-Sports / Liquid Glass look is always dark.
-  void systemDark
-  const isDark = true
+  const isDark = mode === 'system' ? systemDark : mode === 'dark'
 
   useEffect(() => {
-    document.documentElement.classList.add('dark')
-  }, [])
+    document.documentElement.classList.toggle('dark', isDark)
+  }, [isDark])
 
   const setMode = useCallback((m: ThemeMode) => {
     setModeState(m)

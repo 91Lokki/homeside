@@ -67,12 +67,12 @@ export function Team() {
         <div className="mt-2 flex items-center gap-3.5">
           <Flag code={code} size={44} />
           <h1 className="font-grotesk text-4xl font-semibold tracking-tight">{homeTeam.name}</h1>
-          {homeTeam.nameTC && <span className="font-tc text-base text-white/45">{homeTeam.nameTC}</span>}
+          {homeTeam.nameTC && <span className="font-tc text-base text-faint">{homeTeam.nameTC}</span>}
         </div>
       </div>
 
       {noData ? (
-        <div className="rounded-[22px] bg-white/[0.06] ring-1 ring-inset ring-white/10 backdrop-blur-xl p-6 text-sm text-muted">
+        <div className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-6 text-sm text-muted">
           The ability card is built from {homeTeam.name}&rsquo;s real match stats.{' '}
           {!healthKnown
             ? 'Checking the live data feed…'
@@ -83,7 +83,7 @@ export function Team() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.04fr)]">
           {/* radar card with team-colour wash */}
-          <section className="relative flex flex-col items-center overflow-hidden rounded-[22px] bg-white/[0.06] ring-1 ring-inset ring-white/10 backdrop-blur-xl px-6 pb-6 pt-5">
+          <section className="relative flex flex-col items-center overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-44" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
             <div className="absolute right-4 top-4 animate-breathe">
               <Mascot code={code} color={homeTeam.color} color2={homeTeam.color2} symbol={homeTeam.symbol} mood={mood} size={60} />
@@ -99,7 +99,7 @@ export function Team() {
           </section>
 
           {/* rating bars — Apple-Sports style */}
-          <section className="rounded-[22px] bg-white/[0.06] ring-1 ring-inset ring-white/10 backdrop-blur-xl p-5 sm:p-6">
+          <section className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-5 sm:p-6">
             <div className="space-y-4">
               {ORDER.map((k) => {
                 const v = ratings.axes[k]

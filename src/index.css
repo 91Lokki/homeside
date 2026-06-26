@@ -22,6 +22,8 @@
     --team-pure: #4a4a45;
     --team-soft: rgba(74, 74, 69, 0.08);
     --team-ink: #ffffff;
+    /* full-screen app backdrop (team-tinted), light variant */
+    --app-grad: linear-gradient(180deg, color-mix(in srgb, var(--team-pure) 14%, #f6f6f4) 0%, #f6f6f4 50%, #f0f0ee 100%);
     /* motion */
     --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
 
@@ -40,6 +42,7 @@
     --team-pure: #b8b8b0;
     --team-soft: rgba(184, 184, 176, 0.10);
     --team-ink: #0e0e0c;
+    --app-grad: linear-gradient(180deg, color-mix(in srgb, var(--team-pure) 38%, #0b0b14) 0%, #0a0a12 55%, #08080c 100%);
 
     color-scheme: dark;
   }
@@ -99,9 +102,13 @@
     @apply text-2xs uppercase tracking-label text-faint font-medium;
   }
 
-  /* Liquid-Glass surface — translucent, blurred, rim-lit. */
+  /* Liquid-Glass surface — translucent, blurred, rim-lit (adapts to mode). */
   .panel {
     @apply rounded-[20px] backdrop-blur-xl;
+    background: rgba(0, 0, 0, 0.035);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  }
+  .dark .panel {
     background: rgba(255, 255, 255, 0.06);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
