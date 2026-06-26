@@ -2,11 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { BRACKET } from '@/data/bracket'
 import type { TeamCode } from '@/domain/types'
 import { buildPredictedBracket, type Predictions } from '@/domain/predict'
-import type { FantasyTeam, FantasyPick, Slot } from '@/domain/fantasy'
+import { playerKey, type FantasyPick, type RoundSquad, type Round, type Slot } from '@/domain/fantasy'
 
 const PRED_KEY = 'homeside.predictions'
-const FANT_KEY = 'homeside.fantasy'
-const LOCK_KEY = 'homeside.fantasyLocked'
+const FANT_KEY = 'homeside.fantasy.v2'
+
+type FantasyRounds = Partial<Record<Round, RoundSquad>>
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -25,18 +26,14 @@ function safeSet(key: string, value: string) {
   }
 }
 
-/**
- * Drop any downstream prediction that is no longer a valid occupant of its match
- * after an upstream change (the predicted winner that fed it has moved). Keeps the
- * stored bracket consistent with what the user sees; they re-pick the cleared ties.
- */
+/** Drop downstream predictions made stale by an upstream change (see Predict). */
 function pruneStale(preds: Predictions): Predictions {
   const next = { ...preds }
   for (let guard = 0; guard < 8; guard++) {
     const occ = buildPredictedBracket(BRACKET, [], next)
     let changed = false
     for (const m of BRACKET) {
-      if (m.stage === 'R32') continue // group-derived occupants — picked directly from real teams
+      if (m.stage === 'R32') continue
       const pick = next[m.matchNo]
       if (pick == null) continue
       const o = occ[m.matchNo]
@@ -50,15 +47,18 @@ function pruneStale(preds: Predictions): Predictions {
   return next
 }
 
+const emptySquad = (): RoundSquad => ({ players: [], captain: null, vice: null })
+
 interface GamesCtx {
   predictions: Predictions
   setPrediction: (matchNo: number, code: TeamCode) => void
   clearPredictions: () => void
 
-  fantasy: FantasyTeam
-  fantasyLocked: boolean
-  setFantasyPick: (slot: Slot, pick: FantasyPick | null) => void
-  lockFantasy: () => void
+  fantasy: FantasyRounds
+  setRoundPick: (round: Round, slot: Slot, pick: FantasyPick | null) => void
+  seedRound: (round: Round, players: FantasyPick[]) => void
+  setCaptain: (round: Round, key: string) => void
+  setVice: (round: Round, key: string) => void
   resetFantasy: () => void
 }
 
@@ -66,41 +66,61 @@ const Ctx = createContext<GamesCtx | null>(null)
 
 export function GamesProvider({ children }: { children: ReactNode }) {
   const [predictions, setPredictions] = useState<Predictions>(() => load(PRED_KEY, {}))
-  const [fantasy, setFantasy] = useState<FantasyTeam>(() => load(FANT_KEY, {}))
-  const [fantasyLocked, setFantasyLocked] = useState<boolean>(() => load(LOCK_KEY, false))
+  const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
 
-  useEffect(() => {
-    safeSet(PRED_KEY, JSON.stringify(predictions))
-  }, [predictions])
-  useEffect(() => {
-    safeSet(FANT_KEY, JSON.stringify(fantasy))
-  }, [fantasy])
-  useEffect(() => {
-    safeSet(LOCK_KEY, JSON.stringify(fantasyLocked))
-  }, [fantasyLocked])
+  useEffect(() => safeSet(PRED_KEY, JSON.stringify(predictions)), [predictions])
+  useEffect(() => safeSet(FANT_KEY, JSON.stringify(fantasy)), [fantasy])
 
   const setPrediction = useCallback((matchNo: number, code: TeamCode) => {
     setPredictions((p) => pruneStale({ ...p, [matchNo]: code }))
   }, [])
   const clearPredictions = useCallback(() => setPredictions({}), [])
 
-  const setFantasyPick = useCallback((slot: Slot, pick: FantasyPick | null) => {
-    setFantasy((f) => {
-      const next = { ...f }
-      if (pick) next[slot] = pick
-      else delete next[slot]
-      return next
+  const setRoundPick = useCallback((round: Round, slot: Slot, pick: FantasyPick | null) => {
+    setFantasy((fr) => {
+      const cur = fr[round] ?? emptySquad()
+      const removed = cur.players.find((p) => p.slot === slot)
+      const players = cur.players.filter((p) => p.slot !== slot)
+      if (pick) players.push(pick)
+      let { captain, vice } = cur
+      if (removed) {
+        const k = playerKey(removed)
+        if (captain === k) captain = null
+        if (vice === k) vice = null
+      }
+      return { ...fr, [round]: { players, captain, vice } }
     })
   }, [])
-  const lockFantasy = useCallback(() => setFantasyLocked(true), [])
-  const resetFantasy = useCallback(() => {
-    setFantasy({})
-    setFantasyLocked(false)
+
+  const seedRound = useCallback((round: Round, players: FantasyPick[]) => {
+    setFantasy((fr) => {
+      if (fr[round]) return fr
+      return { ...fr, [round]: { players: players.map((p) => ({ ...p })), captain: null, vice: null } }
+    })
   }, [])
 
+  const setCaptain = useCallback((round: Round, key: string) => {
+    setFantasy((fr) => {
+      const cur = fr[round]
+      if (!cur) return fr
+      const vice = cur.vice === key ? null : cur.vice
+      return { ...fr, [round]: { ...cur, captain: key, vice } }
+    })
+  }, [])
+
+  const setVice = useCallback((round: Round, key: string) => {
+    setFantasy((fr) => {
+      const cur = fr[round]
+      if (!cur || cur.captain === key) return fr
+      return { ...fr, [round]: { ...cur, vice: key } }
+    })
+  }, [])
+
+  const resetFantasy = useCallback(() => setFantasy({}), [])
+
   const value = useMemo<GamesCtx>(
-    () => ({ predictions, setPrediction, clearPredictions, fantasy, fantasyLocked, setFantasyPick, lockFantasy, resetFantasy }),
-    [predictions, setPrediction, clearPredictions, fantasy, fantasyLocked, setFantasyPick, lockFantasy, resetFantasy],
+    () => ({ predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy }),
+    [predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

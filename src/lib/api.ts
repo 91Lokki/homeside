@@ -290,8 +290,11 @@ export async function fetchMatchReport(
 
 export interface MatchEvent {
   minute: number | null
+  /** Raw Highlightly clock string, e.g. "45+1" or "120+3" — needed to tell a
+   *  penalty-shootout kick (timed "120+N") from an in-play penalty. */
+  rawTime: string
   teamCode: TeamCode | null
-  type: string // "Goal" | "Own Goal" | "Penalty" | "Yellow Card" | "Red Card" | "Substitution" | ...
+  type: string // "Goal" | "Own Goal" | "Penalty" | "Missed Penalty" | "Yellow Card" | "Red Card" | "Substitution" | ...
   player: string
   playerNumber: number | null
   assist: string | null
@@ -311,12 +314,16 @@ export interface TeamMatchStats {
   fouls: number | null
   yellow: number | null
   red: number | null
+  /** Team goalkeeper saves (one keeper plays, so this is the keeper's saves). */
+  gkSaves: number | null
 }
 
 export interface MatchDetail {
   fixtureId: number
   home: TeamCode | null
   away: TeamCode | null
+  /** True when the match was decided by a penalty shootout (score.penalties present). */
+  hadShootout: boolean
   events: MatchEvent[]
   teamStats: Partial<Record<TeamCode, TeamMatchStats>>
 }
@@ -342,9 +349,11 @@ export async function fetchMatchDetail(fixtureId: number): Promise<MatchDetail |
     const score = parseScore(detail.state?.score?.current)
     const homeGoals = score ? score.home : null
     const awayGoals = score ? score.away : null
+    const hadShootout = detail.state?.score?.penalties != null && detail.state?.score?.penalties !== ''
 
     const events: MatchEvent[] = (detail.events ?? []).map((e: any) => ({
       minute: parseMinute(e?.time),
+      rawTime: String(e?.time ?? ''),
       teamCode: codeFromName(e?.team?.name),
       type: e?.type ?? '',
       player: e?.player ?? '',
@@ -372,12 +381,13 @@ export async function fetchMatchDetail(fixtureId: number): Promise<MatchDetail |
         fouls: statVal(blocks, code, 'Fouls'),
         yellow: statVal(blocks, code, 'Yellow cards'),
         red: statVal(blocks, code, 'Red cards'),
+        gkSaves: statVal(blocks, code, 'Goalkeeper saves'),
       }
     }
     build(home, homeGoals, awayGoals)
     build(away, awayGoals, homeGoals)
 
-    return { fixtureId, home, away, events, teamStats }
+    return { fixtureId, home, away, hadShootout, events, teamStats }
   } catch {
     return null
   }

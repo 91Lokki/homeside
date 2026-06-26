@@ -5,7 +5,7 @@ import { BRACKET } from '@/data/bracket'
 import { TEAMS } from '@/data/teams'
 import { resolveBracket } from '@/domain/bracket'
 import { scorePredictions } from '@/domain/predict'
-import { SLOTS } from '@/domain/fantasy'
+import { currentRound } from '@/domain/fantasyRounds'
 import { moodFor } from '@/domain/mood'
 import { Mascot } from '@/components/mascot/Mascot'
 import { Label } from '@/components/ui/atoms'
@@ -15,11 +15,11 @@ import { DATA_META } from '@/data/meta'
 
 export function Home() {
   const { homeTeam, matches } = useApp()
-  const { predictions, fantasy, fantasyLocked } = useGames()
+  const { predictions, fantasy } = useGames()
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const predScore = useMemo(() => scorePredictions(predictions, resolved), [predictions, resolved])
-  const picksMade = SLOTS.filter((s) => fantasy[s]).length
+  const picksMade = fantasy[currentRound()]?.players.length ?? 0
 
   return (
     <div className="animate-fade-in">
@@ -52,9 +52,9 @@ export function Home() {
           to="/fantasy"
           icon={<Users size={18} />}
           title="Five-player fantasy"
-          how="Pick one striker, forward, midfielder, defender and keeper. They score from real goals, assists & clean sheets."
-          stat={fantasyLocked ? 'Locked in' : `${picksMade}/5 picked`}
-          sub={fantasyLocked ? 'scoring as KO matches play' : 'choose your five'}
+          how="Pick a keeper, defender, midfielder, attacker and a flex. They score from real goals, assists, clean sheets & saves — with transfers and a captain each round."
+          stat={`${picksMade}/5 picked`}
+          sub={picksMade === 5 ? 'squad complete' : 'build your five'}
         />
       </div>
 
