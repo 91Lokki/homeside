@@ -134,16 +134,26 @@ function MatchRow({ match, homeCode, apiStatus, healthKnown }: { match: Match; h
   const home = match.homeCode ? teamByCode[match.homeCode] : null
   const away = match.awayCode ? teamByCode[match.awayCode] : null
   const expandable = match.status === 'finished'
+  const live = match.status === 'live'
   const involvesHome = match.homeCode === homeCode || match.awayCode === homeCode
 
   return (
-    <div className={cn(involvesHome && 'bg-team-soft/40')}>
+    <div className={cn(involvesHome && 'bg-team-soft/40', live && 'bg-team-soft/60')}>
       <button
         onClick={() => expandable && setOpen((v) => !v)}
         className={cn('flex w-full items-center gap-3 px-4 py-3 text-left', expandable && 'hover:bg-sunken/40')}
       >
         <span className="w-12 shrink-0 text-2xs tnum text-faint">
-          {match.status === 'finished' ? 'FT' : localTime(match.kickoff)}
+          {match.status === 'finished' ? (
+            'FT'
+          ) : live ? (
+            <span className="inline-flex items-center gap-1 font-semibold text-team">
+              <span className="h-1.5 w-1.5 rounded-full bg-team animate-live-pulse" />
+              {match.minute ? `${match.minute}'` : 'LIVE'}
+            </span>
+          ) : (
+            localTime(match.kickoff)
+          )}
         </span>
         <span className={cn('flex-1 truncate text-right text-sm', match.homeCode === homeCode ? 'font-semibold text-team' : 'font-medium')}>
           {home?.name ?? match.homeLabel ?? '—'}

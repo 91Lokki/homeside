@@ -136,6 +136,7 @@ function normalizeMatch(e: any): Match | null {
 
   const state = c.status?.type?.state // 'pre' | 'in' | 'post'
   const finished = state === 'post'
+  const live = state === 'in'
   const hso = num(h?.shootoutScore)
   const aso = num(a?.shootoutScore)
 
@@ -145,10 +146,10 @@ function normalizeMatch(e: any): Match | null {
     homeCode,
     awayCode,
     kickoff: e.date ?? new Date().toISOString(),
-    status: finished ? 'finished' : state === 'in' ? 'live' : 'scheduled',
-    homeScore: finished ? num(h?.score) : null,
-    awayScore: finished ? num(a?.score) : null,
-    minute: null,
+    status: finished ? 'finished' : live ? 'live' : 'scheduled',
+    homeScore: finished || live ? num(h?.score) : null,
+    awayScore: finished || live ? num(a?.score) : null,
+    minute: live ? parseMinute(c.status?.displayClock ?? c.status?.type?.shortDetail) : null,
     pens: hso != null && aso != null ? { home: hso, away: aso } : undefined,
     apiFixtureId: Number(e.id) || undefined,
   }
@@ -165,9 +166,11 @@ function normalizeMatch(e: any): Match | null {
 export async function fetchResultsWithHealth(date?: string): Promise<{ matches: Match[] | null; health: ApiHealth }> {
   const raw = await getProxyRaw(date ? `/api/fixtures?date=${encodeURIComponent(date)}` : '/api/fixtures')
   const health = healthFrom(raw)
+  // Surface finished AND live matches (standings/bracket/scoring still count only
+  // finished — see record.ts / bracket.ts — so a live match shows but doesn't score).
   const matches =
     raw.body?.source === 'espn' && Array.isArray(raw.body.events)
-      ? raw.body.events.map((x) => normalizeMatch(x)).filter((m): m is Match => m !== null && m.status === 'finished')
+      ? raw.body.events.map((x) => normalizeMatch(x)).filter((m): m is Match => m !== null && (m.status === 'finished' || m.status === 'live'))
       : null
   return { matches, health }
 }
@@ -259,6 +262,8 @@ export interface MatchReport {
   possession: { home: number | null; away: number | null }
   shots: { home: number | null; away: number | null }
   shotsOnTarget: { home: number | null; away: number | null }
+  corners: { home: number | null; away: number | null }
+  fouls: { home: number | null; away: number | null }
 }
 
 interface ReportEvent {
@@ -304,6 +309,8 @@ export async function fetchMatchReport(
     possession: { home: poss(home), away: poss(away) },
     shots: { home: espnStat(blockFor(home), 'totalShots'), away: espnStat(blockFor(away), 'totalShots') },
     shotsOnTarget: { home: espnStat(blockFor(home), 'shotsOnTarget'), away: espnStat(blockFor(away), 'shotsOnTarget') },
+    corners: { home: espnStat(blockFor(home), 'wonCorners'), away: espnStat(blockFor(away), 'wonCorners') },
+    fouls: { home: espnStat(blockFor(home), 'foulsCommitted'), away: espnStat(blockFor(away), 'foulsCommitted') },
   }
 }
 
@@ -329,9 +336,12 @@ export interface TeamMatchStats {
   possession: number | null // %
   shots: number | null
   shotsOnTarget: number | null
-  xg: number | null
-  xa: number | null
-  keyPasses: number | null
+  passPct: number | null
+  crosses: number | null // accurate crosses
+  corners: number | null // won corners
+  tackles: number | null // effective tackles
+  interceptions: number | null
+  clearances: number | null // effective clearances
   fouls: number | null
   yellow: number | null
   red: number | null
@@ -395,9 +405,12 @@ export async function fetchMatchDetail(fixtureId: number): Promise<MatchDetail |
       possession: poss == null ? null : Math.round(poss),
       shots: espnStat(b, 'totalShots'),
       shotsOnTarget: espnStat(b, 'shotsOnTarget'),
-      xg: null,
-      xa: null,
-      keyPasses: null,
+      passPct: espnStat(b, 'passPct'),
+      crosses: espnStat(b, 'accurateCrosses'),
+      corners: espnStat(b, 'wonCorners'),
+      tackles: espnStat(b, 'effectiveTackles'),
+      interceptions: espnStat(b, 'interceptions'),
+      clearances: espnStat(b, 'effectiveClearance'),
       fouls: espnStat(b, 'foulsCommitted'),
       yellow: espnStat(b, 'yellowCards'),
       red: espnStat(b, 'redCards'),

@@ -87,12 +87,22 @@ export default {
           from: { opacity: '0', transform: 'translateY(14px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'radar': {
+          from: { opacity: '0', transform: 'scale(0.82)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+        'live-pulse': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.35' },
+        },
       },
       animation: {
         breathe: 'breathe 6s var(--ease-calm, ease-in-out) infinite',
         blink: 'blink 7s ease-in-out infinite',
         'fade-in': 'fade-in 0.6s var(--ease-calm, ease-out) both',
         rise: 'rise 0.7s var(--ease-calm, ease-out) both',
+        radar: 'radar 0.7s var(--ease-calm, ease-out) both',
+        'live-pulse': 'live-pulse 1.4s ease-in-out infinite',
       },
     },
   },

@@ -5,7 +5,7 @@ import { liveDataNote } from '@/lib/apiCopy'
 import { cn } from '@/lib/utils'
 import { Label } from './ui/atoms'
 
-/** The light match report — goal timeline, possession, shots. Live data only. */
+/** The match report — goal timeline + Apple-Sports-style stat comparison. ESPN data. */
 export function MatchReport({
   match,
   accentCode,
@@ -42,12 +42,10 @@ export function MatchReport({
   }, [match.apiFixtureId, match.homeCode, match.awayCode])
 
   if (state === 'loading') {
-    return <div className="px-4 py-5 text-2xs text-faint">Loading report…</div>
+    return <div className="px-5 py-5 text-2xs text-faint">Loading report…</div>
   }
 
   if (state === 'unavailable') {
-    // Honest about *why* the report is missing: still checking, feed down, or
-    // (feed ok) the match has no box score yet — not a vague "connect a key".
     const note = !healthKnown
       ? 'Checking the live data feed…'
       : apiStatus !== 'ok'
@@ -56,7 +54,7 @@ export function MatchReport({
           ? 'A detailed report for this match isn’t available yet.'
           : liveDataNote('ok')
     return (
-      <div className="px-4 py-5">
+      <div className="px-5 py-5">
         <p className="text-xs text-muted">Final score recorded. {note}</p>
       </div>
     )
@@ -64,28 +62,36 @@ export function MatchReport({
 
   if (!report) return null
 
-  const goals = report.events.filter((e) => e.type.toLowerCase() === 'goal' && !e.detail.toLowerCase().includes('missed'))
-  const accentHome = accentCode && match.homeCode === accentCode
-  const accentAway = accentCode && match.awayCode === accentCode
+  const goals = report.events.filter((e) => e.type === 'Goal' || e.type === 'Own Goal')
+  const accent: 'home' | 'away' | null =
+    accentCode && match.homeCode === accentCode ? 'home' : accentCode && match.awayCode === accentCode ? 'away' : null
 
   return (
-    <div className="space-y-5 px-4 py-5">
+    <div className="space-y-5 px-5 py-5">
       {/* goal timeline */}
       <div>
         <Label>Goals</Label>
         {goals.length === 0 ? (
           <p className="mt-2 text-xs text-faint">No goals.</p>
         ) : (
-          <ul className="mt-2 space-y-1.5">
+          <ul className="mt-2.5 space-y-2">
             {goals.map((g, i) => {
               const isHome = g.team === match.homeCode
+              const isAccent = (isHome && accent === 'home') || (!isHome && accent === 'away')
               return (
-                <li key={i} className={cn('flex items-center gap-2 text-sm', isHome ? 'justify-start' : 'flex-row-reverse text-right')}>
-                  <span className="w-8 shrink-0 font-grotesk text-xs font-semibold tnum text-muted">{g.minute}&rsquo;</span>
-                  <span className="truncate">
-                    {g.player}
-                    {g.detail.toLowerCase().includes('penalty') && <span className="text-faint"> (pen)</span>}
-                    {g.detail.toLowerCase().includes('own') && <span className="text-faint"> (og)</span>}
+                <li key={i} className={cn('flex items-center gap-2.5 text-sm', isHome ? 'justify-start' : 'flex-row-reverse text-right')}>
+                  <span
+                    className={cn(
+                      'grid h-6 min-w-[30px] place-items-center rounded-md px-1.5 font-grotesk text-2xs font-semibold tnum',
+                      isAccent ? 'bg-team text-team-ink' : 'bg-sunken text-muted',
+                    )}
+                  >
+                    {g.minute}&rsquo;
+                  </span>
+                  <span className="truncate font-medium">
+                    {g.player || 'Goal'}
+                    {g.detail.includes('penalty') && <span className="text-faint"> (pen)</span>}
+                    {g.detail.includes('own goal') && <span className="text-faint"> (og)</span>}
                   </span>
                 </li>
               )
@@ -94,55 +100,52 @@ export function MatchReport({
         )}
       </div>
 
-      <StatBar label="Possession" home={report.possession.home} away={report.possession.away} unit="%" accentHome={!!accentHome} accentAway={!!accentAway} />
-      <StatRow label="Shots" home={report.shots.home} away={report.shots.away} />
-      <StatRow label="On target" home={report.shotsOnTarget.home} away={report.shotsOnTarget.away} />
+      {/* stat comparison */}
+      <div className="space-y-3 border-t pt-4">
+        <CompareBar label="Possession" home={report.possession.home} away={report.possession.away} accent={accent} unit="%" />
+        <CompareBar label="Shots" home={report.shots.home} away={report.shots.away} accent={accent} />
+        <CompareBar label="On target" home={report.shotsOnTarget.home} away={report.shotsOnTarget.away} accent={accent} />
+        <CompareBar label="Corners" home={report.corners.home} away={report.corners.away} accent={accent} />
+        <CompareBar label="Fouls" home={report.fouls.home} away={report.fouls.away} accent={accent} />
+      </div>
     </div>
   )
 }
 
-function StatBar({
+function CompareBar({
   label,
   home,
   away,
+  accent,
   unit = '',
-  accentHome,
-  accentAway,
 }: {
   label: string
   home: number | null
   away: number | null
+  accent: 'home' | 'away' | null
   unit?: string
-  accentHome: boolean
-  accentAway: boolean
 }) {
   if (home == null && away == null) return null
   const h = home ?? 0
   const a = away ?? 0
   const total = h + a || 1
+  const fill = (side: 'home' | 'away') => (accent === side ? 'bg-team' : 'bg-muted/60')
+
   return (
     <div>
-      <div className="flex items-center justify-between text-xs tnum">
-        <span className={cn(accentHome ? 'font-semibold text-team' : 'text-muted')}>{h}{unit}</span>
-        <Label>{label}</Label>
-        <span className={cn(accentAway ? 'font-semibold text-team' : 'text-muted')}>{a}{unit}</span>
+      <div className="flex items-center justify-between text-sm tnum">
+        <span className={cn('font-grotesk font-semibold', accent === 'home' ? 'text-team' : 'text-ink')}>{h}{unit}</span>
+        <span className="text-2xs uppercase tracking-label text-faint">{label}</span>
+        <span className={cn('font-grotesk font-semibold', accent === 'away' ? 'text-team' : 'text-ink')}>{a}{unit}</span>
       </div>
-      <div className="mt-1.5 flex h-1.5 overflow-hidden rounded-full bg-sunken">
-        <div className={cn('h-full', accentHome ? 'bg-team' : 'bg-muted/50')} style={{ width: `${(h / total) * 100}%` }} />
-        <div className="h-full w-px bg-canvas" />
-        <div className={cn('h-full flex-1', accentAway ? 'bg-team' : 'bg-muted/50')} />
+      <div className="mt-1.5 flex h-1.5 items-center gap-1">
+        <div className="flex h-full justify-end" style={{ flexBasis: `${(h / total) * 100}%` }}>
+          <div className={cn('h-full w-full rounded-l-full', fill('home'))} />
+        </div>
+        <div className="flex h-full flex-1 justify-start">
+          <div className={cn('h-full w-full rounded-r-full', fill('away'))} />
+        </div>
       </div>
-    </div>
-  )
-}
-
-function StatRow({ label, home, away }: { label: string; home: number | null; away: number | null }) {
-  if (home == null && away == null) return null
-  return (
-    <div className="flex items-center justify-between text-sm tnum">
-      <span className="w-10 text-muted">{home ?? '–'}</span>
-      <Label>{label}</Label>
-      <span className="w-10 text-right text-muted">{away ?? '–'}</span>
     </div>
   )
 }
