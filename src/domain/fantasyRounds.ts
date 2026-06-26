@@ -1,4 +1,5 @@
 import { BRACKET } from '@/data/bracket'
+import { SEED_MATCHES } from '@/data/fixtures'
 import { resolveBracket } from './bracket'
 import type { Match, Team, TeamCode } from './types'
 import { ROUNDS, stageToRound, type Round } from './fantasy'
@@ -42,6 +43,25 @@ export function activeMatchDates(now: number = Date.now()): string[] {
 /** True while at least one knockout match is in its live window. */
 export function inMatchWindow(now: number = Date.now()): boolean {
   return activeMatchDates(now).length > 0
+}
+
+/** Every scheduled kickoff (ms) across the whole tournament — group stage (seed)
+ *  and knockouts (bracket) — ascending. */
+function allKickoffs(): number[] {
+  const seed = SEED_MATCHES.map((m) => new Date(m.kickoff).getTime())
+  const ko = BRACKET.filter((b) => b.kickoff).map((b) => new Date(b.kickoff as string).getTime())
+  return [...seed, ...ko].filter((t) => !Number.isNaN(t)).sort((a, b) => a - b)
+}
+
+/** UTC calendar dates (YYYY-MM-DD) of ANY match — group or knockout — whose live
+ *  window covers `now`. This widens the fast live poll to group-stage games too, so
+ *  their score and clock update in near-real-time (ESPN is free/unlimited). */
+export function liveMatchDates(now: number = Date.now()): string[] {
+  const dates = new Set<string>()
+  for (const k of allKickoffs()) {
+    if (now >= k - LEAD_MS && now <= k + WINDOW_MS) dates.add(new Date(k).toISOString().slice(0, 10))
+  }
+  return [...dates]
 }
 
 /** A round locks once its first match has kicked off. */

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { GROUP_IDS, TEAMS, teamByCode } from '@/data/teams'
 import { computeGroupStandings } from '@/domain/record'
 import type { GroupId, Match } from '@/domain/types'
@@ -13,10 +13,36 @@ const kickoffMs = (m: Match) => new Date(m.kickoff).getTime()
 const dayLabel = (m: Match) => new Date(m.kickoff).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 const timeLabel = (m: Match) => new Date(m.kickoff).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
+/** Re-render every `ms` while `active`, so a live clock can tick on its own. */
+function useNow(active: boolean, ms = 1000) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!active) return
+    setNow(Date.now())
+    const id = window.setInterval(() => setNow(Date.now()), ms)
+    return () => window.clearInterval(id)
+  }, [active, ms])
+  return now
+}
+
+/** A live game clock as MM:SS, ticking every second between polls. ESPN gives a
+ *  whole-minute clock, so we anchor to it at each poll and interpolate the seconds
+ *  locally; the next poll re-syncs the minute (and handles half-time / stoppage). */
+function liveClock(minute: number | null | undefined, lastUpdated: number | null, now: number): string {
+  if (minute == null) return 'LIVE'
+  const since = lastUpdated != null ? Math.max(0, Math.min(119, Math.floor((now - lastUpdated) / 1000))) : 0
+  const total = minute * 60 + since
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+}
+
 export function Schedule() {
-  const { matches, homeCode, homeTeam, apiStatus, healthKnown } = useApp()
+  const { matches, homeCode, homeTeam, apiStatus, healthKnown, lastUpdated } = useApp()
   const [group, setGroup] = useState<GroupId>(homeTeam?.group ?? 'A')
   const [openId, setOpenId] = useState<string | null>(null)
+
+  // Tick once a second only while something is actually live, so the clock runs.
+  const hasLive = useMemo(() => matches.some((m) => m.status === 'live'), [matches])
+  const now = useNow(hasLive)
 
   const groupCodes = useMemo(() => TEAMS.filter((t) => t.group === group).map((t) => t.code), [group])
   const standings = useMemo(() => computeGroupStandings(matches, group, groupCodes), [matches, group, groupCodes])
@@ -107,7 +133,7 @@ export function Schedule() {
                     const open = openId === m.id
                     return (
                       <div key={m.id} className={cn(i > 0 && 'border-t border-black/5 dark:border-white/[0.07]')}>
-                        <FixtureRow m={m} open={open} onToggle={() => m.status === 'finished' && setOpenId((c) => (c === m.id ? null : m.id))} />
+                        <FixtureRow m={m} open={open} now={now} lastUpdated={lastUpdated} onToggle={() => m.status === 'finished' && setOpenId((c) => (c === m.id ? null : m.id))} />
                         {open && (
                           <div className="animate-fade-in border-t border-black/5 dark:border-white/[0.07]">
                             <MatchReport match={m} apiStatus={apiStatus} healthKnown={healthKnown} />
@@ -126,7 +152,7 @@ export function Schedule() {
   )
 }
 
-function FixtureRow({ m, open, onToggle }: { m: Match; open: boolean; onToggle: () => void }) {
+function FixtureRow({ m, open, now, lastUpdated, onToggle }: { m: Match; open: boolean; now: number; lastUpdated: number | null; onToggle: () => void }) {
   const home = m.homeCode ? teamByCode[m.homeCode] : null
   const away = m.awayCode ? teamByCode[m.awayCode] : null
   const finished = m.status === 'finished'
@@ -147,7 +173,7 @@ function FixtureRow({ m, open, onToggle }: { m: Match; open: boolean; onToggle: 
         {finished ? (
           <span className="text-faint">FT</span>
         ) : live ? (
-          <span className="inline-flex items-center gap-1 text-red-500"><span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-live-pulse" />{m.minute ? `${m.minute}'` : 'Live'}</span>
+          <span className="inline-flex items-center gap-1 text-red-500"><span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-live-pulse" /><span className="tnum">{liveClock(m.minute, lastUpdated, now)}</span></span>
         ) : (
           <span className="text-muted">{timeLabel(m)}</span>
         )}

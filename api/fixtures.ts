@@ -15,8 +15,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   try {
     if (date) {
+      // Single match-day — polled every ~10s while a game is live, so keep the
+      // shared cache short enough that the live score/clock stay fresh.
       const sb = await espnFetch('/scoreboard', { dates: date.replace(/-/g, ''), limit: 200 })
-      return json({ source: 'espn', events: sb?.events ?? [] }, { sMaxAge: 120, swr: 600 })
+      return json({ source: 'espn', events: sb?.events ?? [] }, { sMaxAge: 5, swr: 30 })
     }
     // The whole tournament window in one request.
     const sb = await espnFetch('/scoreboard', { dates: '20260611-20260719', limit: 400 })

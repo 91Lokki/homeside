@@ -3,7 +3,7 @@ import { SEED_MATCHES } from '@/data/fixtures'
 import { teamByCode } from '@/data/teams'
 import type { Match, Team } from '@/domain/types'
 import { fetchResultsWithHealth, mergeMatches, type ApiHealth, type ApiStatus } from '@/lib/api'
-import { activeMatchDates } from '@/domain/fantasyRounds'
+import { liveMatchDates } from '@/domain/fantasyRounds'
 import { useTeamColor, useTheme } from './theme'
 
 const TEAM_KEY = 'homeside.team'
@@ -11,9 +11,11 @@ const TEAM_KEY = 'homeside.team'
 // is on, so this stays near-zero against the daily API budget.
 const REFRESH_MS = 3 * 60 * 60 * 1000 // 3 hours
 const STALE_MS = 60 * 60 * 1000 // refetch on tab focus only if older than 1 hour
-// While a knockout match is actually on (and the tab is open), poll that day's
-// results this often so a final result shows up within a couple of minutes.
-const LIVE_MS = 150 * 1000 // 2.5 minutes
+// While ANY match is on (and the tab is open), poll that day's results this often
+// so the live score tracks the game closely. ESPN is free/unlimited, so we can
+// afford a brisk cadence; the match clock itself ticks every second on the client
+// (see Schedule), re-anchored to the feed on each poll.
+const LIVE_MS = 10 * 1000 // 10 seconds
 
 /** Merge freshly-fetched matches into the accumulated set by stable id. */
 function upsertById(base: Match[], incoming: Match[]): Match[] {
@@ -63,9 +65,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem(TEAM_KEY)
   }, [])
 
-  // Baseline: the whole finished-results feed, occasionally. Plus a fast loop that
-  // only does anything while a knockout match is on AND the tab is visible — so
-  // end-of-match updates are near-real-time without burning the daily quota.
+  // Baseline: the whole results feed, occasionally. Plus a fast loop that only
+  // does anything while a match (group or knockout) is on AND the tab is visible —
+  // so the live score and clock track the game in near-real-time.
   useEffect(() => {
     let cancelled = false
     const liveTimer = { current: null as number | null }
@@ -83,7 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const live = async () => {
       if (document.visibilityState !== 'visible') return
-      const dates = activeMatchDates(Date.now())
+      const dates = liveMatchDates(Date.now())
       if (!dates.length) return
       const got: Match[] = []
       let lastHealth: ApiHealth | null = null
@@ -101,6 +103,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     void baseline()
+    void live() // don't wait a full interval to pick up a match that's already on
     timer.current = window.setInterval(() => void baseline(), REFRESH_MS)
     liveTimer.current = window.setInterval(() => void live(), LIVE_MS)
 
