@@ -14,14 +14,15 @@ const ORDER: AxisKey[] = ['attack', 'finishing', 'possession', 'defense', 'creat
 
 export function Team() {
   const { homeTeam, matches } = useApp()
-  if (!homeTeam) return null
-  const code = homeTeam.code
+  const code = homeTeam?.code ?? ''
 
   const fixtureIds = useMemo(
     () =>
-      finishedFor(matches, code)
-        .map((m) => m.apiFixtureId)
-        .filter((x): x is number => typeof x === 'number'),
+      code
+        ? finishedFor(matches, code)
+            .map((m) => m.apiFixtureId)
+            .filter((x): x is number => typeof x === 'number')
+        : [],
     [matches, code],
   )
   const { details, loading } = useMatchDetails(fixtureIds)
@@ -31,6 +32,8 @@ export function Team() {
     [fixtureIds, details, code],
   )
   const ratings = useMemo(() => computeRatings(stats), [stats])
+
+  if (!homeTeam) return null
   const mood = moodFor(matches, code).mood
   const noData = fixtureIds.length === 0
 
@@ -54,7 +57,7 @@ export function Team() {
             <div className="absolute right-3 top-3 opacity-90">
               <Mascot code={code} color={homeTeam.color} color2={homeTeam.color2} symbol={homeTeam.symbol} mood={mood} size={64} />
             </div>
-            <RadarChart ratings={ratings} color="var(--team-pure)" />
+            <RadarChart ratings={ratings} color={homeTeam.color} />
             <p className="mt-2 text-center font-grotesk text-lg font-medium">{ratings.playstyle}</p>
             <p className="mt-1 text-center text-2xs text-faint">
               Based on real tournament stats · {ratings.matchesUsed} {ratings.matchesUsed === 1 ? 'match' : 'matches'}
