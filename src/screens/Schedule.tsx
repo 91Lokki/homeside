@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react'
 import { GROUP_IDS, TEAMS, teamByCode } from '@/data/teams'
 import { computeGroupStandings } from '@/domain/record'
 import type { GroupId, Match } from '@/domain/types'
+import type { ApiStatus } from '@/lib/api'
 import { MatchReport } from '@/components/MatchReport'
 import { FormDots, Label, Score } from '@/components/ui/atoms'
 import { localDay, localTime, localZoneName } from '@/lib/time'
@@ -10,7 +11,7 @@ import { useApp } from '@/state/store'
 import { cn } from '@/lib/utils'
 
 export function Schedule() {
-  const { matches, homeCode, homeTeam } = useApp()
+  const { matches, homeCode, homeTeam, apiStatus, healthKnown } = useApp()
   const [group, setGroup] = useState<GroupId>(homeTeam?.group ?? 'A')
 
   const codes = useMemo(() => TEAMS.filter((t) => t.group === group).map((t) => t.code), [group])
@@ -116,7 +117,7 @@ export function Schedule() {
                 <p className="ml-1 text-2xs font-medium uppercase tracking-label text-faint">{day}</p>
                 <div className="panel mt-2 divide-y overflow-hidden">
                   {dayMatches.map((m) => (
-                    <MatchRow key={m.id} match={m} homeCode={homeCode} />
+                    <MatchRow key={m.id} match={m} homeCode={homeCode} apiStatus={apiStatus} healthKnown={healthKnown} />
                   ))}
                 </div>
               </div>
@@ -128,7 +129,7 @@ export function Schedule() {
   )
 }
 
-function MatchRow({ match, homeCode }: { match: Match; homeCode: string | null }) {
+function MatchRow({ match, homeCode, apiStatus, healthKnown }: { match: Match; homeCode: string | null; apiStatus: ApiStatus; healthKnown: boolean }) {
   const [open, setOpen] = useState(false)
   const home = match.homeCode ? teamByCode[match.homeCode] : null
   const away = match.awayCode ? teamByCode[match.awayCode] : null
@@ -158,7 +159,7 @@ function MatchRow({ match, homeCode }: { match: Match; homeCode: string | null }
       </button>
       {open && expandable && (
         <div className="border-t bg-canvas/40">
-          <MatchReport match={match} accentCode={homeCode} />
+          <MatchReport match={match} accentCode={homeCode} apiStatus={apiStatus} healthKnown={healthKnown} />
         </div>
       )}
     </div>

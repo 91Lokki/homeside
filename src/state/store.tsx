@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { SEED_MATCHES } from '@/data/fixtures'
 import { teamByCode } from '@/data/teams'
 import type { Match, Team } from '@/domain/types'
-import { fetchResults, mergeMatches } from '@/lib/api'
+import { fetchResultsWithHealth, mergeMatches, type ApiHealth, type ApiStatus } from '@/lib/api'
 import { activeMatchDates } from '@/domain/fantasyRounds'
 import { useTeamColor, useTheme } from './theme'
 
@@ -38,6 +38,12 @@ interface AppCtx {
   /** true once real results from the API have been merged over the seed */
   connected: boolean
   lastUpdated: number | null
+  /** what the live feed is doing right now, so screens can be honest about it */
+  apiStatus: ApiStatus
+  apiReason?: string
+  /** false until the first fetch has actually reported the feed status, so the
+   *  UI never asserts "no key" before we've checked */
+  healthKnown: boolean
 }
 
 const Ctx = createContext<AppCtx | null>(null)
@@ -47,6 +53,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [homeCode, setHomeCodeState] = useState<string | null>(() => localStorage.getItem(TEAM_KEY))
   const [results, setResults] = useState<Match[] | null>(null)
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
+  const [health, setHealth] = useState<ApiHealth | null>(null) // null = not fetched yet
   const lastFetch = useRef(0)
   const timer = useRef<number | null>(null)
 
@@ -64,9 +71,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const liveTimer = { current: null as number | null }
 
     const baseline = async () => {
-      const r = await fetchResults()
+      const { matches: r, health: h } = await fetchResultsWithHealth()
       if (cancelled) return
       lastFetch.current = Date.now()
+      setHealth(h)
       if (r) {
         setResults(r)
         setLastUpdated(Date.now())
@@ -78,11 +86,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const dates = activeMatchDates(Date.now())
       if (!dates.length) return
       const got: Match[] = []
+      let lastHealth: ApiHealth | null = null
       for (const d of dates) {
-        const r = await fetchResults(d)
+        const { matches: r, health: h } = await fetchResultsWithHealth(d)
+        lastHealth = h
         if (r) got.push(...r)
       }
-      if (cancelled || got.length === 0) return
+      if (cancelled) return
+      if (lastHealth) setHealth(lastHealth) // keep apiStatus truthful during the live window
+      if (got.length === 0) return
       lastFetch.current = Date.now()
       setResults((prev) => upsertById(prev ?? [], got))
       setLastUpdated(Date.now())
@@ -116,8 +128,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useTeamColor(homeTeam?.color, isDark)
 
   const value = useMemo<AppCtx>(
-    () => ({ homeCode, homeTeam, setHomeCode, matches, connected: results !== null, lastUpdated }),
-    [homeCode, homeTeam, setHomeCode, matches, results, lastUpdated],
+    () => ({
+      homeCode,
+      homeTeam,
+      setHomeCode,
+      matches,
+      connected: results !== null,
+      lastUpdated,
+      apiStatus: health?.status ?? 'no-key',
+      apiReason: health?.reason,
+      healthKnown: health !== null,
+    }),
+    [homeCode, homeTeam, setHomeCode, matches, results, lastUpdated, health],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -3,6 +3,7 @@ import { finishedFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
 import { AXIS_LABEL, computeRatings, type AxisKey } from '@/domain/ratings'
 import type { TeamMatchStats } from '@/lib/api'
+import { liveDataNote } from '@/lib/apiCopy'
 import { useMatchDetails } from '@/lib/matchData'
 import { Mascot } from '@/components/mascot/Mascot'
 import { RadarChart } from '@/components/RadarChart'
@@ -13,7 +14,7 @@ import { cn } from '@/lib/utils'
 const ORDER: AxisKey[] = ['attack', 'finishing', 'possession', 'defense', 'creativity', 'discipline']
 
 export function Team() {
-  const { homeTeam, matches } = useApp()
+  const { homeTeam, matches, apiStatus, healthKnown } = useApp()
   const code = homeTeam?.code ?? ''
 
   const fixtureIds = useMemo(
@@ -47,8 +48,12 @@ export function Team() {
 
       {noData ? (
         <div className="panel p-6 text-sm text-muted">
-          The ability card is built from this team&rsquo;s real match stats. It appears once live data is connected
-          (Highlightly key set) and the team has played.
+          The ability card is built from {homeTeam.name}&rsquo;s real match stats.{' '}
+          {!healthKnown
+            ? 'Checking the live data feed…'
+            : apiStatus === 'ok'
+              ? 'It appears once the team has played and the match is in the live data feed.'
+              : liveDataNote(apiStatus)}
         </div>
       ) : (
         <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

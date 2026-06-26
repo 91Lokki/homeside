@@ -14,16 +14,40 @@ interface ProxyResult {
   matches?: unknown[]
 }
 
-async function getProxy(path: string): Promise<unknown[] | null> {
+/** What the live feed is actually doing right now — so the UI can be honest
+ *  ("rate-limited, resets soon") instead of vaguely blaming a missing key. */
+export type ApiStatus = 'ok' | 'no-key' | 'rate-limited' | 'error'
+export interface ApiHealth {
+  status: ApiStatus
+  reason?: string
+}
+
+interface ProxyRaw {
+  httpStatus: number
+  body: ProxyResult | null
+}
+
+async function getProxyRaw(path: string): Promise<ProxyRaw> {
   try {
     const res = await fetch(path, { headers: { accept: 'application/json' } })
-    if (!res.ok) return null
-    const data = (await res.json()) as ProxyResult
-    if (data.source !== 'highlightly') return null
-    return Array.isArray(data.matches) ? data.matches : null
+    let body: ProxyResult | null = null
+    try {
+      body = (await res.json()) as ProxyResult
+    } catch {
+      /* non-JSON / empty */
+    }
+    return { httpStatus: res.status, body }
   } catch {
-    return null
+    return { httpStatus: 0, body: null }
   }
+}
+
+function healthFrom({ httpStatus, body }: ProxyRaw): ApiHealth {
+  const source = body?.source
+  if (source === 'highlightly') return { status: 'ok' }
+  if (source === 'none') return { status: 'no-key', reason: body?.reason }
+  if (httpStatus === 429) return { status: 'rate-limited', reason: body?.reason }
+  return { status: 'error', reason: body?.reason || (httpStatus ? `upstream ${httpStatus}` : 'feed unreachable') }
 }
 
 /* --------------------------- name -> code mapping ------------------------- */
@@ -146,19 +170,25 @@ function normalizeMatch(hl: HlMatch): Match | null {
 }
 
 /**
- * Fetch real, FINISHED match results from the proxy. Only final scores reach the
- * app — never an in-play score. Returns null when the proxy has no key (the
- * caller then keeps the real seed snapshot untouched).
+ * Fetch real, FINISHED match results from the proxy AND report what the feed is
+ * doing (ok / no-key / rate-limited / error) — derived from the same request, so
+ * no extra API calls. `matches` is null whenever real data didn't arrive (the
+ * caller then keeps the real seed snapshot untouched). Only final scores reach
+ * the app, never an in-play score.
  *
  * Pass `date` (YYYY-MM-DD) to poll just that match day from the short-cached live
  * path; omit it for the full, hard-cached season feed.
  */
-export async function fetchResults(date?: string): Promise<Match[] | null> {
-  const raw = await getProxy(date ? `/api/fixtures?date=${encodeURIComponent(date)}` : '/api/fixtures')
-  if (!raw) return null
-  return raw
-    .map((x) => normalizeMatch(x as HlMatch))
-    .filter((m): m is Match => m !== null && m.status === 'finished')
+export async function fetchResultsWithHealth(date?: string): Promise<{ matches: Match[] | null; health: ApiHealth }> {
+  const raw = await getProxyRaw(date ? `/api/fixtures?date=${encodeURIComponent(date)}` : '/api/fixtures')
+  const health = healthFrom(raw)
+  const matches =
+    raw.body?.source === 'highlightly' && Array.isArray(raw.body.matches)
+      ? raw.body.matches
+          .map((x) => normalizeMatch(x as HlMatch))
+          .filter((m): m is Match => m !== null && m.status === 'finished')
+      : null
+  return { matches, health }
 }
 
 /* ------------------------------ merge with seed --------------------------- */

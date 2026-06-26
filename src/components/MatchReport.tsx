@@ -1,11 +1,22 @@
 import { useEffect, useState } from 'react'
 import type { Match } from '@/domain/types'
-import { fetchMatchReport, type MatchReport as Report } from '@/lib/api'
+import { fetchMatchReport, type ApiStatus, type MatchReport as Report } from '@/lib/api'
+import { liveDataNote } from '@/lib/apiCopy'
 import { cn } from '@/lib/utils'
 import { Label } from './ui/atoms'
 
 /** The light match report — goal timeline, possession, shots. Live data only. */
-export function MatchReport({ match, accentCode }: { match: Match; accentCode?: string | null }) {
+export function MatchReport({
+  match,
+  accentCode,
+  apiStatus,
+  healthKnown,
+}: {
+  match: Match
+  accentCode?: string | null
+  apiStatus: ApiStatus
+  healthKnown: boolean
+}) {
   const [report, setReport] = useState<Report | null>(null)
   const [state, setState] = useState<'idle' | 'loading' | 'unavailable' | 'ready'>('idle')
 
@@ -35,11 +46,18 @@ export function MatchReport({ match, accentCode }: { match: Match; accentCode?: 
   }
 
   if (state === 'unavailable') {
+    // Honest about *why* the report is missing: still checking, feed down, or
+    // (feed ok) the match has no box score yet — not a vague "connect a key".
+    const note = !healthKnown
+      ? 'Checking the live data feed…'
+      : apiStatus !== 'ok'
+        ? liveDataNote(apiStatus)
+        : match.apiFixtureId
+          ? 'A detailed report for this match isn’t available yet.'
+          : liveDataNote('ok')
     return (
       <div className="px-4 py-5">
-        <p className="text-xs text-muted">
-          Final score recorded. The goal timeline, possession and shots appear here once a live data key is connected.
-        </p>
+        <p className="text-xs text-muted">Final score recorded. {note}</p>
       </div>
     )
   }
