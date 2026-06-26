@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils'
 const GLASS = 'bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10'
 const STAND_COLS = 'grid grid-cols-[1.9rem_minmax(0,1fr)_1.4rem_1.3rem_1.3rem_1.3rem_2rem_2rem] items-center gap-1'
 const kickoffMs = (m: Match) => new Date(m.kickoff).getTime()
-const dayLabel = (m: Match) => new Date(m.kickoff).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 const timeLabel = (m: Match) => new Date(m.kickoff).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+const dateLabel = (m: Match) => new Date(m.kickoff).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
 /** Re-render every `ms` while `active`, so a live clock can tick on its own. */
 function useNow(active: boolean, ms = 1000) {
@@ -47,19 +47,20 @@ export function Schedule() {
   const groupCodes = useMemo(() => TEAMS.filter((t) => t.group === group).map((t) => t.code), [group])
   const standings = useMemo(() => computeGroupStandings(matches, group, groupCodes), [matches, group, groupCodes])
 
-  const byDay = useMemo(() => {
-    const fixtures = matches
-      .filter((m) => m.stage === 'group' && m.group === group && m.homeCode && m.awayCode)
-      .sort((a, b) => kickoffMs(a) - kickoffMs(b))
-    const out: { label: string; matches: Match[] }[] = []
-    for (const m of fixtures) {
-      const label = dayLabel(m)
-      const last = out[out.length - 1]
-      if (last && last.label === label) last.matches.push(m)
-      else out.push({ label, matches: [m] })
-    }
-    return out
-  }, [matches, group])
+  // The group's six fixtures oldest→newest. A 4-team group plays 3 matchdays of two
+  // games each, chronologically grouped, so matchday = pair index + 1 (the two MD2
+  // games can fall on different calendar dates, so day-of-month won't do).
+  const fixtures = useMemo(
+    () =>
+      matches
+        .filter((m) => m.stage === 'group' && m.group === group && m.homeCode && m.awayCode)
+        .sort((a, b) => kickoffMs(a) - kickoffMs(b)),
+    [matches, group],
+  )
+  const matchdayById = useMemo(
+    () => Object.fromEntries(fixtures.map((m, i) => [m.id, Math.floor(i / 2) + 1])),
+    [fixtures],
+  )
 
   return (
     <div className="relative z-10 mx-auto max-w-5xl animate-fade-in text-ink">
@@ -124,27 +125,27 @@ export function Schedule() {
         {/* fixtures & results */}
         <section>
           <h2 className="mb-3 font-grotesk text-lg font-bold">Fixtures &amp; results</h2>
-          <div className="space-y-4">
-            {byDay.map((day) => (
-              <div key={day.label}>
-                <p className="mb-2 ml-1 text-2xs font-semibold uppercase tracking-label text-faint">{day.label}</p>
-                <div className={cn('overflow-hidden rounded-[20px]', GLASS)}>
-                  {day.matches.map((m, i) => {
-                    const open = openId === m.id
-                    return (
-                      <div key={m.id} className={cn(i > 0 && 'border-t border-black/5 dark:border-white/[0.07]')}>
-                        <FixtureRow m={m} open={open} now={now} lastUpdated={lastUpdated} onToggle={() => m.status === 'finished' && setOpenId((c) => (c === m.id ? null : m.id))} />
-                        {open && (
-                          <div className="animate-fade-in border-t border-black/5 dark:border-white/[0.07]">
-                            <MatchReport match={m} apiStatus={apiStatus} healthKnown={healthKnown} />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+          <div className={cn('overflow-hidden rounded-[20px]', GLASS)}>
+            {fixtures.map((m, i) => {
+              const open = openId === m.id
+              return (
+                <div key={m.id} className={cn(i > 0 && 'border-t border-black/5 dark:border-white/[0.07]')}>
+                  <FixtureRow
+                    m={m}
+                    matchday={matchdayById[m.id]}
+                    open={open}
+                    now={now}
+                    lastUpdated={lastUpdated}
+                    onToggle={() => m.status === 'finished' && setOpenId((c) => (c === m.id ? null : m.id))}
+                  />
+                  {open && (
+                    <div className="animate-fade-in border-t border-black/5 dark:border-white/[0.07]">
+                      <MatchReport match={m} apiStatus={apiStatus} healthKnown={healthKnown} />
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       </div>
@@ -152,11 +153,26 @@ export function Schedule() {
   )
 }
 
-function FixtureRow({ m, open, now, lastUpdated, onToggle }: { m: Match; open: boolean; now: number; lastUpdated: number | null; onToggle: () => void }) {
+function FixtureRow({
+  m,
+  matchday,
+  open,
+  now,
+  lastUpdated,
+  onToggle,
+}: {
+  m: Match
+  matchday: number
+  open: boolean
+  now: number
+  lastUpdated: number | null
+  onToggle: () => void
+}) {
   const home = m.homeCode ? teamByCode[m.homeCode] : null
   const away = m.awayCode ? teamByCode[m.awayCode] : null
   const finished = m.status === 'finished'
   const live = m.status === 'live'
+  const showScore = finished || live
   const hWin = finished && (m.homeScore ?? 0) > (m.awayScore ?? 0)
   const aWin = finished && (m.awayScore ?? 0) > (m.homeScore ?? 0)
 
@@ -164,37 +180,46 @@ function FixtureRow({ m, open, now, lastUpdated, onToggle }: { m: Match; open: b
     <button
       onClick={onToggle}
       className={cn(
-        'relative flex w-full items-center justify-center px-4 py-3 text-left transition-colors',
+        'block w-full px-4 py-5 text-center transition-colors',
         finished ? 'cursor-pointer hover:bg-black/[0.03] dark:hover:bg-white/[0.04]' : 'cursor-default',
         (live || open) && 'bg-team-soft',
       )}
     >
-      <span className="absolute left-3.5 text-2xs font-semibold sm:left-4">
-        {finished ? (
-          <span className="text-faint">FT</span>
-        ) : live ? (
-          <span className="inline-flex items-center gap-1 text-red-500"><span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-live-pulse" /><span className="tnum">{liveClock(m.minute, lastUpdated, now)}</span></span>
-        ) : (
-          <span className="text-muted">{timeLabel(m)}</span>
-        )}
-      </span>
+      <p className="mb-3.5 text-2xs font-medium uppercase tracking-label text-faint">
+        {m.stage === 'group' ? `Group Stage · Match ${matchday}` : m.stage}
+      </p>
 
-      <div className="grid items-center gap-2.5" style={{ gridTemplateColumns: 'minmax(0,8.5rem) auto 3.5rem auto minmax(0,8.5rem)' }}>
-        <span className={cn('truncate text-right text-[15px]', aWin ? 'font-medium text-muted' : 'font-semibold text-ink')}>{home?.name ?? m.homeCode}</span>
-        <Flag code={m.homeCode} size={26} />
-        <span className="flex items-center justify-center gap-1.5 font-grotesk text-xl font-bold tnum">
-          {finished || live ? (
-            <>
-              <span className={cn('w-4 text-right', aWin && 'text-faint')}>{m.homeScore}</span>
-              <span className="text-faint">-</span>
-              <span className={cn('w-4 text-left', hWin && 'text-faint')}>{m.awayScore}</span>
-            </>
-          ) : (
-            <span className="text-sm font-semibold text-faint">vs</span>
-          )}
+      {/* Apple-Sports row: flags pushed to the edges, big scores inboard, the
+          live clock / FT / kickoff time dead-centre, team names under the flags. */}
+      <div className="grid items-center gap-x-3 sm:gap-x-5" style={{ gridTemplateColumns: 'minmax(0,1fr) auto auto auto minmax(0,1fr)' }}>
+        <div className="col-start-1 row-start-1 flex justify-center"><Flag code={m.homeCode} size={40} /></div>
+        <span className={cn('col-start-2 row-start-1 min-w-[1.25rem] text-center font-grotesk text-4xl font-bold leading-none tnum', !showScore ? 'text-transparent' : aWin ? 'text-faint' : 'text-ink')}>
+          {showScore ? m.homeScore : 0}
         </span>
-        <Flag code={m.awayCode} size={26} />
-        <span className={cn('truncate text-[15px]', hWin ? 'font-medium text-muted' : 'font-semibold text-ink')}>{away?.name ?? m.awayCode}</span>
+
+        <div className="col-start-3 row-start-1 flex min-w-[3.5rem] flex-col items-center justify-center gap-1 px-1">
+          {live ? (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-live-pulse" />
+              <span className="font-grotesk text-xl font-bold tnum text-ink">{liveClock(m.minute, lastUpdated, now)}</span>
+            </>
+          ) : finished ? (
+            <span className="text-2xs font-semibold uppercase tracking-label text-faint">FT</span>
+          ) : (
+            <>
+              <span className="font-grotesk text-base font-semibold tnum text-ink">{timeLabel(m)}</span>
+              <span className="text-2xs text-faint">{dateLabel(m)}</span>
+            </>
+          )}
+        </div>
+
+        <span className={cn('col-start-4 row-start-1 min-w-[1.25rem] text-center font-grotesk text-4xl font-bold leading-none tnum', !showScore ? 'text-transparent' : hWin ? 'text-faint' : 'text-ink')}>
+          {showScore ? m.awayScore : 0}
+        </span>
+        <div className="col-start-5 row-start-1 flex justify-center"><Flag code={m.awayCode} size={40} /></div>
+
+        <span className="col-start-1 row-start-2 mt-2.5 truncate text-center text-sm font-medium text-muted">{home?.name ?? m.homeCode}</span>
+        <span className="col-start-5 row-start-2 mt-2.5 truncate text-center text-sm font-medium text-muted">{away?.name ?? m.awayCode}</span>
       </div>
     </button>
   )
