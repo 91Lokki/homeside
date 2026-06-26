@@ -65,7 +65,10 @@ export interface RoundSquad {
   captain: string | null
   vice: string | null
 }
-export const playerKey = (p: { teamCode: string; name: string }) => `${p.teamCode}·${p.name}`
+/** Unique per player. Includes the shirt number because some squads list two
+ *  different players under the same single name (e.g. Brazil's two "Danilo"s). */
+export const playerKey = (p: { teamCode: string; name: string; number?: number | null }) =>
+  `${p.teamCode}·${p.name}·${p.number ?? ''}`
 
 /* ------------------------------ scoring table ----------------------------- */
 const GOAL_POINTS: Record<PosCat, number> = { GK: 6, DEF: 6, MID: 5, ATT: 4 }
