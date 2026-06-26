@@ -3,13 +3,32 @@ import { SEED_MATCHES } from '@/data/fixtures'
 import { teamByCode } from '@/data/teams'
 import type { Match, Team } from '@/domain/types'
 import { fetchResults, mergeMatches } from '@/lib/api'
+import { activeMatchDates } from '@/domain/fantasyRounds'
 import { useTeamColor, useTheme } from './theme'
 
 const TEAM_KEY = 'homeside.team'
-// Low-frequency results updater (NOT live): refresh on load, then every few
-// hours. World Cup results change a handful of times a day at most.
+// Baseline results feed: refresh on load, then every few hours. Most days nothing
+// is on, so this stays near-zero against the daily API budget.
 const REFRESH_MS = 3 * 60 * 60 * 1000 // 3 hours
 const STALE_MS = 60 * 60 * 1000 // refetch on tab focus only if older than 1 hour
+// While a knockout match is actually on (and the tab is open), poll that day's
+// results this often so a final result shows up within a couple of minutes.
+const LIVE_MS = 150 * 1000 // 2.5 minutes
+
+/** Merge freshly-fetched matches into the accumulated set by stable id. */
+function upsertById(base: Match[], incoming: Match[]): Match[] {
+  const out = base.slice()
+  const idx = new Map(out.map((m, i) => [m.id, i]))
+  for (const m of incoming) {
+    const i = idx.get(m.id)
+    if (i != null) out[i] = m
+    else {
+      idx.set(m.id, out.length)
+      out.push(m)
+    }
+  }
+  return out
+}
 
 interface AppCtx {
   homeCode: string | null
@@ -37,10 +56,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem(TEAM_KEY)
   }, [])
 
-  // Pull real finished results occasionally. No in-match polling.
+  // Baseline: the whole finished-results feed, occasionally. Plus a fast loop that
+  // only does anything while a knockout match is on AND the tab is visible — so
+  // end-of-match updates are near-real-time without burning the daily quota.
   useEffect(() => {
     let cancelled = false
-    const refresh = async () => {
+    const liveTimer = { current: null as number | null }
+
+    const baseline = async () => {
       const r = await fetchResults()
       if (cancelled) return
       lastFetch.current = Date.now()
@@ -50,20 +73,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    void refresh()
-    timer.current = window.setInterval(() => void refresh(), REFRESH_MS)
-
-    // If the tab has been away for a while, top up on return (still low-frequency).
-    const onVisible = () => {
-      if (document.visibilityState === 'visible' && Date.now() - lastFetch.current > STALE_MS) {
-        void refresh()
+    const live = async () => {
+      if (document.visibilityState !== 'visible') return
+      const dates = activeMatchDates(Date.now())
+      if (!dates.length) return
+      const got: Match[] = []
+      for (const d of dates) {
+        const r = await fetchResults(d)
+        if (r) got.push(...r)
       }
+      if (cancelled || got.length === 0) return
+      lastFetch.current = Date.now()
+      setResults((prev) => upsertById(prev ?? [], got))
+      setLastUpdated(Date.now())
+    }
+
+    void baseline()
+    timer.current = window.setInterval(() => void baseline(), REFRESH_MS)
+    liveTimer.current = window.setInterval(() => void live(), LIVE_MS)
+
+    // On return to the tab: top up the baseline if stale, and grab fresh results
+    // immediately if a match is on right now.
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - lastFetch.current > STALE_MS) void baseline()
+      void live()
     }
     document.addEventListener('visibilitychange', onVisible)
 
     return () => {
       cancelled = true
       if (timer.current) window.clearInterval(timer.current)
+      if (liveTimer.current) window.clearInterval(liveTimer.current)
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])

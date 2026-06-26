@@ -18,23 +18,30 @@ import {
   type Round,
   type Slot,
 } from '@/domain/fantasy'
-import { currentRound, eliminatedTeams, isRoundLocked, previousRound } from '@/domain/fantasyRounds'
+import { currentRound, eliminatedTeams, isRoundLocked, previousRound, roundFirstKickoff } from '@/domain/fantasyRounds'
 import type { Match } from '@/domain/types'
 import { useMatchDetails } from '@/lib/matchData'
 import { PlayerPicker } from '@/components/PlayerPicker'
+import { KnockoutProgress, type ProgressNode } from '@/components/KnockoutProgress'
 import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { cn } from '@/lib/utils'
 
 const ROUND_SHORT: Record<Round, string> = { R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', FINAL: 'Final' }
+const fmtDate = (ms: number | null) => (ms == null ? '' : new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
 
 export function Fantasy() {
   const { matches } = useApp()
   const { fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy } = useGames()
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
 
-  const now = Date.now()
+  // A slow clock so the timeline flips to LIVE at kickoff even between data polls.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(t)
+  }, [])
   const cur = currentRound(now)
 
   // How many matches each round has, and how many have finished, to tell a
@@ -101,6 +108,13 @@ export function Fantasy() {
   const totalPoints = ROUNDS.reduce((a, r) => a + (roundScore[r]?.points ?? 0), 0)
   const selScore = roundScore[focus]
 
+  const progressNodes: ProgressNode[] = ROUNDS.map((r) => {
+    const done = roundFullyDone(r)
+    const live = isRoundLocked(r, now) && !done
+    const state = done ? 'done' : live ? 'live' : r === focus ? 'focus' : 'upcoming'
+    return { round: r, label: ROUND_SHORT[r], state, points: roundScore[r]?.points, dateLabel: fmtDate(roundFirstKickoff(r)) }
+  })
+
   const transfersUsed = prev ? countTransfers(players, prevPlayers) : 0
   const free = FREE_TRANSFERS[focus]
   const paid = Number.isFinite(free) ? Math.max(0, transfersUsed - free) : 0
@@ -131,31 +145,7 @@ export function Fantasy() {
       </div>
 
       {/* knockout progress bar — a timeline, not a switcher */}
-      <div className="mb-6 flex items-center">
-        {ROUNDS.map((r, i) => {
-          const isFocus = r === focus
-          const started = isRoundLocked(r, now)
-          const pts = roundScore[r]?.points
-          return (
-            <div key={r} className="flex flex-1 items-center last:flex-none">
-              <div className="flex flex-col items-center">
-                <div
-                  className={cn(
-                    'grid h-9 w-9 place-items-center rounded-full font-grotesk text-[11px] font-semibold transition-colors',
-                    isFocus ? 'bg-team text-team-ink' : started ? 'border-2 border-team text-team' : 'border text-faint',
-                  )}
-                >
-                  {ROUND_SHORT[r]}
-                </div>
-                <span className={cn('mt-1.5 text-2xs tnum', started ? 'text-muted' : 'text-faint')}>
-                  {started && pts != null ? `${pts}` : isFocus ? 'now' : ''}
-                </span>
-              </div>
-              {i < ROUNDS.length - 1 && <div className={cn('mx-1 h-0.5 flex-1 rounded-full', started ? 'bg-team/50' : 'bg-hairline')} />}
-            </div>
-          )
-        })}
-      </div>
+      <KnockoutProgress nodes={progressNodes} />
 
       {/* status line */}
       <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted">

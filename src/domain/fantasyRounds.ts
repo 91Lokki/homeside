@@ -11,6 +11,39 @@ export function roundFirstKickoff(round: Round): number | null {
   return ks.length ? Math.min(...ks) : null
 }
 
+/* ------------------------------ match windows ----------------------------- */
+// Used to poll real results faster only while a knockout match is actually on,
+// so end-of-match updates land within a couple of minutes — and we sit idle
+// (near-zero API budget) the rest of the time.
+
+/** A knockout match is "live" from a few minutes before kickoff until well past
+ *  full time (covers 90' + stoppage + extra time + a shootout + the result lag). */
+const LEAD_MS = 5 * 60 * 1000
+const WINDOW_MS = 170 * 60 * 1000 // ~2h50 after kickoff
+
+/** Every knockout kickoff (ms), ascending. */
+export function knockoutKickoffs(): number[] {
+  return BRACKET.filter((b) => stageToRound(b.stage) && b.kickoff)
+    .map((b) => new Date(b.kickoff as string).getTime())
+    .filter((t) => !Number.isNaN(t))
+    .sort((a, b) => a - b)
+}
+
+/** UTC calendar dates (YYYY-MM-DD) of any knockout match whose live window covers
+ *  `now`. Usually one date; two only around a UTC midnight. Empty when nothing's on. */
+export function activeMatchDates(now: number = Date.now()): string[] {
+  const dates = new Set<string>()
+  for (const k of knockoutKickoffs()) {
+    if (now >= k - LEAD_MS && now <= k + WINDOW_MS) dates.add(new Date(k).toISOString().slice(0, 10))
+  }
+  return [...dates]
+}
+
+/** True while at least one knockout match is in its live window. */
+export function inMatchWindow(now: number = Date.now()): boolean {
+  return activeMatchDates(now).length > 0
+}
+
 /** A round locks once its first match has kicked off. */
 export function isRoundLocked(round: Round, now: number = Date.now()): boolean {
   const k = roundFirstKickoff(round)

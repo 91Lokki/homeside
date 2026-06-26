@@ -146,12 +146,15 @@ function normalizeMatch(hl: HlMatch): Match | null {
 }
 
 /**
- * Fetch real, FINISHED match results from the proxy. Low-frequency results
- * updater — not live: only final scores reach the app. Returns null when the
- * proxy has no key (the caller then keeps the real seed snapshot untouched).
+ * Fetch real, FINISHED match results from the proxy. Only final scores reach the
+ * app — never an in-play score. Returns null when the proxy has no key (the
+ * caller then keeps the real seed snapshot untouched).
+ *
+ * Pass `date` (YYYY-MM-DD) to poll just that match day from the short-cached live
+ * path; omit it for the full, hard-cached season feed.
  */
-export async function fetchResults(): Promise<Match[] | null> {
-  const raw = await getProxy('/api/fixtures')
+export async function fetchResults(date?: string): Promise<Match[] | null> {
+  const raw = await getProxy(date ? `/api/fixtures?date=${encodeURIComponent(date)}` : '/api/fixtures')
   if (!raw) return null
   return raw
     .map((x) => normalizeMatch(x as HlMatch))
