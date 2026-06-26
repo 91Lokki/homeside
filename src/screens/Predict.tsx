@@ -5,6 +5,7 @@ import { TEAMS, teamByCode } from '@/data/teams'
 import { resolveBracket, STAGE_LABEL } from '@/domain/bracket'
 import { buildPredictedBracket, scorePredictions, type PickStatus } from '@/domain/predict'
 import type { ResolvedBracketMatch, Stage, TeamCode } from '@/domain/types'
+import { Flag } from '@/components/Flag'
 import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
@@ -115,10 +116,10 @@ function MatchCard({
   const def = BRACKET.find((b) => b.matchNo === no)
   const finished = real?.status === 'finished'
   return (
-    <div className="rounded-[12px] border bg-surface p-1.5">
+    <div className="rounded-[14px] bg-white/[0.06] p-1.5 ring-1 ring-inset ring-white/10 backdrop-blur-xl">
       <div className="mb-0.5 flex items-center justify-between px-1.5">
-        <span className="text-[9px] font-medium uppercase tracking-label text-faint">M{no}</span>
-        {finished && <span className="text-[9px] uppercase tracking-label text-faint">FT</span>}
+        <span className="text-[9px] font-medium uppercase tracking-label text-white/40">M{no}</span>
+        {finished && <span className="text-[9px] uppercase tracking-label text-white/40">FT</span>}
       </div>
       <Side code={homeCode} label={def?.home.label} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
       <Side code={awayCode} label={def?.away.label} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
@@ -155,28 +156,21 @@ function Side({
       disabled={!code}
       onClick={() => code && onPick(code)}
       className={cn(
-        'flex w-full items-center justify-between gap-2 rounded-[8px] px-2 py-1.5 text-left transition-colors',
-        code && 'hover:bg-sunken/60',
-        picked && !finished && 'bg-team-soft',
-        correct && 'bg-emerald-500/15',
-        wrong && 'opacity-50',
+        'flex w-full items-center justify-between gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors',
+        code && 'hover:bg-white/10',
+        picked && !finished && 'bg-team-soft ring-1 ring-inset ring-team/40',
+        correct && 'bg-emerald-500/20',
+        wrong && 'opacity-45',
       )}
     >
-      <span className="flex min-w-0 items-center gap-1.5">
-        {picked && (
-          <span
-            className={cn(
-              'inline-block h-1.5 w-1.5 shrink-0 rounded-full',
-              correct ? 'bg-emerald-500' : wrong ? 'bg-faint' : 'bg-team',
-            )}
-          />
-        )}
-        <span className={cn('truncate text-[13px]', team ? 'font-medium' : 'text-faint', isWinner && 'font-semibold')}>
+      <span className="flex min-w-0 items-center gap-2">
+        {team ? <Flag code={code} size={18} /> : <span className="h-[18px] w-[18px] shrink-0 rounded-full bg-white/8" />}
+        <span className={cn('truncate text-[13px]', team ? 'text-white' : 'text-white/40', (isWinner || picked) && 'font-semibold')}>
           {team ? team.name : label ?? '—'}
         </span>
-        {correct && <Check size={12} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
+        {correct && <Check size={12} className="shrink-0 text-emerald-400" />}
       </span>
-      {score != null && <span className="font-grotesk text-xs font-semibold tnum">{score}</span>}
+      {score != null && <span className="font-grotesk text-sm font-bold tnum text-white">{score}</span>}
     </button>
   )
 }

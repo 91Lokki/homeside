@@ -21,6 +21,7 @@ import {
 import { currentRound, eliminatedTeams, isRoundLocked, previousRound, roundFirstKickoff } from '@/domain/fantasyRounds'
 import type { Match } from '@/domain/types'
 import { useMatchDetails } from '@/lib/matchData'
+import { Flag } from '@/components/Flag'
 import { PlayerPicker } from '@/components/PlayerPicker'
 import { KnockoutProgress, type ProgressNode } from '@/components/KnockoutProgress'
 import { Label } from '@/components/ui/atoms'
@@ -188,7 +189,8 @@ export function Fantasy() {
                     {(isNominalCap || isCap) && <Badge tone="cap">{isCap ? 'C×2' : 'C'}</Badge>}
                     {isVice && <Badge tone="vice">VC</Badge>}
                   </div>
-                  <p className="mt-0.5 text-2xs text-faint">
+                  <p className="mt-1 flex items-center gap-1.5 text-2xs text-faint">
+                    <Flag code={pick.teamCode} size={15} />
                     {pick.position} · {team?.name ?? pick.teamCode}
                   </p>
                   {out && (

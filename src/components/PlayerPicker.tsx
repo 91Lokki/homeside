@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
+import { Flag } from './Flag'
 import { posCat, SLOT_ALLOWS, SLOT_LABEL, playerKey, type FantasyPick, type PosCat, type Slot } from '@/domain/fantasy'
 import type { TeamCode } from '@/domain/types'
 import { Label } from './ui/atoms'
@@ -103,9 +104,7 @@ export function PlayerPicker({
                       onClick={() => onPick({ slot, name: p.name, teamCode: p.teamCode, position: p.pos, number: p.number })}
                       className={cn('flex w-full items-center gap-3 px-2 py-2.5 text-left', full ? 'cursor-not-allowed opacity-40' : 'hover:bg-sunken/50')}
                     >
-                      <span className="grid h-8 w-9 shrink-0 place-items-center rounded-[7px] bg-sunken font-grotesk text-[10px] font-semibold tracking-wide text-muted">
-                        {p.teamCode}
-                      </span>
+                      <Flag code={p.teamCode} size={28} className="shrink-0" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{p.name}</span>
                         <span className="block truncate text-2xs text-faint">
