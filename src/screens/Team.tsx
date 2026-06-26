@@ -5,6 +5,8 @@ import { AXIS_LABEL, computeRatings, type AxisKey } from '@/domain/ratings'
 import type { TeamMatchStats } from '@/lib/api'
 import { liveDataNote } from '@/lib/apiCopy'
 import { useMatchDetails } from '@/lib/matchData'
+import { GROUP_STATS } from '@/data/teamStats'
+import type { Match } from '@/domain/types'
 import { Mascot } from '@/components/mascot/Mascot'
 import { RadarChart } from '@/components/RadarChart'
 import { Label } from '@/components/ui/atoms'
@@ -13,58 +15,44 @@ import { cn } from '@/lib/utils'
 
 const ORDER: AxisKey[] = ['attack', 'finishing', 'possession', 'defense', 'creativity', 'discipline']
 
+/** Fallback stats from a real final score alone (Attack/Defense only) — used when
+ *  no box score is available; the other axes stay null (never fabricated). */
+function resultStat(m: Match, code: string): TeamMatchStats | null {
+  const gf = m.homeCode === code ? m.homeScore : m.awayScore
+  const ga = m.homeCode === code ? m.awayScore : m.homeScore
+  if (gf == null || ga == null) return null
+  return { code, goalsFor: gf, goalsAgainst: ga, cleanSheet: ga === 0, possession: null, shots: null, shotsOnTarget: null, xg: null, xa: null, keyPasses: null, fouls: null, yellow: null, red: null, gkSaves: null }
+}
+
 export function Team() {
   const { homeTeam, matches, apiStatus, healthKnown } = useApp()
   const code = homeTeam?.code ?? ''
 
   const finished = useMemo(() => (code ? finishedFor(matches, code) : []), [matches, code])
 
-  // Results-based stats from the real final scores — ZERO API. The group stage is
-  // static (seed-sourced), so this powers Attack & Defense for every finished
-  // match without a single request; the live box score (knockouts) enriches the
-  // remaining axes when it's available. Other axes stay null — never fabricated.
-  const resultStats = useMemo<Record<string, TeamMatchStats>>(() => {
-    const out: Record<string, TeamMatchStats> = {}
-    for (const m of finished) {
-      const gf = m.homeCode === code ? m.homeScore : m.awayScore
-      const ga = m.homeCode === code ? m.awayScore : m.homeScore
-      if (gf == null || ga == null) continue
-      out[m.id] = {
-        code,
-        goalsFor: gf,
-        goalsAgainst: ga,
-        cleanSheet: ga === 0,
-        possession: null,
-        shots: null,
-        shotsOnTarget: null,
-        xg: null,
-        xa: null,
-        keyPasses: null,
-        fouls: null,
-        yellow: null,
-        red: null,
-        gkSaves: null,
-      }
-    }
-    return out
-  }, [finished, code])
-
-  // Only finished matches that carry a real API id (knockouts / API-merged) cost
-  // a box-score fetch — group matches are served entirely from the static seed.
+  // Knockout box scores are the only ones that cost an API call; the group stage
+  // is served from the static ESPN bake below.
   const fixtureIds = useMemo(
-    () => finished.map((m) => m.apiFixtureId).filter((x): x is number => typeof x === 'number'),
+    () => finished.filter((m) => m.stage !== 'group').map((m) => m.apiFixtureId).filter((x): x is number => typeof x === 'number'),
     [finished],
   )
   const { details, loading } = useMatchDetails(fixtureIds)
 
-  // Per match, prefer the richer live box score; otherwise the results-based stats.
-  const stats = useMemo<TeamMatchStats[]>(
-    () =>
-      finished
-        .map((m) => (m.apiFixtureId ? details[m.apiFixtureId]?.teamStats[code] : undefined) ?? resultStats[m.id])
-        .filter((s): s is TeamMatchStats => !!s),
-    [finished, details, resultStats, code],
-  )
+  // Radar inputs, all from REAL data, never fabricated:
+  //  • group stage → real ESPN box scores (static, ZERO API key/quota), with the
+  //    seed's final scores as a gf/ga-only fallback if a match isn't baked yet
+  //  • knockouts → live box score when present, else the seed score
+  const stats = useMemo<TeamMatchStats[]>(() => {
+    const baked = GROUP_STATS[code]
+    const group: TeamMatchStats[] = baked?.length
+      ? baked
+      : (finished.filter((m) => m.stage === 'group').map((m) => resultStat(m, code)).filter(Boolean) as TeamMatchStats[])
+    const ko: TeamMatchStats[] = finished
+      .filter((m) => m.stage !== 'group')
+      .map((m) => (m.apiFixtureId ? details[m.apiFixtureId]?.teamStats[code] : undefined) ?? resultStat(m, code))
+      .filter(Boolean) as TeamMatchStats[]
+    return [...group, ...ko]
+  }, [finished, details, code])
   const ratings = useMemo(() => computeRatings(stats), [stats])
 
   if (!homeTeam) return null
