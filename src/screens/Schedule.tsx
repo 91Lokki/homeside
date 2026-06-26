@@ -84,12 +84,6 @@ export function Schedule() {
 
   return (
     <div className="animate-fade-in text-white">
-      {/* full-bleed team-colour gradient behind everything (glass nav sits on top) */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--team-pure) 42%, #0b0b14) 0%, #0a0a12 50%, #08080c 100%)' }}
-      />
-
       <div className="relative z-10 mx-auto max-w-md">
         <h1 className="font-grotesk text-3xl font-bold tracking-tight">World Cup</h1>
         <p className="mt-1 text-sm text-white/60">{group ? `Following ${homeTeam?.name} · Group ${group}` : '2026'}</p>

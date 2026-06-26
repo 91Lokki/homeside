@@ -99,9 +99,10 @@
     @apply text-2xs uppercase tracking-label text-faint font-medium;
   }
 
-  /* A hairline-bordered surface card — no shadow, gentle radius. */
+  /* Liquid-Glass surface — translucent, blurred, rim-lit. */
   .panel {
-    @apply rounded-card border bg-surface;
-    border-color: var(--hairline);
+    @apply rounded-[20px] backdrop-blur-xl;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
 }

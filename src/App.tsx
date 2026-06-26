@@ -7,7 +7,6 @@ import { GamesProvider } from '@/state/games'
 import { ThemeProvider } from '@/state/theme'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
 import { Home } from '@/screens/Home'
 import { Predict } from '@/screens/Predict'
@@ -51,8 +50,12 @@ function Shell() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b bg-canvas/85 backdrop-blur-md">
+    <div className="relative flex min-h-dvh flex-col text-white">
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{ background: 'linear-gradient(180deg, color-mix(in srgb, var(--team-pure) 38%, #0b0b14) 0%, #0a0a12 55%, #08080c 100%)' }}
+      />
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-white/[0.04] backdrop-blur-2xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <div className="flex items-baseline gap-2">
             <span className="font-grotesk text-lg font-semibold tracking-tight">homeside</span>
@@ -75,12 +78,11 @@ function Shell() {
               </span>
               <span className="hidden text-xs font-medium sm:inline">{homeTeam?.name}</span>
             </button>
-            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-5 pb-24 pt-6 sm:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 pb-24 pt-6 sm:px-8">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/predict" element={<Predict />} />
@@ -92,7 +94,7 @@ function Shell() {
         </Routes>
       </main>
 
-      <footer className="border-t pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <footer className="relative z-10 border-t border-white/10 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-4 text-2xs text-faint sm:px-8">
           <span>
             {connected ? 'Real results & stats via ESPN.' : `Snapshot as of ${DATA_META.asOf}.`} Scored from real
@@ -117,7 +119,7 @@ const TABS = [
 
 function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-canvas/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)] sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-white/[0.04] backdrop-blur-2xl pb-[env(safe-area-inset-bottom)] sm:hidden">
       <div className="flex items-stretch justify-around">
         {TABS.map((t) => {
           const Icon = t.icon
