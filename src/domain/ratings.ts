@@ -54,23 +54,39 @@ export function computeRatings(stats: TeamMatchStats[]): Ratings {
   const xa = avg(stats, (s) => s.xa)
   const keyP = avg(stats, (s) => s.keyPasses)
   const fouls = avg(stats, (s) => s.fouls)
-  const cards = avg(stats, (s) => (s.yellow ?? 0) + (s.red ?? 0) * 2)
+  // cards: stays null only when NO card data exists for any match (never faked).
+  const cards = avg(stats, (s) => (s.yellow == null && s.red == null ? null : (s.yellow ?? 0) + (s.red ?? 0) * 2))
   const cleanRate = stats.filter((s) => s.cleanSheet).length / n
 
-  const attack =
-    gf == null && shots == null ? null : 0.6 * scale(gf ?? 0, 0, 2.5) + 0.4 * scale(shots ?? 0, 4, 18)
+  // A weighted average that drops null components and renormalizes; null if all missing.
+  const wavg = (parts: [number | null, number][]): number | null => {
+    const live = parts.filter(([v]) => v != null) as [number, number][]
+    if (live.length === 0) return null
+    const tw = live.reduce((a, [, w]) => a + w, 0)
+    return live.reduce((a, [v, w]) => a + v * w, 0) / tw
+  }
 
-  const finishing =
-    gf == null || sot == null || sot === 0 ? (gf != null && (sot ?? 0) === 0 ? scale(gf, 0, 2.5) * 0.5 : null) : scale(gf / sot, 0, 0.6)
+  const attack = wavg([
+    [gf == null ? null : scale(gf, 0, 2.5), 0.6],
+    [shots == null ? null : scale(shots, 4, 18), 0.4],
+  ])
+
+  // gf is non-null for n>=1; finishing needs shots-on-target to be present.
+  const finishing = sot == null ? null : sot === 0 ? scale(gf ?? 0, 0, 2.5) * 0.5 : scale((gf ?? 0) / sot, 0, 0.6)
 
   const possession = poss == null ? null : scale(poss, 30, 70)
 
   const defense = ga == null ? null : 0.65 * (100 - scale(ga, 0, 2.5)) + 0.35 * (cleanRate * 100)
 
-  const creativity =
-    keyP == null && xa == null ? null : 0.6 * scale(keyP ?? 0, 3, 14) + 0.4 * scale(xa ?? 0, 0.3, 2)
+  const creativity = wavg([
+    [keyP == null ? null : scale(keyP, 3, 14), 0.6],
+    [xa == null ? null : scale(xa, 0.3, 2), 0.4],
+  ])
 
-  const discipline = fouls == null && cards == null ? null : 100 - scale((fouls ?? 0) + 3 * (cards ?? 0), 5, 28)
+  const discipline = wavg([
+    [fouls == null ? null : 100 - scale(fouls, 5, 22), 0.6],
+    [cards == null ? null : 100 - scale(cards, 0, 8), 0.4],
+  ])
 
   const axes: Record<AxisKey, number | null> = {
     attack: round(attack),

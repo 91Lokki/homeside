@@ -150,6 +150,7 @@ export function Fantasy() {
       {openSlot && (
         <PlayerPicker
           slot={openSlot}
+          taken={new Set(SLOTS.filter((s) => s !== openSlot && fantasy[s]).map((s) => `${fantasy[s]!.teamCode}-${fantasy[s]!.name}`))}
           onClose={() => setOpenSlot(null)}
           onPick={(p) => {
             setFantasyPick(openSlot, p)

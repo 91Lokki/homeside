@@ -76,11 +76,19 @@ export function buildPredictedBracket(
   const ordered = [...bracket].sort((a, b) => a.matchNo - b.matchNo)
 
   const occ = (kind: string, ref: { matchNo?: number }, side: 'home' | 'away', no: number): TeamCode | null => {
-    if (kind === 'matchWinner' && ref.matchNo != null) return predictions[ref.matchNo] ?? null
+    if (kind === 'matchWinner' && ref.matchNo != null) {
+      const w = predictions[ref.matchNo]
+      if (w == null) return null
+      // Reject a stale pick that is no longer one of the feeder's (known) occupants.
+      const f = out[ref.matchNo]
+      if (f && f.homeCode != null && f.awayCode != null && w !== f.homeCode && w !== f.awayCode) return null
+      return w
+    }
     if (kind === 'matchLoser' && ref.matchNo != null) {
       const src = out[ref.matchNo]
       const w = predictions[ref.matchNo]
-      if (!src || !w) return null
+      if (!src || !w || src.homeCode == null || src.awayCode == null) return null
+      if (w !== src.homeCode && w !== src.awayCode) return null // stale
       return src.homeCode === w ? src.awayCode : src.homeCode
     }
     // group-derived slot (winner / runnerUp / third) — use the REAL resolved team

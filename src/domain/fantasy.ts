@@ -69,16 +69,16 @@ const surnameOf = (n: string) => n.split(' ').slice(-1)[0] ?? ''
 /** Match an event's player (name + optional shirt number) to a pick. Scoped by
  *  the caller to the pick's own team, so surname collisions are unlikely. */
 function matchPlayer(evName: string, evNumber: number | null, pick: FantasyPick): boolean {
-  if (pick.number != null && evNumber != null && evNumber === pick.number) return true
+  // When both shirt numbers are present the number is decisive — it confirms AND
+  // rejects, so a same-surname teammate can't be mis-credited.
+  if (pick.number != null && evNumber != null) return evNumber === pick.number
   const a = norm(evName)
   const b = norm(pick.name)
   if (!a || !b) return false
   if (a === b) return true
+  // A surname match must also agree on first initial (guards same-surname teammates).
   if (surnameOf(a) && surnameOf(a) === surnameOf(b)) {
-    const aFirst = a.split(' ')[0]
-    const bFirst = b.split(' ')[0]
-    if (aFirst.length <= 1) return aFirst[0] === bFirst[0] // "T. Maseko" → initial check
-    return true
+    return (a.split(' ')[0]?.[0] ?? '') === (b.split(' ')[0]?.[0] ?? '')
   }
   return false
 }
@@ -107,20 +107,22 @@ export function scorePick(pick: FantasyPick, koDetails: MatchDetail[]): PickScor
       const teamEvents = d.events.filter((e) => e.teamCode === pick.teamCode)
       for (const e of teamEvents) {
         const t = (e.type || '').toLowerCase()
-        const isGoal = t === 'goal' || t === 'penalty' || t.includes('var goal confirmed')
+        // In-play only: shootout penalties carry no clock minute, so this excludes them.
+        const inPlay = e.minute != null && e.minute <= 120
+        const isGoal = inPlay && (t === 'goal' || t === 'penalty' || t === 'var goal confirmed')
         if (isGoal) out.teamGoalScorers.push(e.player)
         const mine = matchPlayer(e.player, e.playerNumber, pick)
         if (isGoal && mine) {
           const g = GOAL_POINTS[pos] ?? 4
           mp += g
           lines.push(`Goal +${g}`)
-        } else if (t.includes('own goal') && mine) {
+        } else if (t === 'own goal' && mine) {
           mp += OWN_GOAL
           lines.push(`Own goal ${OWN_GOAL}`)
-        } else if (t.includes('yellow') && mine) {
+        } else if (t === 'yellow card' && mine) {
           mp += YELLOW
           lines.push(`Yellow ${YELLOW}`)
-        } else if (t.includes('red') && mine) {
+        } else if (t === 'red card' && mine) {
           mp += RED
           lines.push(`Red ${RED}`)
         }

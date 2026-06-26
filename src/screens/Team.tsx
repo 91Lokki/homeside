@@ -35,7 +35,7 @@ export function Team() {
 
   if (!homeTeam) return null
   const mood = moodFor(matches, code).mood
-  const noData = fixtureIds.length === 0
+  const noData = fixtureIds.length === 0 || (!loading && stats.length === 0)
 
   return (
     <div className="animate-fade-in">

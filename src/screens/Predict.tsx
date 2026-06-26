@@ -32,7 +32,9 @@ export function Predict() {
     return m
   }, [])
 
-  const champion = predictions[104] ? teamByCode[predictions[104]] : null
+  const finalOcc = predicted[104]
+  const champCode = finalOcc && (predictions[104] === finalOcc.homeCode || predictions[104] === finalOcc.awayCode) ? predictions[104] : null
+  const champion = champCode ? teamByCode[champCode] : null
 
   return (
     <div className="animate-fade-in">

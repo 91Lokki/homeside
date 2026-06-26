@@ -14,8 +14,10 @@ function load(id: number): Promise<MatchDetail | null> {
   const existing = inflight.get(id)
   if (existing) return existing
   const p = fetchMatchDetail(id).then((d) => {
-    cache.set(id, d)
     inflight.delete(id)
+    // Only memoize real results; a transient null (network/rate-limit) must be
+    // retryable rather than cached forever.
+    if (d) cache.set(id, d)
     return d
   })
   inflight.set(id, p)

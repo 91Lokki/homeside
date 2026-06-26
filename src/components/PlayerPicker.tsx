@@ -28,16 +28,29 @@ const POOL: PoolPlayer[] = Object.entries(SQUADS).flatMap(([code, squad]) =>
   })),
 )
 
-export function PlayerPicker({ slot, onPick, onClose }: { slot: Slot; onPick: (p: FantasyPick) => void; onClose: () => void }) {
+const keyOf = (teamCode: string, name: string) => `${teamCode}-${name}`
+
+export function PlayerPicker({
+  slot,
+  onPick,
+  onClose,
+  taken,
+}: {
+  slot: Slot
+  onPick: (p: FantasyPick) => void
+  onClose: () => void
+  taken?: Set<string>
+}) {
   const [query, setQuery] = useState('')
   const wantPos = SLOT_POSITION[slot]
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     return POOL.filter((p) => p.position === wantPos)
+      .filter((p) => !taken?.has(keyOf(p.teamCode, p.name)))
       .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.club ?? '').toLowerCase().includes(q) || p.teamName.toLowerCase().includes(q))
       .sort((a, b) => a.teamName.localeCompare(b.teamName) || a.name.localeCompare(b.name))
-  }, [query, wantPos])
+  }, [query, wantPos, taken])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-canvas/95 backdrop-blur-sm">
