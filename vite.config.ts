@@ -7,7 +7,7 @@ import path from 'node:path'
  *
  * The functions in /api are standard Request->Response handlers; here we adapt
  * Node's req/res to them and expose the server-side env (from .env) so the
- * API-Football key works locally exactly as it will in production.
+ * Highlightly key works locally exactly as it will in production.
  */
 function apiDev(env: Record<string, string>): Plugin {
   const ROUTES = new Set(['fixtures', 'match'])
@@ -47,6 +47,11 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+    },
+    // Honour a preview-assigned port (PORT env) so the dev server isn't pinned to
+    // 5173; the app has no hard dependency on a specific port.
+    server: {
+      port: process.env.PORT ? Number(process.env.PORT) : 5173,
     },
   }
 })

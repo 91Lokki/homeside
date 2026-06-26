@@ -120,8 +120,8 @@ function MatchCard({
         <span className="text-[9px] font-medium uppercase tracking-label text-faint">M{no}</span>
         {finished && <span className="text-[9px] uppercase tracking-label text-faint">FT</span>}
       </div>
-      <Side code={homeCode} label={def?.home.label} score={real?.homeScore} picked={pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
-      <Side code={awayCode} label={def?.away.label} score={real?.awayScore} picked={pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+      <Side code={homeCode} label={def?.home.label} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+      <Side code={awayCode} label={def?.away.label} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
     </div>
   )
 }
