@@ -149,13 +149,15 @@ function CompareBar({
         <span className="text-2xs uppercase tracking-label text-faint">{label}</span>
         <span className="font-grotesk font-bold text-ink">{a}{unit}</span>
       </div>
-      <div className="mt-1.5 flex h-[5px] items-center gap-1">
-        <div className="flex h-full justify-end" style={{ flexBasis: `${(h / total) * 100}%` }}>
-          <div className="h-full w-full rounded-l-full" style={{ background: homeColor }} />
-        </div>
-        <div className="flex h-full flex-1 justify-start">
-          <div className="h-full w-full rounded-r-full" style={{ background: awayColor }} />
-        </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <div
+          className="h-[7px] rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15"
+          style={{ flexBasis: `${(h / total) * 100}%`, minWidth: '7px', background: homeColor }}
+        />
+        <div
+          className="h-[7px] rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/15"
+          style={{ flexBasis: `${(a / total) * 100}%`, minWidth: '7px', background: awayColor }}
+        />
       </div>
     </div>
   )
