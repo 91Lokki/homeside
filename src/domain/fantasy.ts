@@ -296,3 +296,44 @@ export function scoreRound(
     points: live - transferPenalty,
   }
 }
+
+/** A finished knockout fixture, as the leaderboard needs it for scoring. */
+export interface ScorableMatch {
+  stage: Stage
+  apiFixtureId: number
+  homeCode: string | null
+  awayCode: string | null
+}
+
+/**
+ * Total fantasy points across all rounds for ONE person's saved squads — the
+ * same per-round computation the Fantasy screen runs, factored out so the league
+ * leaderboard scores everyone identically (and can never disagree with the
+ * Fantasy screen). `details` is keyed by fixture id; results come from ESPN, so
+ * every client computes the same numbers from the same finished matches.
+ */
+export function scoreFantasyTotal(
+  fantasy: Partial<Record<Round, RoundSquad>>,
+  koMatches: ScorableMatch[],
+  details: Record<number, MatchDetail>,
+): number {
+  const detailsFor = (round: Round) => (teamCode: string) =>
+    koMatches
+      .filter(
+        (m) =>
+          stageToRound(m.stage) === round &&
+          (m.homeCode === teamCode || m.awayCode === teamCode) &&
+          details[m.apiFixtureId],
+      )
+      .map((m) => details[m.apiFixtureId])
+
+  let total = 0
+  for (let i = 0; i < ROUNDS.length; i++) {
+    const r = ROUNDS[i]
+    const sq = fantasy[r]
+    if (!sq) continue
+    const prevPlayers = (i > 0 && fantasy[ROUNDS[i - 1]]?.players) || []
+    total += scoreRound(r, sq, prevPlayers, detailsFor(r)).points
+  }
+  return total
+}

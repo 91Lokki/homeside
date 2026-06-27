@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { CalendarDays, GitFork, Hexagon, Home as HomeIcon, Users } from 'lucide-react'
+import { CalendarDays, GitFork, Hexagon, Home as HomeIcon, Trophy, Users } from 'lucide-react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { DATA_META } from '@/data/meta'
 import { AppProvider, useApp } from '@/state/store'
 import { GamesProvider } from '@/state/games'
+import { AuthProvider } from '@/state/auth'
 import { ThemeProvider } from '@/state/theme'
+import { authEnabled } from '@/lib/supabase'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
+import { AuthButton } from '@/components/AuthButton'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
 import { Home } from '@/screens/Home'
@@ -15,18 +18,21 @@ import { Fantasy } from '@/screens/Fantasy'
 import { Team } from '@/screens/Team'
 import { Schedule } from '@/screens/Schedule'
 import { Gallery } from '@/screens/Gallery'
+import { Leaderboard } from '@/screens/Leaderboard'
 
 export function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppProvider>
-          <GamesProvider>
-            <BrowserRouter>
-              <Shell />
-            </BrowserRouter>
-          </GamesProvider>
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <GamesProvider>
+              <BrowserRouter>
+                <Shell />
+              </BrowserRouter>
+            </GamesProvider>
+          </AppProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   )
@@ -76,6 +82,7 @@ function Shell() {
               </span>
               <span className="hidden text-xs font-medium sm:inline">{homeTeam?.name}</span>
             </button>
+            <AuthButton />
             <ThemeToggle />
           </div>
         </div>
@@ -89,6 +96,7 @@ function Shell() {
           <Route path="/team" element={<Team />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/gallery" element={<Gallery />} />
+          {authEnabled && <Route path="/league" element={<Leaderboard />} />}
           <Route path="*" element={<Home />} />
         </Routes>
       </main>
@@ -114,6 +122,9 @@ const TABS = [
   { to: '/fantasy', label: 'Fantasy', short: 'Fantasy', end: false, icon: Users },
   { to: '/team', label: 'Team', short: 'Team', end: false, icon: Hexagon },
   { to: '/schedule', label: 'Schedule', short: 'Sched', end: false, icon: CalendarDays },
+  // The league only appears once a backend is configured (otherwise there's
+  // nothing to rank). Until then the app is exactly the 5-tab experience.
+  ...(authEnabled ? [{ to: '/league', label: 'League', short: 'League', end: false, icon: Trophy }] : []),
 ]
 
 function BottomNav() {
