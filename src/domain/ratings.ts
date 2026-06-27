@@ -2,11 +2,25 @@ import type { TeamMatchStats } from '@/lib/api'
 
 /**
  * Team "ability card" ratings — every axis from REAL aggregated stats over the
- * team's finished matches (live ESPN box scores). Each axis is scored DYNAMICALLY
- * against the rest of the field: a team's raw composite is placed on the field's
- * 5th–95th-percentile spread and mapped into [20, 93], so the scale adapts to the
- * tournament and no team is ever a flat 0 or a perfect 100. An axis with no data
- * stays null; <2 matches marks the card provisional. Nothing is ever fabricated.
+ * team's finished matches (live ESPN box scores).
+ *
+ * Each axis is scored DYNAMICALLY against the rest of the field: a team's raw
+ * composite is ranked against the whole tournament with a logistic curve on a
+ * robust z-score (median + MAD). The curve is gentle through the middle but
+ * saturates toward the extremes, so climbing into the top tier gets progressively
+ * harder — a 94/95 is rare and a true 99/100 is near-impossible, yet never
+ * forbidden if a team genuinely earns it; likewise nobody bottoms out at a flat 0.
+ * Using a robust spread means one runaway team can't redefine the scale for
+ * everyone the way a hard percentile clamp would.
+ *
+ * The six axes are kept as orthogonal as the box-score data allows:
+ *   attack=output, finishing=efficiency, possession=ball control (incl. pass
+ *   accuracy), defense, creativity=chance manufacturing (crosses/corners),
+ *   discipline. (Pass accuracy lives in possession, not creativity, so a
+ *   ball-dominant team doesn't double-count.)
+ *
+ * An axis with no data stays null; <2 matches marks the card provisional.
+ * Nothing is ever fabricated.
  */
 export type AxisKey = 'attack' | 'finishing' | 'possession' | 'defense' | 'creativity' | 'discipline'
 
@@ -98,8 +112,12 @@ function rawAxes(stats: TeamMatchStats[]): Record<AxisKey, number | null> {
     [gf == null ? null : scale(gf, 0.3, 2.6), 0.4],
   ])
 
-  // POSSESSION
-  const possession = poss == null ? null : scale(poss, 36, 64)
+  // POSSESSION — ball control: share of the ball + passing accuracy (the two
+  // "keep the ball" signals live here together so creativity stays distinct).
+  const possession = wavg([
+    [poss == null ? null : scale(poss, 36, 64), 0.65],
+    [passPct == null ? null : scale(passPct, 72, 90), 0.35],
+  ])
 
   // DEFENSE — concede little + clean sheets + active defending + keeper saves
   const defActions = tackles == null && intc == null && clr == null ? null : (tackles ?? 0) + (intc ?? 0) + (clr ?? 0)
@@ -110,11 +128,12 @@ function rawAxes(stats: TeamMatchStats[]): Record<AxisKey, number | null> {
     [saves == null ? null : scale(saves, 1, 6), 0.15],
   ])
 
-  // CREATIVITY — chance creation / build-up: crosses + corners + passing accuracy
+  // CREATIVITY — chance manufacturing beyond raw shooting: wing service (accurate
+  // crosses) + earned set-piece pressure (won corners). Pass accuracy deliberately
+  // excluded here — it belongs to possession, so the two don't overlap.
   const creativity = wavg([
-    [crosses == null ? null : scale(crosses, 3, 16), 0.35],
-    [corners == null ? null : scale(corners, 2, 9), 0.25],
-    [passPct == null ? null : scale(passPct, 72, 90), 0.4],
+    [crosses == null ? null : scale(crosses, 3, 16), 0.58],
+    [corners == null ? null : scale(corners, 2, 9), 0.42],
   ])
 
   // DISCIPLINE — few fouls, few cards
@@ -141,10 +160,16 @@ export function buildLeague(teamStats: TeamMatchStats[][]): League {
   return cols
 }
 
-// Dynamic scale: place a value on the field's 5th–95th-percentile spread, mapped
-// into [LO, HI]. Bounds stay off 0/100; outliers clamp to the bounds.
-const LO = 20
-const HI = 93
+// Dynamic scale: rank a raw composite against the whole field with a logistic
+// curve on a robust z-score (median + MAD). Gentle near the middle, saturating at
+// the extremes — so the top tier is progressively harder to climb. The curve maps
+// into the band (FLOOR, 100): no team is ever a flat 0, while 100 still needs a
+// near-impossible ~4.6 robust σ above the field (never forbidden, just historic).
+// MIN_SPREAD stops a tightly-bunched field from turning a modest gap into a runaway
+// z, and a robust spread keeps one outlier team from redefining the scale.
+const GAIN = 1.15
+const FLOOR = 1
+const MIN_SPREAD = 6
 function quantile(sorted: number[], q: number): number {
   if (sorted.length === 0) return 0
   if (sorted.length === 1) return sorted[0]
@@ -154,11 +179,18 @@ function quantile(sorted: number[], q: number): number {
   return next == null ? sorted[base] : sorted[base] + (pos - base) * (next - sorted[base])
 }
 function relScale(v: number, sorted: number[]): number {
-  const lo = quantile(sorted, 0.05)
-  const hi = quantile(sorted, 0.95)
-  if (hi <= lo) return (LO + HI) / 2
-  const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)))
-  return LO + t * (HI - LO)
+  const med = quantile(sorted, 0.5)
+  // Median absolute deviation, scaled to be comparable to a standard deviation.
+  const dev = sorted.map((x) => Math.abs(x - med)).sort((a, b) => a - b)
+  let spread = quantile(dev, 0.5) * 1.4826
+  if (!(spread > 1e-6)) {
+    // MAD collapsed (many identical values) — fall back to the plain stdev.
+    const mean = sorted.reduce((a, b) => a + b, 0) / sorted.length
+    spread = Math.sqrt(sorted.reduce((a, b) => a + (b - mean) ** 2, 0) / sorted.length)
+  }
+  if (!(spread > 1e-6)) return 50
+  const z = (v - med) / Math.max(spread, MIN_SPREAD)
+  return FLOOR + (100 - FLOOR) / (1 + Math.exp(-GAIN * z))
 }
 
 export function computeRatings(stats: TeamMatchStats[], league?: League): Ratings {

@@ -131,16 +131,28 @@ export function Schedule() {
                   key={row.code}
                   className={cn(
                     STAND_COLS,
-                    'border-t px-5 py-2.5 text-sm',
+                    'relative border-t px-5 py-2.5 text-sm',
                     i === 2 ? 'border-black/[0.10] dark:border-white/[0.12]' : HAIRLINE,
                     isHome && 'bg-team-soft',
                   )}
                 >
-                  <span className="flex items-center gap-1 tnum">
-                    <span className={cn('w-2.5 text-[11px] leading-none', status === 'in' ? 'text-emerald-500' : status === 'out' ? 'text-red-400' : 'text-transparent')}>
-                      {status === 'out' ? '–' : '▸'}
+                  {/* Qualification edge: a clearly-visible colored stripe down the
+                      left of the row — green = advancing, red = eliminated. */}
+                  {status !== 'pending' && (
+                    <span
+                      aria-hidden
+                      className={cn('absolute inset-y-0 left-0 w-1', status === 'in' ? 'bg-emerald-500' : 'bg-red-500')}
+                    />
+                  )}
+                  <span className="flex items-center tnum">
+                    <span
+                      className={cn(
+                        'font-grotesk text-sm',
+                        status === 'in' ? 'font-bold text-ink' : status === 'out' ? 'text-faint' : 'text-muted',
+                      )}
+                    >
+                      {row.rank}
                     </span>
-                    <span className={cn(status === 'in' ? 'font-semibold text-ink' : 'text-faint')}>{row.rank}</span>
                   </span>
                   <span className="flex items-center gap-2.5 truncate">
                     <Flag code={row.code} size={22} />
@@ -156,7 +168,17 @@ export function Schedule() {
               )
             })}
           </div>
-          <p className="mt-3 px-1 text-2xs text-faint">Top two advance, plus the eight best third-placed teams.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 px-1 text-2xs text-faint">
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden className="h-3 w-1 rounded-full bg-emerald-500" />
+              Advancing
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span aria-hidden className="h-3 w-1 rounded-full bg-red-500" />
+              Eliminated
+            </span>
+            <span className="text-faint/80">Top two advance, plus the eight best third-placed teams.</span>
+          </div>
         </section>
 
         {/* fixtures & results — dated matchday headers over separated glass cards */}
