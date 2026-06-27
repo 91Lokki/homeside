@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { GROUP_IDS, TEAMS, teamByCode } from '@/data/teams'
-import { computeGroupStandings } from '@/domain/record'
+import { computeGroupStandings, computeQualification } from '@/domain/record'
 import type { GroupId, Match } from '@/domain/types'
 import { Flag } from '@/components/Flag'
 import { MatchReport } from '@/components/MatchReport'
@@ -62,6 +62,9 @@ export function Schedule() {
 
   const groupCodes = useMemo(() => TEAMS.filter((t) => t.group === group).map((t) => t.code), [group])
   const standings = useMemo(() => computeGroupStandings(matches, group, groupCodes), [matches, group, groupCodes])
+  // Qualified (green) / eliminated (red) / undecided — from real results across all
+  // groups (third-placed teams need every group done), so it updates live.
+  const qual = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
   // The group's six fixtures oldest→newest. A 4-team group plays 3 matchdays of two
   // games each, chronologically grouped, so matchday = pair index + 1 (the two MD2
@@ -122,8 +125,7 @@ export function Schedule() {
             {standings.map((row, i) => {
               const t = teamByCode[row.code]
               const isHome = row.code === homeCode
-              const advancing = i < 2
-              const eliminated = i === standings.length - 1 && row.played > 0
+              const status = qual.get(row.code) ?? 'pending'
               return (
                 <div
                   key={row.code}
@@ -134,11 +136,11 @@ export function Schedule() {
                     isHome && 'bg-team-soft',
                   )}
                 >
-                  <span className="flex items-center gap-1.5 tnum">
-                    <span className={cn('w-1.5 text-[9px] leading-none', advancing ? 'text-emerald-500' : eliminated ? 'text-red-400' : 'text-transparent')}>
-                      {advancing ? '▲' : '▼'}
+                  <span className="flex items-center gap-1 tnum">
+                    <span className={cn('w-2.5 text-[11px] leading-none', status === 'in' ? 'text-emerald-500' : status === 'out' ? 'text-red-400' : 'text-transparent')}>
+                      {status === 'out' ? '–' : '▸'}
                     </span>
-                    <span className={cn(advancing ? 'font-semibold text-ink' : 'text-faint')}>{row.rank}</span>
+                    <span className={cn(status === 'in' ? 'font-semibold text-ink' : 'text-faint')}>{row.rank}</span>
                   </span>
                   <span className="flex items-center gap-2.5 truncate">
                     <Flag code={row.code} size={22} />

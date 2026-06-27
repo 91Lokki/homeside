@@ -185,3 +185,60 @@ function breakTiesByHeadToHead(rows: StandingRow[], groupMatches: Match[]): Stan
   }
   return result
 }
+
+/** Whether a team has qualified for the knockouts, is out, or is still undecided. */
+export type GroupStatus = 'in' | 'out' | 'pending'
+
+/**
+ * Group-stage outcome for every team, from real finished results only:
+ *  • a group's top two advance once that group is complete (all 6 games played),
+ *  • the worst-placed never advances,
+ *  • a third-placed team is decided only once EVERY group is complete — the eight
+ *    best thirds (points, GD, GF) advance, the rest are out (the same rule the
+ *    bracket uses to seed the round of 32). Anything not yet decided is 'pending'.
+ */
+export function computeQualification(
+  matches: Match[],
+  teams: ReadonlyArray<{ code: TeamCode; group: GroupId }>,
+): Map<TeamCode, GroupStatus> {
+  const byGroup = new Map<GroupId, TeamCode[]>()
+  for (const t of teams) {
+    const arr = byGroup.get(t.group) ?? []
+    arr.push(t.code)
+    byGroup.set(t.group, arr)
+  }
+
+  const standings = new Map<GroupId, StandingRow[]>()
+  const complete = new Map<GroupId, boolean>()
+  for (const [g, codes] of byGroup) {
+    standings.set(g, computeGroupStandings(matches, g, codes))
+    const finished = matches.filter((m) => m.stage === 'group' && m.group === g && m.status === 'finished').length
+    complete.set(g, finished >= 6)
+  }
+  const allComplete = [...complete.values()].every(Boolean)
+
+  // The eight best third-placed teams (only meaningful once every group is done).
+  const thirdsIn = new Set<TeamCode>()
+  if (allComplete) {
+    const thirds = [...standings.values()]
+      .map((rows) => rows[2])
+      .filter((r): r is StandingRow => !!r)
+      .sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf)
+    thirds.slice(0, 8).forEach((r) => thirdsIn.add(r.code))
+  }
+
+  const out = new Map<TeamCode, GroupStatus>()
+  for (const [g, rows] of standings) {
+    const comp = complete.get(g) ?? false
+    rows.forEach((row, i) => {
+      let st: GroupStatus = 'pending'
+      if (comp) {
+        if (i < 2) st = 'in'
+        else if (i === 2) st = allComplete ? (thirdsIn.has(row.code) ? 'in' : 'out') : 'pending'
+        else st = 'out'
+      }
+      out.set(row.code, st)
+    })
+  }
+  return out
+}

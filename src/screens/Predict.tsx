@@ -433,11 +433,11 @@ function MatchCard({
           muted ? 'bg-black/[0.02] ring-black/[0.05] dark:bg-white/[0.03] dark:ring-white/[0.07]' : 'bg-black/[0.04] ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10',
         )}
       >
-        {/* one quiet divider: the date header sits above the two teams */}
         <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
           {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
         </div>
         <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+        <div className="mx-3 h-px bg-black/5 dark:bg-white/[0.07]" />
         <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
       </div>
     </div>
