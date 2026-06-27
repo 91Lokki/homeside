@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Crown, Plus, X } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
 import {
@@ -9,7 +9,6 @@ import {
   ROUNDS,
   POS_ABBR,
   SCORING_RULES,
-  SLOTS,
   SLOT_LABEL,
   countTransfers,
   countryCounts,
@@ -31,12 +30,15 @@ import { useGames } from '@/state/games'
 import { cn } from '@/lib/utils'
 
 const ROUND_SHORT: Record<Round, string> = { R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', FINAL: 'Final' }
+/** Pitch formation rows, own goal (top) → attack (bottom). FLEX shares midfield. */
+const FORMATION: Slot[][] = [['GK'], ['DEF'], ['MID', 'FLEX'], ['ATT']]
 const fmtDate = (ms: number | null) => (ms == null ? '' : new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
 
 export function Fantasy() {
   const { matches } = useApp()
   const { fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy } = useGames()
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
+  const [selected, setSelected] = useState<Slot | null>(null)
 
   // A slow clock so the timeline flips to LIVE at kickoff even between data polls.
   const [now, setNow] = useState(() => Date.now())
@@ -64,6 +66,9 @@ export function Fantasy() {
   const inPlay = [...ROUNDS].reverse().find((r) => isRoundLocked(r, now) && !roundFullyDone(r))
   const focus: Round = inPlay ?? cur
   const editable = focus === cur && !isRoundLocked(focus, now)
+
+  // A stale selection must not outlive a round change or an edit-state flip.
+  useEffect(() => { setSelected(null) }, [focus, editable])
 
   const prev = previousRound(focus)
   const prevPlayers = (prev && fantasy[prev]?.players) || []
@@ -127,6 +132,84 @@ export function Fantasy() {
   }
   const takenKeys = new Set(players.filter((p) => p.slot !== openSlot).map(playerKey))
 
+  // One pitch token (filled or empty). Closes over the round state + handlers.
+  const renderSlot = (slot: Slot) => {
+    const pick = players.find((p) => p.slot === slot)
+    if (!pick) {
+      if (!editable) {
+        return (
+          <div key={slot} className="flex w-[88px] flex-col items-center sm:w-[104px]">
+            <span className="h-[52px] w-[52px] rounded-full border border-dashed border-black/10 dark:border-white/15" />
+            <span className="mt-1.5 text-[9px] font-medium uppercase tracking-label text-faint">{SLOT_LABEL[slot]}</span>
+          </div>
+        )
+      }
+      return (
+        <button key={slot} type="button" onClick={() => setOpenSlot(slot)} className="group flex w-[88px] flex-col items-center sm:w-[104px]">
+          <span className="grid h-[52px] w-[52px] place-items-center rounded-full border border-dashed border-black/[0.12] text-faint transition-colors group-hover:border-ink/30 group-hover:text-muted dark:border-white/15">
+            <Plus size={18} />
+          </span>
+          <span className="mt-1.5 flex w-full items-center justify-center rounded-[10px] bg-black/[0.03] px-1.5 py-1 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.04] dark:ring-white/[0.06]">
+            <span className="truncate text-[9px] font-medium uppercase tracking-label text-faint">{SLOT_LABEL[slot]}</span>
+          </span>
+        </button>
+      )
+    }
+    const key = playerKey(pick)
+    const ps = selScore?.perPlayer[key]
+    const team = teamByCode[pick.teamCode]
+    const isCap = selScore?.effectiveCaptain === key // doubled this round (auto-vice aware)
+    const isNominalCap = squad?.captain === key
+    const isVice = squad?.vice === key
+    const out = eliminated.has(pick.teamCode)
+    const active = selected === slot
+    return (
+      <button
+        key={slot}
+        type="button"
+        onClick={() => editable && setSelected(active ? null : slot)}
+        aria-pressed={active}
+        className={cn('group flex w-[88px] flex-col items-center sm:w-[104px]', !editable && 'cursor-default', out && 'opacity-60 saturate-0')}
+      >
+        <span className="relative">
+          <span
+            className={cn(
+              'grid place-items-center rounded-full bg-black/[0.04] p-[3px] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10',
+              (isCap || isNominalCap) && 'ring-2 ring-[var(--team-pure)]',
+              active && !isCap && !isNominalCap && 'ring-2 ring-ink/40',
+            )}
+          >
+            <Flag code={pick.teamCode} size={46} />
+          </span>
+          {pick.number != null && (
+            <span className="absolute -bottom-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-canvas px-1 font-grotesk text-[10px] font-semibold tnum text-muted ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
+              {pick.number}
+            </span>
+          )}
+          {(isCap || isNominalCap) && (
+            <span className="absolute -left-1 -top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-team px-1 font-grotesk text-[9px] font-bold tnum text-team-ink">
+              {isCap ? 'C×2' : 'C'}
+            </span>
+          )}
+          {isVice && !isCap && !isNominalCap && (
+            <span className="absolute -left-1 -top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-team-soft px-1 font-grotesk text-[9px] font-bold tnum text-team">
+              VC
+            </span>
+          )}
+        </span>
+        <span className="mt-1.5 flex w-full flex-col items-center rounded-[10px] bg-black/[0.04] px-1.5 py-1 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
+          <span className="flex w-full items-center justify-center gap-1">
+            <span className="truncate font-grotesk text-xs font-medium leading-tight text-ink">{pick.name}</span>
+            {ps && <span className="shrink-0 font-grotesk text-xs font-semibold tnum text-team">{ps.final}</span>}
+          </span>
+          <span className="mt-0.5 truncate text-[9px] font-medium uppercase tracking-label text-faint">
+            {out ? 'Eliminated' : `${POS_ABBR[pick.position] ?? pick.position} · ${team?.name ?? pick.teamCode}`}
+          </span>
+        </span>
+      </button>
+    )
+  }
+
   return (
     <div className="animate-fade-in">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -179,75 +262,84 @@ export function Fantasy() {
         )}
       </div>
 
-      {/* the continuous five */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {SLOTS.map((slot) => {
-          const pick = players.find((p) => p.slot === slot)
-          const key = pick ? playerKey(pick) : null
-          const ps = key ? selScore?.perPlayer[key] : undefined
-          const team = pick ? teamByCode[pick.teamCode] : null
-          const isCap = key && selScore?.effectiveCaptain === key
-          const isNominalCap = key && squad?.captain === key
-          const isVice = key && squad?.vice === key
-          const out = pick ? eliminated.has(pick.teamCode) : false
-          return (
-            <div key={slot} className={cn('panel flex flex-col p-4', out && 'opacity-70')}>
-              <div className="flex items-center justify-between">
-                <Label>{SLOT_LABEL[slot]}</Label>
-                {ps && <span className="font-grotesk text-sm font-semibold text-team tnum">{ps.final}</span>}
-              </div>
-              {pick ? (
-                <div className="mt-2 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="font-grotesk text-base font-medium leading-tight">{pick.name}</p>
-                    {(isNominalCap || isCap) && <Badge tone="cap">{isCap ? 'C×2' : 'C'}</Badge>}
-                    {isVice && <Badge tone="vice">VC</Badge>}
-                  </div>
-                  <p className="mt-1 flex items-center gap-1.5 text-2xs text-faint">
-                    <Flag code={pick.teamCode} size={15} />
-                    {POS_ABBR[pick.position] ?? pick.position} · {team?.name ?? pick.teamCode}
-                  </p>
-                  {out && (
-                    <span className="mt-2 inline-block rounded-[5px] bg-sunken px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-label text-faint">
-                      Eliminated
-                    </span>
-                  )}
-                  {ps && ps.detail.matches.length > 0 && (
-                    <ul className="mt-2 space-y-0.5">
-                      {ps.detail.matches.flatMap((m) => m.lines).map((l, i) => (
-                        <li key={i} className="text-2xs text-muted">{l}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {editable && (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-2xs">
-                      <button onClick={() => setCaptain(focus, key!)} className={cn('rounded-pill border px-2 py-0.5', isNominalCap ? 'border-team text-team' : 'text-faint hover:text-ink')}>
-                        Captain
-                      </button>
-                      <button onClick={() => setVice(focus, key!)} className={cn('rounded-pill border px-2 py-0.5', isVice ? 'border-team text-team' : 'text-faint hover:text-ink')}>
-                        Vice
-                      </button>
-                      <button onClick={() => setRoundPick(focus, slot, null)} className="ml-auto inline-flex items-center gap-1 text-faint hover:text-ink">
-                        <X size={11} /> {out ? 'replace' : 'change'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : editable ? (
-                <button
-                  onClick={() => setOpenSlot(slot)}
-                  className="mt-2 flex flex-1 flex-col items-center justify-center gap-1.5 rounded-card border border-dashed py-6 text-faint transition-colors hover:border-ink/30 hover:text-muted"
-                >
-                  <Plus size={18} />
-                  <span className="text-2xs">add {SLOT_LABEL[slot].toLowerCase()}</span>
-                </button>
-              ) : (
-                <p className="mt-2 flex-1 text-2xs text-faint">empty</p>
-              )}
+      {/* the five — an Apple pitch in formation (own goal top, attack bottom) */}
+      <div className="panel relative mx-auto w-full max-w-[440px] overflow-hidden px-3 py-5 sm:px-5 sm:py-7">
+        {/* implied pitch markings — 1px hairlines only, no green, no fill */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-3 rounded-[14px] border border-black/[0.05] dark:border-white/[0.06]" />
+          <div className="absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-black/[0.05] dark:bg-white/[0.06]" />
+          <div className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/[0.05] dark:border-white/[0.06]" />
+          <div className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/[0.08] dark:bg-white/[0.10]" />
+          <div className="absolute left-1/2 top-3 h-11 w-1/2 -translate-x-1/2 rounded-b-[10px] border border-t-0 border-black/[0.05] dark:border-white/[0.06]" />
+          <div className="absolute bottom-3 left-1/2 h-11 w-1/2 -translate-x-1/2 rounded-t-[10px] border border-b-0 border-black/[0.05] dark:border-white/[0.06]" />
+        </div>
+
+        <p className="relative mb-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">Your goal</span></p>
+
+        <div className="relative flex flex-col gap-4 sm:gap-6">
+          {FORMATION.map((row, i) => (
+            <div key={i} className="flex items-start justify-center gap-3 sm:gap-6">
+              {row.map((slot) => renderSlot(slot))}
             </div>
-          )
-        })}
+          ))}
+        </div>
+
+        <p className="relative mt-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">Attack</span></p>
       </div>
+
+      {/* shared inspector — the Apple way to act on a token (Captain/Vice/Change/Remove) */}
+      {editable && selected && (() => {
+        const pick = players.find((p) => p.slot === selected)
+        if (!pick) return null
+        const key = playerKey(pick)
+        const ps = selScore?.perPlayer[key]
+        const isNominalCap = squad?.captain === key
+        const isVice = squad?.vice === key
+        const lines = ps?.detail.matches.flatMap((m) => m.lines) ?? []
+        return (
+          <div className="panel mx-auto mt-3 w-full max-w-[440px] animate-fade-in p-3 sm:p-4">
+            <div className="flex items-center gap-3">
+              <Flag code={pick.teamCode} size={30} className="shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-grotesk text-sm font-medium leading-tight">{pick.name}</p>
+                <p className="truncate text-2xs text-faint">{POS_ABBR[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {SLOT_LABEL[selected]}</p>
+              </div>
+              <button onClick={() => setSelected(null)} aria-label="Done" className="shrink-0 text-faint hover:text-ink"><X size={16} /></button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setCaptain(focus, key)}
+                className={cn('inline-flex items-center gap-1 rounded-pill border px-3 py-1 text-xs font-medium transition-colors', isNominalCap ? 'border-team bg-team-soft text-team' : 'border-hairline text-muted hover:text-ink')}
+              >
+                <Crown size={12} /> Captain ×2
+              </button>
+              <button
+                onClick={() => setVice(focus, key)}
+                className={cn('rounded-pill border px-3 py-1 text-xs font-medium transition-colors', isVice ? 'border-team bg-team-soft text-team' : 'border-hairline text-muted hover:text-ink')}
+              >
+                Vice
+              </button>
+              <button
+                onClick={() => { setSelected(null); setOpenSlot(selected) }}
+                className="rounded-pill border border-hairline px-3 py-1 text-xs font-medium text-muted hover:text-ink"
+              >
+                Change
+              </button>
+              <button
+                onClick={() => { setRoundPick(focus, selected, null); setSelected(null) }}
+                className="ml-auto inline-flex items-center gap-1 rounded-pill border border-hairline px-3 py-1 text-xs font-medium text-faint hover:text-ink"
+              >
+                <X size={13} /> Remove
+              </button>
+            </div>
+            {lines.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-0.5 border-t pt-2">
+                {lines.map((l, i) => <li key={i} className="text-2xs text-muted">{l}</li>)}
+              </ul>
+            )}
+          </div>
+        )
+      })()}
 
       {editable && (
         <p className="mt-3 text-2xs text-faint">
@@ -284,13 +376,5 @@ export function Fantasy() {
         </>
       )}
     </div>
-  )
-}
-
-function Badge({ tone, children }: { tone: 'cap' | 'vice'; children: React.ReactNode }) {
-  return (
-    <span className={cn('rounded-[5px] px-1.5 py-0.5 text-[9px] font-bold uppercase', tone === 'cap' ? 'bg-team text-team-ink' : 'bg-team-soft text-team')}>
-      {children}
-    </span>
   )
 }

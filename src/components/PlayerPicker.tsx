@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, Search } from 'lucide-react'
+import { ChevronLeft, Plus, Search } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
 import { Flag } from './Flag'
@@ -102,37 +102,51 @@ export function PlayerPicker({
       {results.length === 0 ? (
         <p className="px-1 py-10 text-center text-sm text-faint">No players match.</p>
       ) : (
-        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="panel divide-y divide-black/5 overflow-hidden dark:divide-white/[0.07]">
           {results.map((p) => {
             const full = isCountryFull?.(p.teamCode) ?? false
             return (
-              <button
-                key={playerKey(p)}
-                disabled={full}
-                onClick={() => onPick({ slot, name: p.name, teamCode: p.teamCode, position: p.pos, number: p.number })}
-                className={cn(
-                  'flex items-center gap-3 rounded-[16px] bg-black/[0.04] p-3 text-left ring-1 ring-inset ring-black/[0.06] transition-colors dark:bg-white/[0.06] dark:ring-white/10',
-                  full ? 'cursor-not-allowed opacity-40' : 'hover:bg-black/[0.07] dark:hover:bg-white/[0.10]',
-                )}
-              >
-                <Flag code={p.teamCode} size={36} className="shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
-                  <span className="block truncate text-2xs text-faint">
-                    <span className="font-semibold tracking-label text-muted">{POS_ABBR[p.pos] ?? p.pos}</span> · {p.teamName}
-                    {p.club ? ` · ${p.club}` : ''}
+              <li key={playerKey(p)}>
+                <button
+                  type="button"
+                  disabled={full}
+                  onClick={() => onPick({ slot, name: p.name, teamCode: p.teamCode, position: p.pos, number: p.number })}
+                  className={cn(
+                    'group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors sm:px-4',
+                    full ? 'cursor-not-allowed opacity-40' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
+                  )}
+                >
+                  <Flag code={p.teamCode} size={34} className="shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
+                    <span className="block truncate text-2xs text-faint">
+                      <span className="font-semibold uppercase tracking-label text-muted">{POS_ABBR[p.pos] ?? p.pos}</span> · {p.teamName}
+                      {p.club ? ` · ${p.club}` : ''}
+                    </span>
+                    {full && <span className="mt-0.5 block text-2xs text-amber-600 dark:text-amber-500">country quota full</span>}
                   </span>
-                  {full && <span className="mt-0.5 block text-2xs text-amber-600 dark:text-amber-500">country quota full</span>}
-                </span>
-                {p.number != null && (
-                  <span className="grid h-6 min-w-[1.5rem] shrink-0 place-items-center rounded-full bg-black/[0.05] px-1.5 font-grotesk text-xs tnum text-faint dark:bg-white/[0.08]">
-                    {p.number}
+                  {p.number != null && (
+                    <span className="grid h-6 min-w-[1.6rem] shrink-0 place-items-center rounded-full bg-black/[0.05] px-1.5 font-grotesk text-xs tnum text-faint dark:bg-white/[0.08]">
+                      {p.number}
+                    </span>
+                  )}
+                  {/* add affordance — the reference's Action column; the only accent in the list */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'grid h-8 w-8 shrink-0 place-items-center rounded-full ring-1 ring-inset transition-colors',
+                      full
+                        ? 'text-faint ring-black/5 dark:ring-white/10'
+                        : 'text-ink ring-black/10 group-hover:bg-team group-hover:text-team-ink group-hover:ring-transparent dark:ring-white/15',
+                    )}
+                  >
+                    <Plus size={16} />
                   </span>
-                )}
-              </button>
+                </button>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
     </section>
   )
