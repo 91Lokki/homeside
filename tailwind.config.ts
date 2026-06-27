@@ -35,6 +35,8 @@ export default {
         ],
         grotesk: ['"Space Grotesk"', 'sans-serif'],
         tc: ['"Noto Sans TC"', 'sans-serif'],
+        // The native system font (SF Pro on Apple) — used to match Apple Sports.
+        system: ['-apple-system', 'BlinkMacSystemFont', 'ui-sans-serif', 'system-ui', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       colors: {
         // Surfaces & ink read from CSS vars so dark mode is a single source of truth.
@@ -95,6 +97,14 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.35' },
         },
+        'slide-from-right': {
+          from: { opacity: '0.3', transform: 'translateX(38px)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
+        },
+        'slide-from-left': {
+          from: { opacity: '0.3', transform: 'translateX(-38px)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         breathe: 'breathe 6s var(--ease-calm, ease-in-out) infinite',
@@ -103,6 +113,8 @@ export default {
         rise: 'rise 0.7s var(--ease-calm, ease-out) both',
         radar: 'radar 0.7s var(--ease-calm, ease-out) both',
         'live-pulse': 'live-pulse 1.4s ease-in-out infinite',
+        'slide-from-right': 'slide-from-right 0.36s var(--ease-calm, ease-out) both',
+        'slide-from-left': 'slide-from-left 0.36s var(--ease-calm, ease-out) both',
       },
     },
   },
