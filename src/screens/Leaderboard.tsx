@@ -42,7 +42,7 @@ export function Leaderboard() {
     let cancelled = false
     void (async () => {
       const [picksRes, membersRes] = await Promise.all([
-        supabase.from('picks').select('user_id, email, predictions, fantasy, home_code'),
+        supabase.from('picks').select('user_id, email, display_name, predictions, fantasy, home_code'),
         supabase.from('members').select('email, display_name'),
       ])
       if (cancelled) return
@@ -50,12 +50,15 @@ export function Leaderboard() {
         setLoadError(picksRes.error.message)
         return
       }
+      // members is now an OPTIONAL name override; the default name is the player's
+      // own Google display name, stored on their picks row. Falls back to email.
       const nameByEmail = new Map<string, string>(
         (membersRes.data ?? []).map((m) => [String(m.email).toLowerCase(), m.display_name as string]),
       )
       const merged: PickRow[] = (picksRes.data ?? []).map((p) => {
         const email = (p.email as string | null) ?? null
-        const name = (email && nameByEmail.get(email.toLowerCase())) || email || 'Player'
+        const name =
+          (email && nameByEmail.get(email.toLowerCase())) || (p.display_name as string | null) || email || 'Player'
         return {
           user_id: p.user_id as string,
           email,
@@ -99,8 +102,6 @@ export function Leaderboard() {
     return scored
   }, [rows, resolved, scorable, details, sortKey])
 
-  const onRoster = !user || board.some((r) => r.user_id === user.id)
-
   /* --------------------------------- states -------------------------------- */
   if (status === 'unavailable') {
     return <Centered>The league isn’t configured for this build.</Centered>
@@ -137,13 +138,6 @@ export function Leaderboard() {
         </div>
         <Segmented value={sortKey} onChange={setSortKey} />
       </header>
-
-      {!onRoster && (
-        <p className="mt-5 rounded-2xl bg-amber-500/10 px-4 py-3 text-xs text-amber-700 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300">
-          You’re signed in, but not on the league roster yet — ask the organizer to add{' '}
-          <span className="font-semibold">{user?.email}</span>.
-        </p>
-      )}
 
       {loadError ? (
         <Centered>Couldn’t load the league ({loadError}).</Centered>

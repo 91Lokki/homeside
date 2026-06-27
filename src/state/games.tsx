@@ -70,7 +70,7 @@ interface GamesCtx {
 const Ctx = createContext<GamesCtx | null>(null)
 
 export function GamesProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
+  const { user, displayName } = useAuth()
   const [predictions, setPredictions] = useState<Predictions>(() => load(PRED_KEY, {}))
   const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
 
@@ -120,6 +120,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         const { error: upErr } = await supabase.from('picks').upsert({
           user_id: userId,
           email: user.email,
+          display_name: displayName,
           predictions: seed.predictions,
           fantasy: seed.fantasy,
           home_code: localStorage.getItem(TEAM_KEY),
@@ -152,6 +153,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         .upsert({
           user_id: userId,
           email: user.email,
+          display_name: displayName,
           predictions,
           fantasy,
           home_code: localStorage.getItem(TEAM_KEY),
@@ -166,7 +168,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         })
     }, SYNC_DEBOUNCE_MS)
     return () => window.clearTimeout(t)
-  }, [predictions, fantasy, userId, user])
+  }, [predictions, fantasy, userId, user, displayName])
 
   const setPrediction = useCallback((matchNo: number, code: TeamCode) => {
     setPredictions((p) => pruneStale({ ...p, [matchNo]: code }))
