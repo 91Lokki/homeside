@@ -9,6 +9,7 @@ import {
   ROUNDS,
   POS_ABBR,
   SCORING_RULES,
+  SLOTS,
   SLOT_LABEL,
   countTransfers,
   countryCounts,
@@ -27,6 +28,7 @@ import { KnockoutProgress, type ProgressNode } from '@/components/KnockoutProgre
 import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 
 const ROUND_SHORT: Record<Round, string> = { R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', FINAL: 'Final' }
@@ -39,6 +41,7 @@ export function Fantasy() {
   const { fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy } = useGames()
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
   const [selected, setSelected] = useState<Slot | null>(null)
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
 
   // A slow clock so the timeline flips to LIVE at kickoff even between data polls.
   const [now, setNow] = useState(() => Date.now())
@@ -131,6 +134,11 @@ export function Fantasy() {
     return (counts[teamCode] ?? 0) - (editingTeam === teamCode ? 1 : 0) >= quotaMax
   }
   const takenKeys = new Set(players.filter((p) => p.slot !== openSlot).map(playerKey))
+
+  // The slot the right-hand pool is filling. On desktop the pool is always present:
+  // it follows an explicit pick (openSlot) or defaults to the next empty slot.
+  const firstEmpty = SLOTS.find((s) => !players.some((p) => p.slot === s)) ?? null
+  const poolSlot: Slot | null = openSlot ?? (isDesktop && editable ? firstEmpty : null)
 
   // One pitch token (filled or empty). Closes over the round state + handlers.
   const renderSlot = (slot: Slot) => {
@@ -229,7 +237,7 @@ export function Fantasy() {
         </div>
       </div>
 
-      {openSlot ? (
+      {!isDesktop && openSlot ? (
         <PlayerPicker
           slot={openSlot}
           taken={takenKeys}
@@ -355,31 +363,55 @@ export function Fantasy() {
       )}
         </div>
 
-        {/* right rail (desktop) — the scoring reference + reset */}
-        <div className="mt-8 lg:mt-0 lg:flex-1 lg:min-w-0">
-          <section>
-            <Label>How points work</Label>
-            <div className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-              {SCORING_RULES.map((r) => (
-                <div key={r.label} className="flex items-center justify-between border-b py-1.5 text-sm">
-                  <span className="text-muted">{r.label}</span>
-                  <span className="font-medium tnum">{r.value}</span>
-                </div>
-              ))}
+        {/* right (desktop): the player pool, FIFA-style — picks fill the active
+            slot (an explicit tap, else the next empty one). Hidden on mobile,
+            where tapping a slot opens the full-screen picker instead. */}
+        <div className="hidden lg:block lg:flex-1 lg:min-w-0">
+          {editable && poolSlot ? (
+            <PlayerPicker
+              slot={poolSlot}
+              embedded
+              taken={takenKeys}
+              isCountryFull={isCountryFull}
+              onClose={() => setOpenSlot(null)}
+              onPick={(p) => {
+                setRoundPick(focus, poolSlot, p)
+                setOpenSlot(null)
+              }}
+            />
+          ) : (
+            <div className="panel grid min-h-[200px] place-items-center p-8 text-center text-sm text-muted">
+              {editable ? 'Your five is set — tap a player on the pitch to swap them.' : 'This round is locked and under way.'}
             </div>
-            <p className="mt-3 text-2xs text-faint">
-              Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team +
-              name. Knockout scoring grades as each real match finishes.
-            </p>
-          </section>
-
-          <div className="mt-6 flex items-center gap-4">
-            {selScore && selScore.transferPenalty > 0 && (
-              <span className="text-xs text-amber-600 dark:text-amber-500">Transfer penalty this round: −{selScore.transferPenalty} pts</span>
-            )}
-            <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
-          </div>
+          )}
         </div>
+      </div>
+
+      {/* scoring reference — compact and tucked away, open when you want it */}
+      <details className="group mt-8">
+        <summary className="flex cursor-pointer list-none items-center gap-2">
+          <Label>How points work</Label>
+          <span className="text-2xs text-faint transition-transform group-open:rotate-90">▸</span>
+        </summary>
+        <div className="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+          {SCORING_RULES.map((r) => (
+            <div key={r.label} className="flex items-center justify-between gap-3 border-b py-1 text-2xs">
+              <span className="text-muted">{r.label}</span>
+              <span className="font-medium tnum text-ink">{r.value}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2.5 text-2xs text-faint">
+          Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team + name.
+          Knockout scoring grades as each real match finishes.
+        </p>
+      </details>
+
+      <div className="mt-5 flex items-center gap-4">
+        {selScore && selScore.transferPenalty > 0 && (
+          <span className="text-xs text-amber-600 dark:text-amber-500">Transfer penalty this round: −{selScore.transferPenalty} pts</span>
+        )}
+        <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
       </div>
         </>
       )}

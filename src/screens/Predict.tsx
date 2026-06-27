@@ -9,6 +9,7 @@ import { Flag } from '@/components/Flag'
 import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
+import { useMediaQuery } from '@/lib/useMediaQuery'
 import { cn } from '@/lib/utils'
 
 const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
@@ -50,18 +51,6 @@ const BRACKET_POS: Record<number, number> = (() => {
   for (const b of BRACKET) out[b.matchNo] = pos(b.matchNo)
   return out
 })()
-
-function useMediaQuery(query: string) {
-  const [match, setMatch] = useState(() => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false))
-  useEffect(() => {
-    const mq = window.matchMedia(query)
-    const fn = () => setMatch(mq.matches)
-    fn()
-    mq.addEventListener('change', fn)
-    return () => mq.removeEventListener('change', fn)
-  }, [query])
-  return match
-}
 
 export function Predict() {
   const { matches } = useApp()

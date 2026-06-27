@@ -50,12 +50,15 @@ export function PlayerPicker({
   onClose,
   taken,
   isCountryFull,
+  embedded = false,
 }: {
   slot: Slot
   onPick: (p: FantasyPick) => void
   onClose: () => void
   taken?: Set<string>
   isCountryFull?: (teamCode: TeamCode) => boolean
+  /** Rendered as a persistent side panel (desktop) — hides the back button. */
+  embedded?: boolean
 }) {
   const [query, setQuery] = useState('')
   const allowed = SLOT_ALLOWS[slot]
@@ -70,12 +73,14 @@ export function PlayerPicker({
 
   return (
     <section className="animate-fade-in">
-      <button
-        onClick={onClose}
-        className="mb-4 inline-flex items-center gap-1 rounded-pill bg-black/[0.04] py-1.5 pl-2 pr-3.5 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.06] transition-colors hover:text-ink dark:bg-white/[0.06] dark:ring-white/10"
-      >
-        <ChevronLeft size={16} /> Squad
-      </button>
+      {!embedded && (
+        <button
+          onClick={onClose}
+          className="mb-4 inline-flex items-center gap-1 rounded-pill bg-black/[0.04] py-1.5 pl-2 pr-3.5 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.06] transition-colors hover:text-ink dark:bg-white/[0.06] dark:ring-white/10"
+        >
+          <ChevronLeft size={16} /> Squad
+        </button>
+      )}
 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <h2 className="font-grotesk text-2xl font-bold tracking-tight">Pick your {SLOT_LABEL[slot].toLowerCase()}</h2>
