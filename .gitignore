@@ -41,3 +41,6 @@ coverage/
 .cache/
 .eslintcache
 *.tsbuildinfo
+
+# workflow git worktrees (isolation) — never commit
+.claude/worktrees/
