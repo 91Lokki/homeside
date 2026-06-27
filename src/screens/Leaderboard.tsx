@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS } from '@/data/teams'
 import { resolveBracket } from '@/domain/bracket'
@@ -19,7 +18,6 @@ type FantasyRounds = Partial<Record<Round, RoundSquad>>
 
 interface PickRow {
   user_id: string
-  email: string | null
   predictions: Predictions | null
   fantasy: FantasyRounds | null
   home_code: string | null
@@ -36,40 +34,28 @@ export function Leaderboard() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('predict')
 
-  // Pull every participant's stored picks + the friendly-name roster, merge by email.
+  // The leaderboard is public — read it from the `leaderboard` view (no emails),
+  // which anon and signed-in users can both see. Names come from each player's
+  // Google display name; scores are computed client-side below.
   useEffect(() => {
-    if (!supabase || status !== 'signedIn') return
+    if (!supabase || status === 'unavailable' || status === 'loading') return
     let cancelled = false
     void (async () => {
-      const [picksRes, membersRes] = await Promise.all([
-        supabase.from('picks').select('user_id, email, display_name, predictions, fantasy, home_code'),
-        supabase.from('members').select('email, display_name'),
-      ])
+      const { data, error } = await supabase
+        .from('leaderboard')
+        .select('user_id, display_name, home_code, predictions, fantasy')
       if (cancelled) return
-      if (picksRes.error) {
-        setLoadError(picksRes.error.message)
+      if (error) {
+        setLoadError(error.message)
         return
       }
-      // members is now an OPTIONAL name override; the default name is the player's
-      // own Google display name, stored on their picks row. Falls back to email.
-      const nameByEmail = new Map<string, string>(
-        (membersRes.data ?? []).map((m) => [String(m.email).toLowerCase(), m.display_name as string]),
-      )
-      const merged: PickRow[] = (picksRes.data ?? []).map((p) => {
-        const email = (p.email as string | null) ?? null
-        const raw =
-          (email && nameByEmail.get(email.toLowerCase())) || (p.display_name as string | null) || email || 'Player'
-        // Last-resort fallback is an email — show just the local part, not the domain.
-        const name = raw.includes('@') ? raw.split('@')[0] : raw
-        return {
-          user_id: p.user_id as string,
-          email,
-          predictions: p.predictions as Predictions | null,
-          fantasy: p.fantasy as FantasyRounds | null,
-          home_code: (p.home_code as string | null) ?? null,
-          name,
-        }
-      })
+      const merged: PickRow[] = (data ?? []).map((p) => ({
+        user_id: p.user_id as string,
+        predictions: p.predictions as Predictions | null,
+        fantasy: p.fantasy as FantasyRounds | null,
+        home_code: (p.home_code as string | null) ?? null,
+        name: ((p.display_name as string | null) ?? '').trim() || 'Player',
+      }))
       setRows(merged)
     })()
     return () => {
@@ -111,25 +97,6 @@ export function Leaderboard() {
   if (status === 'loading') {
     return <Centered>Checking your session…</Centered>
   }
-  if (status === 'signedOut') {
-    return (
-      <div className="mx-auto max-w-md py-16 text-center animate-fade-in">
-        <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
-          <Trophy size={22} className="text-team" />
-        </div>
-        <h1 className="mt-5 font-grotesk text-2xl font-bold tracking-tight">The league.</h1>
-        <p className="mx-auto mt-3 max-w-sm text-sm text-muted">
-          Sign in to see how your bracket and fantasy scores stack up against everyone else.
-        </p>
-        <button
-          onClick={() => void signInWithGoogle()}
-          className="mt-6 inline-flex items-center justify-center rounded-pill bg-ink px-6 py-3 text-sm font-semibold text-canvas transition-transform duration-300 ease-calm hover:-translate-y-0.5"
-        >
-          Sign in to continue
-        </button>
-      </div>
-    )
-  }
 
   return (
     <div className="animate-fade-in">
@@ -140,6 +107,18 @@ export function Leaderboard() {
         </div>
         <Segmented value={sortKey} onChange={setSortKey} />
       </header>
+
+      {status === 'signedOut' && (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-black/[0.035] px-4 py-3 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10">
+          <p className="text-sm text-muted">Viewing as a guest. Sign in to play and join the board.</p>
+          <button
+            onClick={() => void signInWithGoogle()}
+            className="shrink-0 rounded-pill bg-ink px-4 py-2 text-xs font-semibold text-canvas transition-transform duration-300 ease-calm hover:-translate-y-0.5"
+          >
+            Sign in
+          </button>
+        </div>
+      )}
 
       {loadError ? (
         <Centered>Couldn’t load the league ({loadError}).</Centered>

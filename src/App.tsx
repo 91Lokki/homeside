@@ -10,6 +10,7 @@ import { authEnabled } from '@/lib/supabase'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
 import { AuthButton } from '@/components/AuthButton'
+import { RequireAuth } from '@/components/RequireAuth'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
 import { Predict } from '@/screens/Predict'
@@ -90,8 +91,8 @@ function Shell() {
       <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 pb-24 pt-6 sm:px-8">
         <Routes>
           <Route path="/" element={<Navigate to="/schedule" replace />} />
-          <Route path="/predict" element={<Predict />} />
-          <Route path="/fantasy" element={<Fantasy />} />
+          <Route path="/predict" element={<RequireAuth><Predict /></RequireAuth>} />
+          <Route path="/fantasy" element={<RequireAuth><Fantasy /></RequireAuth>} />
           <Route path="/team" element={<Team />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/gallery" element={<Gallery />} />

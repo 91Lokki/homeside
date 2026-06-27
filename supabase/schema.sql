@@ -49,10 +49,12 @@ drop policy if exists "members readable" on public.members;
 create policy "members readable" on public.members
   for select to authenticated using (true);
 
--- picks: any signed-in user may READ everyone's picks (that's the leaderboard)…
+-- picks: you may read only YOUR OWN row (the public leaderboard reads the
+-- email-free view below, so nobody needs direct read access to everyone's rows).
 drop policy if exists "picks readable" on public.picks;
-create policy "picks readable" on public.picks
-  for select to authenticated using (true);
+drop policy if exists "picks own read" on public.picks;
+create policy "picks own read" on public.picks
+  for select to authenticated using (auth.uid() = user_id);
 
 -- …and may WRITE their OWN row (auto-join — no allowlist). The auth.uid() check
 -- is what stops anyone from writing as someone else.
@@ -75,6 +77,15 @@ create policy "picks update own" on public.picks
 grant usage on schema public to authenticated;
 grant select, insert, update on public.picks to authenticated;
 grant select on public.members to authenticated;
+
+-- 3c) Public, EMAIL-FREE leaderboard. The view runs with definer rights
+--     (security_invoker = false) so anyone — even signed-out guests — can read
+--     the standings, while emails stay private (the column simply isn't exposed)
+--     and direct row access stays locked down by the policy above.
+create or replace view public.leaderboard with (security_invoker = false) as
+  select user_id, display_name, home_code, predictions, fantasy from public.picks;
+grant usage on schema public to anon;
+grant select on public.leaderboard to anon, authenticated;
 
 -- 4) (Optional) Rename anyone on the board. Not required — the leaderboard shows
 --    each player's Google name by default. Use this only to override a name.
