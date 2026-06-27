@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
-import { Check } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
-import { resolveBracket, STAGE_LABEL } from '@/domain/bracket'
+import { resolveBracket } from '@/domain/bracket'
 import { buildPredictedBracket, scorePredictions, type PickStatus } from '@/domain/predict'
 import type { ResolvedBracketMatch, SlotSource, Stage, TeamCode } from '@/domain/types'
 import { Flag } from '@/components/Flag'
@@ -17,6 +17,7 @@ const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
 /** Card + gutter geometry (px). The gutter holds the connecting lines. */
 const CARD_W = 232
 const GUTTER = 44
+const COL_W = CARD_W + GUTTER
 
 /**
  * True bracket position of every match. The R32 ties are not wired as adjacent
@@ -79,6 +80,41 @@ export function Predict() {
       : null
   const champion = champCode ? teamByCode[champCode] : null
 
+  // The horizontal scroll position drives the Apple-style scrubber on top, and the
+  // scrubber drives the scroll — a two-way navigator over a board that's wider
+  // than the screen (essential on mobile, handy on desktop).
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ left: 0, client: 1, full: 1 })
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const measure = () => setBox({ left: el.scrollLeft, client: el.clientWidth, full: el.scrollWidth })
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', measure)
+      ro.disconnect()
+    }
+  }, [])
+  const maxScroll = Math.max(0, box.full - box.client)
+  const lensWidth = Math.min(100, Math.max(14, (box.client / box.full) * 100))
+  const lensLeft = maxScroll > 0 ? (box.left / maxScroll) * (100 - lensWidth) : 0
+  const activeRound = maxScroll > 0 ? Math.min(COLUMNS.length - 1, Math.round(box.left / COL_W)) : 0
+  const scrubTo = (frac: number) => scrollRef.current?.scrollTo({ left: frac * maxScroll })
+  // Tapping a round jumps to its first match — scrolling the board across AND the
+  // page down, so later rounds (whose cards centre far down the tall tree) land in
+  // view just below the pinned navigator instead of leaving an empty top.
+  const scrollToRound = (ci: number) => {
+    const sc = scrollRef.current
+    const el = sc?.querySelector<HTMLElement>(`[data-round-start="${COLUMNS[ci]}"]`)
+    if (!sc || !el) return
+    sc.scrollTo({ left: Math.min(maxScroll, ci * COL_W), behavior: 'smooth' })
+    const y = window.scrollY + el.getBoundingClientRect().top - 150 // clear app header + sticky nav
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
+  }
+
   return (
     <div className="animate-fade-in">
       <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
@@ -118,28 +154,23 @@ export function Predict() {
         </div>
       )}
 
-      <div className="-mx-5 overflow-x-auto px-5 pb-4 sm:mx-0 sm:px-0">
-        {/* Column header row — aligned to the round columns below. */}
-        <div className="flex min-w-max">
-          {COLUMNS.map((stage, ci) => (
-            <div
-              key={stage}
-              className="shrink-0"
-              style={{ width: CARD_W, marginRight: ci < COLUMNS.length - 1 ? GUTTER : 0 }}
-            >
-              <p className="mb-3 px-1 text-2xs font-medium uppercase tracking-label text-faint">
-                {STAGE_LABEL[stage]}
-                <span className="ml-1.5 text-faint/60">{(byStage.get(stage) ?? []).length}</span>
-              </p>
-            </div>
-          ))}
-        </div>
+      <BracketNav
+        rounds={COLUMNS}
+        counts={COLUMNS.map((s) => (byStage.get(s) ?? []).length)}
+        activeRound={activeRound}
+        lensLeft={lensLeft}
+        lensWidth={lensWidth}
+        scrollable={maxScroll > 0}
+        onTapRound={scrollToRound}
+        onScrub={scrubTo}
+      />
 
+      <div ref={scrollRef} className="-mx-5 overflow-x-auto px-5 pb-4 sm:mx-0 sm:px-0">
         {/* The bracket tree: equal-height flex columns; each match is a flex-1
             slot that centers its card. Because each round has exactly half the
             slots of the previous one, every next-round card lands on the midpoint
             of its two feeders automatically. Connectors are drawn per slot. */}
-        <div className="flex min-w-max" style={{ minHeight: 16 * 64 }}>
+        <div className="flex min-w-max" style={{ minHeight: 16 * 82 }}>
           {COLUMNS.map((stage, ci) => {
             const nos = byStage.get(stage) ?? []
             const isFirst = ci === 0
@@ -160,6 +191,7 @@ export function Predict() {
                     />
                     <MatchCard
                       no={no}
+                      anchor={i === 0 ? stage : undefined}
                       real={byNo.get(no)}
                       homeCode={predicted[no]?.homeCode ?? null}
                       awayCode={predicted[no]?.awayCode ?? null}
@@ -173,6 +205,110 @@ export function Predict() {
             )
           })}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The Apple-Sports navigator: tappable round labels over a draggable minimap. The
+ * minimap shows each round as a stack of dashes (one per match, so density falls
+ * off left→right), and a team-accent "lens" marks the slice currently on screen.
+ * Drag the lens — or tap a round — to pan the board. Two-way bound to the scroll.
+ */
+function BracketNav({
+  rounds,
+  counts,
+  activeRound,
+  lensLeft,
+  lensWidth,
+  scrollable,
+  onTapRound,
+  onScrub,
+}: {
+  rounds: Stage[]
+  counts: number[]
+  activeRound: number
+  lensLeft: number
+  lensWidth: number
+  scrollable: boolean
+  onTapRound: (i: number) => void
+  onScrub: (frac: number) => void
+}) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const grab = useRef<number | null>(null)
+
+  const fracFromX = (clientX: number) => {
+    const el = trackRef.current
+    if (!el) return 0
+    const r = el.getBoundingClientRect()
+    const lensPx = (lensWidth / 100) * r.width
+    const usable = Math.max(1, r.width - lensPx)
+    const left = Math.max(0, Math.min(usable, clientX - r.left - (grab.current ?? lensPx / 2)))
+    return left / usable
+  }
+
+  return (
+    <div className="sticky top-14 z-20 -mx-5 mb-4 select-none bg-canvas/90 px-5 pb-3 pt-3 backdrop-blur-xl sm:-mx-8 sm:px-8">
+      <div className="mb-2 flex px-1">
+        {rounds.map((r, i) => (
+          <button
+            key={r}
+            onClick={() => onTapRound(i)}
+            className={cn(
+              'flex-1 text-center font-grotesk text-xs font-bold uppercase tracking-label transition-colors',
+              i === activeRound ? 'text-ink' : 'text-faint hover:text-muted',
+            )}
+          >
+            {r}
+          </button>
+        ))}
+      </div>
+      <div
+        ref={trackRef}
+        onPointerDown={(e) => {
+          if (!scrollable) return
+          const el = trackRef.current!
+          const r = el.getBoundingClientRect()
+          const lensPx = (lensWidth / 100) * r.width
+          const lensLeftPx = (lensLeft / 100) * r.width
+          const x = e.clientX - r.left
+          grab.current = x >= lensLeftPx && x <= lensLeftPx + lensPx ? x - lensLeftPx : lensPx / 2
+          el.setPointerCapture(e.pointerId)
+          onScrub(fracFromX(e.clientX))
+        }}
+        onPointerMove={(e) => grab.current != null && onScrub(fracFromX(e.clientX))}
+        onPointerUp={() => {
+          grab.current = null
+        }}
+        onPointerCancel={() => {
+          grab.current = null
+        }}
+        className={cn(
+          'relative h-12 touch-none overflow-hidden rounded-[16px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10',
+          scrollable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
+        )}
+      >
+        {/* minimap density — one mini-column per round, dashes ≈ match count */}
+        <div className="pointer-events-none absolute inset-0 flex">
+          {counts.map((c, i) => (
+            <div key={i} className="flex flex-1 flex-col justify-center gap-[2px] px-3">
+              {Array.from({ length: c }).map((_, k) => (
+                <div key={k} className="h-[1.5px] rounded-full bg-black/30 dark:bg-white/35" />
+              ))}
+            </div>
+          ))}
+        </div>
+        {/* the lens — the slice currently on screen */}
+        {scrollable && (
+          <div
+            className="pointer-events-none absolute inset-y-1 flex items-center justify-between rounded-[12px] bg-black/[0.06] px-1 ring-2 ring-inset ring-black/40 dark:bg-white/15 dark:ring-white/70"
+            style={{ left: `${lensLeft}%`, width: `${lensWidth}%` }}
+          >
+            <ChevronLeft size={14} className="text-muted" />
+            <ChevronRight size={14} className="text-muted" />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -238,6 +374,7 @@ function Connectors({
 
 function MatchCard({
   no,
+  anchor,
   real,
   homeCode,
   awayCode,
@@ -246,6 +383,7 @@ function MatchCard({
   onPick,
 }: {
   no: number
+  anchor?: Stage
   real: ResolvedBracketMatch | undefined
   homeCode: TeamCode | null
   awayCode: TeamCode | null
@@ -256,7 +394,7 @@ function MatchCard({
   const def = BRACKET.find((b) => b.matchNo === no)
   const finished = real?.status === 'finished'
   return (
-    <div className="relative z-10 w-full rounded-[16px] bg-black/[0.04] p-1.5 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10">
+    <div data-round-start={anchor} className="relative z-10 w-full rounded-[16px] bg-black/[0.04] p-1.5 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10">
       <div className="mb-1 flex items-center justify-between px-1.5">
         <span className="text-[9px] font-medium uppercase tracking-label text-faint">M{no}</span>
         {finished && (
