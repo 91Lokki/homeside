@@ -127,3 +127,48 @@ export function accentOn(hex: string, dark: boolean): string {
   }
   return c
 }
+
+/** Euclidean RGB distance between two hex colors (0..441). */
+export function colorDist(a: string, b: string): number {
+  const x = hexToRgb(a)
+  const y = hexToRgb(b)
+  return Math.sqrt((x.r - y.r) ** 2 + (x.g - y.g) ** 2 + (x.b - y.b) ** 2)
+}
+
+/** Near-white or near-black — a poor identity fill on either theme. */
+function isExtreme(hex: string): boolean {
+  const l = luminance(hex)
+  return l > 0.8 || l < 0.05
+}
+
+/**
+ * A team's display color for FILLS (stat bars, goal markers): identity-true but
+ * visible on the current theme. When the primary is near white/black (England,
+ * Germany), it falls back to the secondary, then clamps contrast via accentOn.
+ */
+export function teamFillColor(color: string, color2: string, dark: boolean): string {
+  const base = isExtreme(color) && !isExtreme(color2) ? color2 : color
+  return accentOn(base, dark)
+}
+
+/**
+ * Two team fill colors guaranteed to read apart. If the primaries clash (e.g.
+ * Mexico vs South Africa, both green), the away side shifts to its secondary,
+ * then to a contrasting shade — so a split bar is always legible.
+ */
+export function teamFillPair(
+  home: { color: string; color2: string },
+  away: { color: string; color2: string },
+  dark: boolean,
+): [string, string] {
+  const MIN = 90
+  const h = teamFillColor(home.color, home.color2, dark)
+  let a = teamFillColor(away.color, away.color2, dark)
+  if (colorDist(h, a) >= MIN) return [h, a]
+  const awayAlt = accentOn(away.color2, dark)
+  if (colorDist(h, awayAlt) >= MIN) return [h, awayAlt]
+  const homeAlt = accentOn(home.color2, dark)
+  if (colorDist(homeAlt, a) >= MIN) return [homeAlt, a]
+  a = luminance(h) > 0.4 ? darken(h, 0.55) : lighten(h, 0.5)
+  return [h, a]
+}

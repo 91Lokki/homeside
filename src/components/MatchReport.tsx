@@ -3,6 +3,8 @@ import { teamByCode } from '@/data/teams'
 import type { Match } from '@/domain/types'
 import { fetchMatchReport, type ApiStatus, type MatchReport as Report } from '@/lib/api'
 import { liveDataNote } from '@/lib/apiCopy'
+import { teamFillPair } from '@/lib/prng'
+import { useTheme } from '@/state/theme'
 import { cn } from '@/lib/utils'
 
 /**
@@ -21,6 +23,7 @@ export function MatchReport({
 }) {
   const [report, setReport] = useState<Report | null>(null)
   const [state, setState] = useState<'idle' | 'loading' | 'unavailable' | 'ready'>('idle')
+  const { isDark } = useTheme()
 
   useEffect(() => {
     let cancelled = false
@@ -65,8 +68,16 @@ export function MatchReport({
   if (!report) return null
 
   const goals = report.events.filter((e) => e.type === 'Goal' || e.type === 'Own Goal')
-  const homeColor = (match.homeCode && teamByCode[match.homeCode]?.color) || '#9aa0aa'
-  const awayColor = (match.awayCode && teamByCode[match.awayCode]?.color) || '#5b606b'
+  // Theme-safe, mutually-distinct fill colors so similar kits (e.g. Mexico vs
+  // South Africa, both green) and extreme ones (England white, Germany black)
+  // still read clearly in the split bars.
+  const homeT = match.homeCode ? teamByCode[match.homeCode] : undefined
+  const awayT = match.awayCode ? teamByCode[match.awayCode] : undefined
+  const [homeColor, awayColor] = teamFillPair(
+    { color: homeT?.color ?? '#9aa0aa', color2: homeT?.color2 ?? '#9aa0aa' },
+    { color: awayT?.color ?? '#5b606b', color2: awayT?.color2 ?? '#5b606b' },
+    isDark,
+  )
   // An own goal is shown on the side that benefited (the scoreline), not the scorer's team.
   const sideOf = (g: (typeof goals)[number]): 'home' | 'away' => {
     const home = g.team === match.homeCode
