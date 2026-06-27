@@ -175,7 +175,7 @@ export function Team() {
             The squad list for {homeTeam.name} isn&rsquo;t available yet — it appears once verified from a public source (never fabricated).
           </p>
         ) : (
-          <div className="grid gap-x-10 gap-y-7 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2">
             {POS_LINES.map(([pos, title]) => {
               const rows = byLine(pos)
               if (!rows.length) return null
