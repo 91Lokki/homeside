@@ -12,11 +12,10 @@ import { useGames } from '@/state/games'
 import { cn } from '@/lib/utils'
 
 const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
-const ROUND_LABEL: Record<string, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' }
 const CARD_W = 176
 const GUTTER = 26
 const COL_W = CARD_W + GUTTER
-const ROW_H = 120
+const ROW_H = 98
 const CONN = 'border-black/15 dark:border-white/20'
 const STUB = 'bg-black/15 dark:bg-white/20'
 
@@ -97,16 +96,43 @@ export function Predict() {
     onPick: (code: TeamCode) => setPrediction(no, code),
   })
 
-  // mobile: adaptive two-round window — height shrinks to the focused round so its
-  // matches all fit, and switching slides the board left.
+  // mobile: adaptive two-round window — height shrinks to the focused round so all
+  // its matches fit; advancing pans the old rounds out left as the next pan in.
   const maxFocus = COLUMNS.length - 2
   const [focus, setFocus] = useState(0)
-  const dir = useRef(1)
+  const [leaving, setLeaving] = useState<{ idx: number; dir: number } | null>(null)
   const goFocus = (i: number) => {
     const next = Math.max(0, Math.min(maxFocus, i))
-    dir.current = next >= focus ? 1 : -1
+    if (next === focus) return
+    setLeaving({ idx: focus, dir: next > focus ? 1 : -1 })
     setFocus(next)
   }
+  useEffect(() => {
+    if (!leaving) return
+    const t = window.setTimeout(() => setLeaving(null), 340)
+    return () => window.clearTimeout(t)
+  }, [leaving])
+
+  const renderWindow = (f: number) => (
+    <div className="flex" style={{ minHeight: cols[f].nos.length * ROW_H }}>
+      <div className="flex flex-1 flex-col">
+        {cols[f].nos.map((no, i) => (
+          <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
+            <MatchCard {...cardProps(no)} />
+          </Slot>
+        ))}
+      </div>
+      <div className="shrink-0" style={{ width: GUTTER }} />
+      <div className="flex flex-1 flex-col">
+        {cols[f + 1].nos.map((no) => (
+          <Slot key={no} hasNext={false} hasPrev topOfPair>
+            <MatchCard {...cardProps(no)} muted />
+          </Slot>
+        ))}
+      </div>
+    </div>
+  )
+
   const boardRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   useEffect(() => {
@@ -211,31 +237,13 @@ export function Predict() {
           <div className="sticky top-14 z-20 -mx-5 mb-4 bg-canvas/90 px-5 pb-3 pt-3 backdrop-blur-xl">
             <MobileNav focus={focus} maxFocus={maxFocus} onFocus={goFocus} />
           </div>
-          <div ref={boardRef}>
-            <div className="mb-3 flex items-center gap-2 px-1 text-2xs font-semibold uppercase tracking-label text-faint">
-              <span className="text-ink">{ROUND_LABEL[COLUMNS[focus]]}</span>
-              <ChevronRight size={12} className="text-faint" />
-              <span>{ROUND_LABEL[COLUMNS[focus + 1]]}</span>
-            </div>
-            <div key={focus} className={cn('overflow-hidden', dir.current >= 0 ? 'animate-slide-from-right' : 'animate-slide-from-left')}>
-              <div className="flex" style={{ minHeight: cols[focus].nos.length * ROW_H }}>
-                <div className="flex flex-1 flex-col">
-                  {cols[focus].nos.map((no, i) => (
-                    <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
-                      <MatchCard {...cardProps(no)} />
-                    </Slot>
-                  ))}
-                </div>
-                <div className="shrink-0" style={{ width: GUTTER }} />
-                <div className="flex flex-1 flex-col">
-                  {cols[focus + 1].nos.map((no) => (
-                    <Slot key={no} hasNext={focus + 1 < cols.length - 1} hasPrev topOfPair edgeStub>
-                      <MatchCard {...cardProps(no)} muted />
-                    </Slot>
-                  ))}
-                </div>
+          <div ref={boardRef} className="relative overflow-hidden">
+            {leaving && (
+              <div className={cn('pointer-events-none absolute inset-x-0 top-0', leaving.dir > 0 ? 'animate-slide-out-left' : 'animate-slide-out-right')}>
+                {renderWindow(leaving.idx)}
               </div>
-            </div>
+            )}
+            <div className={cn(leaving ? (leaving.dir > 0 ? 'animate-slide-from-right' : 'animate-slide-from-left') : '')}>{renderWindow(focus)}</div>
           </div>
         </>
       )}
@@ -345,7 +353,7 @@ function MatchCard({
         muted ? 'bg-black/[0.02] ring-black/[0.05] dark:bg-white/[0.03] dark:ring-white/[0.07]' : 'bg-black/[0.04] ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10',
       )}
     >
-      <div className="border-b border-black/5 px-3 py-1.5 text-2xs text-faint dark:border-white/[0.07]">
+      <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
         {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
       </div>
       <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
@@ -383,7 +391,7 @@ function Side({
       disabled={!code}
       onClick={() => code && onPick(code)}
       className={cn(
-        'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
+        'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors',
         code && 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
         picked && !finished && 'bg-team-soft',
         correct && 'bg-emerald-500/15',
@@ -392,11 +400,11 @@ function Side({
       )}
     >
       {team ? (
-        <Flag code={code} size={22} className="shrink-0" />
+        <Flag code={code} size={19} className="shrink-0" />
       ) : (
-        <span className="h-[22px] w-[22px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
+        <span className="h-[19px] w-[19px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
       )}
-      <span className={cn('flex-1 truncate text-[15px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? team.name : 'TBD'}</span>
+      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? team.name : 'TBD'}</span>
       {correct && <Check size={13} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
       {score != null && <span className="text-sm font-bold tnum text-ink">{score}</span>}
     </button>

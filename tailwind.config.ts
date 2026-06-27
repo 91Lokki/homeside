@@ -98,12 +98,20 @@ export default {
           '50%': { opacity: '0.35' },
         },
         'slide-from-right': {
-          from: { opacity: '0.3', transform: 'translateX(38px)' },
+          from: { opacity: '0', transform: 'translateX(38px)' },
           to: { opacity: '1', transform: 'translateX(0)' },
         },
         'slide-from-left': {
-          from: { opacity: '0.3', transform: 'translateX(-38px)' },
+          from: { opacity: '0', transform: 'translateX(-38px)' },
           to: { opacity: '1', transform: 'translateX(0)' },
+        },
+        'slide-out-left': {
+          from: { opacity: '1', transform: 'translateX(0)' },
+          to: { opacity: '0', transform: 'translateX(-38px)' },
+        },
+        'slide-out-right': {
+          from: { opacity: '1', transform: 'translateX(0)' },
+          to: { opacity: '0', transform: 'translateX(38px)' },
         },
       },
       animation: {
@@ -113,8 +121,10 @@ export default {
         rise: 'rise 0.7s var(--ease-calm, ease-out) both',
         radar: 'radar 0.7s var(--ease-calm, ease-out) both',
         'live-pulse': 'live-pulse 1.4s ease-in-out infinite',
-        'slide-from-right': 'slide-from-right 0.36s var(--ease-calm, ease-out) both',
-        'slide-from-left': 'slide-from-left 0.36s var(--ease-calm, ease-out) both',
+        'slide-from-right': 'slide-from-right 0.34s var(--ease-calm, ease-out) both',
+        'slide-from-left': 'slide-from-left 0.34s var(--ease-calm, ease-out) both',
+        'slide-out-left': 'slide-out-left 0.34s var(--ease-calm, ease-out) both',
+        'slide-out-right': 'slide-out-right 0.34s var(--ease-calm, ease-out) both',
       },
     },
   },
