@@ -64,6 +64,15 @@ create policy "picks update own" on public.picks
     and lower(auth.email()) in (select lower(email) from public.members)
   );
 
+-- 3b) Table-level grants. RLS decides WHICH ROWS the authenticated role sees, but
+--     the role still needs base table access — without these, queries fail with
+--     "permission denied for table picks" before RLS is ever evaluated. (Supabase
+--     usually auto-grants these; we set them explicitly so this script is
+--     self-sufficient on any project.)
+grant usage on schema public to authenticated;
+grant select, insert, update on public.picks to authenticated;
+grant select on public.members to authenticated;
+
 -- 4) Seed the roster with your ~10 friends. EDIT THESE — add one row per person
 --    using the exact Google email they'll sign in with.
 insert into public.members (email, display_name) values
