@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, Plus, Search } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
-import { Flag } from './Flag'
+import { PlayerAvatar } from './PlayerAvatar'
 import { posCat, POS_ABBR, SLOT_ALLOWS, SLOT_LABEL, playerKey, type PosCat, type Slot } from '@/domain/fantasy'
 import type { TeamCode } from '@/domain/types'
 import { cn } from '@/lib/utils'
@@ -158,7 +158,7 @@ export function PlayerPicker({
             disabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
           )}
         >
-          <Flag code={p.teamCode} size={34} className="shrink-0" />
+          <PlayerAvatar teamCode={p.teamCode} name={p.name} number={p.number} size={34} className="shrink-0" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
             <span className="block truncate text-2xs text-faint">

@@ -26,7 +26,7 @@ import {
 import { currentRound, eliminatedTeams, isRoundLocked, previousRound, roundFirstKickoff } from '@/domain/fantasyRounds'
 import type { Match } from '@/domain/types'
 import { useMatchDetails } from '@/lib/matchData'
-import { Flag } from '@/components/Flag'
+import { PlayerAvatar } from '@/components/PlayerAvatar'
 import { PlayerPicker } from '@/components/PlayerPicker'
 import { KnockoutProgress, type ProgressNode } from '@/components/KnockoutProgress'
 import { Label } from '@/components/ui/atoms'
@@ -208,7 +208,7 @@ export function Fantasy() {
     return (
       <>
         <div className="flex items-center gap-2.5">
-          <Flag code={pick.teamCode} size={28} className="shrink-0" />
+          <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={28} className="shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="truncate font-grotesk text-sm font-medium leading-tight">{pick.name}</p>
             <p className="truncate text-2xs text-faint">
@@ -306,7 +306,7 @@ export function Fantasy() {
                 active && !isCap && 'ring-2 ring-ink/40',
               )}
             >
-              <Flag code={pick.teamCode} size={46} />
+              <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={46} flagBadge={false} />
             </span>
             {pick.number != null && (
               <span className="absolute -bottom-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-canvas px-1 font-grotesk text-[10px] font-semibold tnum text-muted ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
