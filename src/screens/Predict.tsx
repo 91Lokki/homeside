@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Check, ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
@@ -15,7 +15,12 @@ const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
 const CARD_W = 176
 const GUTTER = 26
 const COL_W = CARD_W + GUTTER
-const ROW_H = 98
+// Flat cards (~66px) sit centered in a tall slot, so there is comfortable, even
+// air (~45px) above and below each one — Apple keeps the cards short but the
+// vertical spacing generous, especially the tight R32 pairs.
+const ROW_H = 122
+const THIRD_NO = 103 // third-place play-off (BRACKET stage "F3")
+const SLIDE_MS = 380
 const CONN = 'border-black/15 dark:border-white/20'
 const STUB = 'bg-black/15 dark:bg-white/20'
 
@@ -97,43 +102,78 @@ export function Predict() {
   })
 
   // mobile: adaptive two-round window — height shrinks to the focused round so all
-  // its matches fit; advancing pans the old rounds out left as the next pan in.
+  // its matches fit. Switching rounds is a true horizontal carousel: a 200%-wide
+  // track holds both windows and slides by one full container width, so the
+  // leaving and entering windows never overlap (no ghost).
   const maxFocus = COLUMNS.length - 2
   const [focus, setFocus] = useState(0)
-  const [leaving, setLeaving] = useState<{ idx: number; dir: number } | null>(null)
+  // slide drives the transition: `from` is the previous focus, `dir` the direction
+  // (+1 advance / leaving slides left, -1 back / leaving slides right). null = idle.
+  const [slide, setSlide] = useState<{ from: number; dir: number } | null>(null)
   const goFocus = (i: number) => {
     const next = Math.max(0, Math.min(maxFocus, i))
-    if (next === focus) return
-    setLeaving({ idx: focus, dir: next > focus ? 1 : -1 })
+    if (next === focus || slide) return // ignore taps mid-animation
+    setSlide({ from: focus, dir: next > focus ? 1 : -1 })
     setFocus(next)
   }
+  // Clear the slide after the animation runs (a timeout, never a lone
+  // transitionend, so a missed event can't lock the scrubber).
   useEffect(() => {
-    if (!leaving) return
-    const t = window.setTimeout(() => setLeaving(null), 340)
+    if (!slide) return
+    const t = window.setTimeout(() => setSlide(null), SLIDE_MS + 40)
     return () => window.clearTimeout(t)
-  }, [leaving])
+  }, [slide])
 
-  const renderWindow = (f: number) => (
-    <div className="flex" style={{ minHeight: cols[f].nos.length * ROW_H }}>
-      <div className="flex flex-1 flex-col">
-        {cols[f].nos.map((no, i) => (
-          <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
-            <MatchCard {...cardProps(no)} />
-          </Slot>
-        ))}
+  /** A focused-round window: the focused column + the next (preview) column. */
+  const renderWindow = (f: number) => {
+    const previewIsFinal = cols[f + 1].stage === 'F'
+    return (
+      <div className="flex w-full" style={{ minHeight: cols[f].nos.length * ROW_H }}>
+        {/* focused round (left) — connectors fan into the next column */}
+        <div className="flex flex-1 flex-col">
+          {cols[f].nos.map((no, i) => (
+            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
+              <MatchCard {...cardProps(no)} />
+            </Slot>
+          ))}
+        </div>
+        <div className="shrink-0" style={{ width: GUTTER }} />
+        {/* preview round (right) — a rounded stub runs off the right edge toward the
+            round that isn't revealed yet, unless this preview is already the Final */}
+        <div className="flex flex-1 flex-col">
+          {cols[f + 1].nos.map((no) => (
+            <Slot key={no} hasNext={false} hasPrev topOfPair edgeStub={!previewIsFinal}>
+              <MatchCard {...cardProps(no)} muted />
+            </Slot>
+          ))}
+          {previewIsFinal && (
+            <div className="mt-7">
+              <p className="mb-1.5 text-center font-grotesk text-2xs font-bold uppercase tracking-label text-faint">
+                Third Place Match
+              </p>
+              {/* stands alone — no bracket lines connect to it */}
+              <MatchCard {...cardProps(THIRD_NO)} muted />
+            </div>
+          )}
+        </div>
       </div>
-      <div className="shrink-0" style={{ width: GUTTER }} />
-      <div className="flex flex-1 flex-col">
-        {cols[f + 1].nos.map((no) => (
-          <Slot key={no} hasNext={false} hasPrev topOfPair>
-            <MatchCard {...cardProps(no)} muted />
-          </Slot>
-        ))}
-      </div>
-    </div>
-  )
+    )
+  }
 
   const boardRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const [vw, setVw] = useState(0)
+  useLayoutEffect(() => {
+    if (isDesktop) return
+    const el = viewportRef.current
+    if (!el) return
+    const measure = () => setVw(el.clientWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [isDesktop])
+
   const mounted = useRef(false)
   useEffect(() => {
     if (isDesktop) return
@@ -225,6 +265,15 @@ export function Predict() {
                         <MatchCard {...cardProps(no)} />
                       </Slot>
                     ))}
+                    {/* Third-place play-off sits under the Final, wired to nothing. */}
+                    {col.stage === 'F' && (
+                      <div className="mt-7">
+                        <p className="mb-1.5 text-center font-grotesk text-2xs font-bold uppercase tracking-label text-faint">
+                          Third Place Match
+                        </p>
+                        <MatchCard {...cardProps(THIRD_NO)} muted />
+                      </div>
+                    )}
                   </div>
                   {ci < cols.length - 1 && <div className="shrink-0" style={{ width: GUTTER }} />}
                 </Fragment>
@@ -237,14 +286,46 @@ export function Predict() {
           <div className="sticky top-14 z-20 -mx-5 mb-4 bg-canvas/90 px-5 pb-3 pt-3 backdrop-blur-xl">
             <MobileNav focus={focus} maxFocus={maxFocus} onFocus={goFocus} />
           </div>
-          <div ref={boardRef} className="relative overflow-hidden">
-            {leaving && (
-              <div className={cn('pointer-events-none absolute inset-x-0 top-0', leaving.dir > 0 ? 'animate-slide-out-left' : 'animate-slide-out-right')}>
-                {renderWindow(leaving.idx)}
-              </div>
-            )}
-            <div className={cn(leaving ? (leaving.dir > 0 ? 'animate-slide-from-right' : 'animate-slide-from-left') : '')}>{renderWindow(focus)}</div>
+          <div ref={boardRef}>
+            {/* Carousel viewport. overflow is clipped ONLY while sliding, so the idle
+                view never crops the right-edge connector stub (fix 3). */}
+            <div ref={viewportRef} className={cn('relative', slide && 'overflow-hidden')}>
+              {slide && vw > 0 ? (
+                // A 200%-wide track holding [old | new] (advance) or [new | old]
+                // (back). It starts showing one half and animates a full screen
+                // width to the other, so the windows never overlap (no ghost).
+                <div
+                  key={`${slide.from}->${focus}`}
+                  className="flex"
+                  style={{
+                    width: vw * 2,
+                    animation: `${slide.dir > 0 ? 'carousel-left' : 'carousel-right'} ${SLIDE_MS}ms var(--ease-calm, ease-out) forwards`,
+                    ['--vw' as string]: `${vw}px`,
+                  }}
+                >
+                  <div className="shrink-0" style={{ width: vw }}>
+                    {renderWindow(slide.dir > 0 ? slide.from : focus)}
+                  </div>
+                  <div className="shrink-0" style={{ width: vw }}>
+                    {renderWindow(slide.dir > 0 ? focus : slide.from)}
+                  </div>
+                </div>
+              ) : (
+                renderWindow(focus)
+              )}
+            </div>
           </div>
+          {/* keyframes for the full-width carousel slide */}
+          <style>{`
+            @keyframes carousel-left {
+              from { transform: translateX(0); }
+              to   { transform: translateX(calc(-1 * var(--vw))); }
+            }
+            @keyframes carousel-right {
+              from { transform: translateX(calc(-1 * var(--vw))); }
+              to   { transform: translateX(0); }
+            }
+          `}</style>
         </>
       )}
     </div>
@@ -274,8 +355,11 @@ function Slot({
         ) : (
           <div className={cn('pointer-events-none absolute rounded-br-[4px] border-b border-r', CONN)} style={{ left: '100%', top: 0, width: GUTTER / 2, height: '50%' }} />
         ))}
-      {/* a short stub off the right edge — hints the bracket continues to the next round */}
-      {edgeStub && <div className={cn('pointer-events-none absolute top-1/2 h-px', STUB)} style={{ left: '100%', width: 14 }} />}
+      {/* a short rounded stub off the right edge — hints the bracket continues to
+          the next (not-yet-revealed) round, so a round switch reads as continuous. */}
+      {edgeStub && (
+        <div className={cn('pointer-events-none absolute top-1/2 -translate-y-1/2 rounded-r-[4px] border-y border-r', CONN)} style={{ left: '100%', width: 16, height: 9 }} />
+      )}
       {children}
     </div>
   )
