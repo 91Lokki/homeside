@@ -67,6 +67,8 @@ export function PlayerPicker({
   embedded?: boolean
 }) {
   const [query, setQuery] = useState('')
+  const [posFilter, setPosFilter] = useState<PosCat | null>(null)
+  const browsing = slot == null // whole-pool browse (no specific slot being filled)
   const allowed = slot ? SLOT_ALLOWS[slot] : ALL_POS
 
   // Single source of truth for whether a row can be added (drives sort + disable).
@@ -77,6 +79,7 @@ export function PlayerPicker({
     const q = foldText(query.trim())
     return POOL.filter((p) => allowed.includes(p.pos))
       .filter((p) => !taken?.has(playerKey(p)))
+      .filter((p) => (browsing && posFilter ? p.pos === posFilter : true))
       .filter((p) => !q || p.search.includes(q))
       .sort((a, b) => {
         // addable players first — never open on a wall of greyed rows
@@ -85,9 +88,42 @@ export function PlayerPicker({
         if (da !== db) return da - db
         return a.teamName.localeCompare(b.teamName) || a.name.localeCompare(b.name)
       })
-  }, [query, allowed, taken, isCountryFull, canAdd])
+  }, [query, allowed, taken, browsing, posFilter, isCountryFull, canAdd])
 
   const addableCount = useMemo(() => results.filter((p) => !rowDisabled(p)).length, [results])
+  // Total (untaken) players per position — for the browse filter; always > 0.
+  const posCounts = useMemo(() => {
+    const m: Record<PosCat, number> = { GK: 0, DEF: 0, MID: 0, ATT: 0 }
+    for (const p of POOL) if (!taken?.has(playerKey(p))) m[p.pos]++
+    return m
+  }, [taken])
+
+  // Position filter for whole-pool browsing (search + look without a target slot).
+  const posFilterBar = browsing && (
+    <div className="mt-3 flex flex-wrap gap-1.5">
+      <button
+        onClick={() => setPosFilter(null)}
+        className={cn(
+          'rounded-pill px-3 py-1 text-2xs font-semibold uppercase tracking-label transition-colors',
+          posFilter === null ? 'bg-team text-team-ink' : 'bg-black/[0.04] text-muted hover:text-ink dark:bg-white/[0.06]',
+        )}
+      >
+        All
+      </button>
+      {ALL_POS.map((pos) => (
+        <button
+          key={pos}
+          onClick={() => setPosFilter((cur) => (cur === pos ? null : pos))}
+          className={cn(
+            'rounded-pill px-3 py-1 text-2xs font-semibold uppercase tracking-label transition-colors',
+            posFilter === pos ? 'bg-team text-team-ink' : 'bg-black/[0.04] text-muted hover:text-ink dark:bg-white/[0.06]',
+          )}
+        >
+          {POS_ABBR[pos] ?? pos} <span className="tnum opacity-70">{posCounts[pos]}</span>
+        </button>
+      ))}
+    </div>
+  )
 
   const heading = embedded ? 'Player pool' : `Pick your ${slot ? SLOT_LABEL[slot].toLowerCase() : 'player'}`
   const helper = slot
@@ -155,8 +191,8 @@ export function PlayerPicker({
   // height so it lines up top-and-bottom with the pitch beside it.
   if (embedded) {
     return (
-      <section className="animate-fade-in">
-        <div className="panel overflow-hidden">
+      <section className="flex h-full">
+        <div className="panel flex h-[640px] w-full flex-col overflow-hidden">
           <div className="border-b border-black/5 px-4 py-4 dark:border-white/[0.07]">
             <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
               <h2 className="font-grotesk text-xl font-bold tracking-tight">{heading}</h2>
@@ -171,11 +207,12 @@ export function PlayerPicker({
             </div>
             <p className="mt-1 text-2xs text-faint">{helper}</p>
             <div className="mt-3">{searchBar}</div>
+            {posFilterBar}
           </div>
           {results.length === 0 ? (
-            <p className="px-1 py-10 text-center text-sm text-faint">No players match.</p>
+            <p className="grid flex-1 place-items-center px-1 text-center text-sm text-faint">No players match.</p>
           ) : (
-            <ul className="max-h-[58vh] divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
+            <ul className="min-h-0 flex-1 divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
               {listItems}
             </ul>
           )}

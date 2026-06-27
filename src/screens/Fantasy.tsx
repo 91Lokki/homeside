@@ -145,7 +145,6 @@ export function Fantasy() {
   }
   // In browse mode, a position is addable only while it (or Flex) still has room.
   const canAdd = (pos: PosCat) => (openSlot ? SLOT_ALLOWS[openSlot].includes(pos) : slotForPos(pos) !== null)
-  const teamFull = FORMATION.flat().every((s) => players.some((p) => p.slot === s))
 
   // Shared body for acting on a filled token — rendered in a desktop popover and
   // a mobile bottom sheet. Captain/Vice are real toggles; the captain can never be
@@ -247,7 +246,7 @@ export function Fantasy() {
           onClick={() => editable && setSelected(active ? null : slot)}
           aria-pressed={active}
           aria-expanded={active}
-          className={cn('group flex flex-col items-center', !editable && 'cursor-default', out && 'opacity-60 saturate-0')}
+          className={cn('group flex w-full flex-col items-center', !editable && 'cursor-default', out && 'opacity-60 saturate-0')}
         >
           <span className="relative">
             <span
@@ -270,12 +269,12 @@ export function Fantasy() {
               </span>
             )}
           </span>
-          <span className="mt-1.5 flex w-full flex-col items-center rounded-[10px] bg-black/[0.04] px-1.5 py-1 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
-            <span className="flex w-full items-center justify-center gap-1">
-              <span className="truncate font-grotesk text-xs font-medium leading-tight text-ink">{pick.name}</span>
+          <span className="mt-1.5 flex w-full max-w-full flex-col items-center overflow-hidden rounded-[10px] bg-black/[0.04] px-1.5 py-1 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
+            <span className="flex w-full min-w-0 items-center justify-center gap-1">
+              <span className="min-w-0 truncate font-grotesk text-xs font-medium leading-tight text-ink">{pick.name}</span>
               {ps && <span className="shrink-0 font-grotesk text-xs font-semibold tnum text-team">{ps.final}</span>}
             </span>
-            <span className="mt-0.5 truncate text-[9px] font-medium uppercase tracking-label text-faint">
+            <span className="mt-0.5 w-full truncate text-[9px] font-medium uppercase tracking-label text-faint">
               {out ? 'Eliminated' : `${POS_ABBR[pick.position] ?? pick.position} · ${team?.name ?? pick.teamCode}`}
             </span>
           </span>
@@ -352,8 +351,9 @@ export function Fantasy() {
       <div className="lg:flex lg:items-start lg:gap-8">
         <div className="lg:w-[468px] lg:shrink-0">
       {/* the five — an Apple pitch in formation (own goal top, attack bottom).
-          No overflow-hidden so a token's action popover can extend past the edge. */}
-      <div className="panel relative mx-auto w-full max-w-[440px] px-3 py-5 sm:px-5 sm:py-7">
+          No overflow-hidden so a token's action popover can extend past the edge.
+          On desktop it's a fixed height so it lines up with the player pool box. */}
+      <div className="panel relative mx-auto flex w-full max-w-[440px] flex-col px-3 py-5 sm:px-5 sm:py-7 lg:h-[640px]">
         {/* implied pitch markings — 1px hairlines only, no green, no fill */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute inset-3 rounded-[14px] border border-black/[0.05] dark:border-white/[0.06]" />
@@ -366,7 +366,7 @@ export function Fantasy() {
 
         <p className="relative mb-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">Your goal</span></p>
 
-        <div className="relative flex flex-col gap-4 sm:gap-6">
+        <div className="relative flex flex-1 flex-col justify-between gap-4 py-1 sm:gap-6">
           {FORMATION.map((row, i) => (
             <div key={i} className="flex items-start justify-center gap-3 sm:gap-6">
               {row.map((slot) => renderSlot(slot))}
@@ -397,23 +397,7 @@ export function Fantasy() {
             pitch slot filters it; otherwise picks drop into the first open spot.
             Hidden on mobile, where tapping a slot opens the full-screen picker. */}
         <div className="hidden lg:block lg:flex-1 lg:min-w-0">
-          {!editable ? (
-            <div className="panel grid min-h-[200px] place-items-center p-8 text-center text-sm text-muted">
-              This round is locked and under way.
-            </div>
-          ) : teamFull && openSlot == null ? (
-            <div className="panel grid min-h-[320px] place-items-center p-8 text-center">
-              <div className="max-w-[22rem]">
-                <span className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-team-soft text-team">
-                  <Check size={22} />
-                </span>
-                <p className="font-grotesk text-lg font-semibold tracking-tight">Your five is set</p>
-                <p className="mt-1.5 text-sm leading-snug text-muted">
-                  Tap a player on the pitch to make them captain, change them, or remove them.
-                </p>
-              </div>
-            </div>
-          ) : (
+          {editable ? (
             <PlayerPicker
               slot={openSlot}
               embedded
@@ -428,6 +412,10 @@ export function Fantasy() {
                 setOpenSlot(null)
               }}
             />
+          ) : (
+            <div className="panel grid h-[640px] place-items-center p-8 text-center text-sm text-muted">
+              This round is locked and under way.
+            </div>
           )}
         </div>
       </div>
