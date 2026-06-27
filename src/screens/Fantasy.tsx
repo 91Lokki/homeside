@@ -366,7 +366,7 @@ export function Fantasy() {
   )
 
   return (
-    <div className={cn('animate-fade-in', editable && 'max-lg:pb-28')}>
+    <div className={cn('animate-fade-in', editable && 'max-lg:pb-[calc(7.5rem+env(safe-area-inset-bottom))]')}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Label>Knockout fantasy</Label>
@@ -522,7 +522,7 @@ export function Fantasy() {
       {/* view mode — mobile: floating "Make transfers" so it's always reachable */}
       {!transferring && editable && !isDesktop && !selected &&
         createPortal(
-          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/[0.06] bg-canvas/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
+          <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 border-y border-black/[0.06] bg-canvas/95 px-4 py-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
             <button
               onClick={startTransfers}
               className="flex w-full items-center justify-center gap-2 rounded-pill bg-team px-5 py-3 font-grotesk text-sm font-semibold text-team-ink"
@@ -561,7 +561,7 @@ export function Fantasy() {
       {/* transfer mode: mobile fixed Save/Reset bar (portaled; only when no sheet/picker is up) */}
       {transferring && !isDesktop && !openSlot && !selected &&
         createPortal(
-          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/[0.06] bg-canvas/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
+          <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 border-y border-black/[0.06] bg-canvas/95 px-4 py-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
             <div className="mb-2 text-center text-2xs text-muted">
               {prev ? (
                 <>
