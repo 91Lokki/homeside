@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
@@ -11,23 +11,20 @@ import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { cn } from '@/lib/utils'
 
-/** Left-to-right rounds. R32 has 16 matches, each later round exactly half. */
+/** Left-to-right knockout rounds (no GS — Predict is about picking winners). */
 const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
 const ROUND_LABEL: Record<string, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' }
-/** Clean, representative dash counts for the minimap (not the literal match count,
- *  which looked noisy). The Final shows a trophy instead. */
-const MINI_LINES = [6, 5, 4, 3]
-/** Vertical rhythm: px per match in the focused (left) round. */
-const ROW_H = 82
+/** Minimap dash counts per round (the Final shows a trophy). */
+const MINI_LINES = [5, 4, 3, 2]
+const ROW_H = 84
 const GUTTER = 36
-const LINE = 'bg-black/20 dark:bg-white/25'
+const DESK_CARD_W = 224
+const DESK_COL_W = DESK_CARD_W + GUTTER
+const CONN = 'border-black/25 dark:border-white/30'
+const STUB = 'bg-black/25 dark:bg-white/30'
 
-/**
- * True bracket position of every match — an in-order walk of the feeder graph
- * (home/away .source.matchNo) gives the R32 leaves in tournament order; each later
- * match sits at its feeders' average index. Sorting a column by this lines every
- * pair up beside the match it feeds (M89 is fed by M74 + M77, not M73 + M74).
- */
+/** True bracket position of every match (in-order walk of the feeder graph), so a
+ *  column sorted by it puts each pair beside the match it feeds. */
 const BRACKET_POS: Record<number, number> = (() => {
   const byNo = new Map(BRACKET.map((b) => [b.matchNo, b]))
   const feeders = (no: number): number[] => {
@@ -52,9 +49,22 @@ const BRACKET_POS: Record<number, number> = (() => {
   return out
 })()
 
+function useMediaQuery(query: string) {
+  const [match, setMatch] = useState(() => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false))
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const fn = () => setMatch(mq.matches)
+    fn()
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
+  }, [query])
+  return match
+}
+
 export function Predict() {
   const { matches } = useApp()
   const { predictions, setPrediction, clearPredictions } = useGames()
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const byNo = useMemo(() => new Map(resolved.map((m) => [m.matchNo, m])), [resolved])
@@ -71,37 +81,83 @@ export function Predict() {
     for (const arr of m.values()) arr.sort((a, b) => BRACKET_POS[a] - BRACKET_POS[b])
     return m
   }, [])
+  const cols = useMemo(() => COLUMNS.map((stage) => ({ stage, nos: byStage.get(stage) ?? [] })), [byStage])
 
   const finalOcc = predicted[104]
   const champCode =
     finalOcc && (predictions[104] === finalOcc.homeCode || predictions[104] === finalOcc.awayCode) ? predictions[104] : null
   const champion = champCode ? teamByCode[champCode] : null
 
-  // Apple-style adaptive window: show two adjacent rounds at a time. `focus` is the
-  // left/main round; the next round previews on the right. Advancing slides the
-  // next round into the main slot and reflows — later rounds show compactly, so
-  // there's no giant half-empty tree to pan.
-  const [focus, setFocus] = useState(0) // 0..COLUMNS.length-2
-  const leftStage = COLUMNS[focus]
-  const rightStage = COLUMNS[focus + 1] as Stage | undefined
-  const leftNos = byStage.get(leftStage) ?? []
-  const rightNos = rightStage ? byStage.get(rightStage) ?? [] : []
-  const minHeight = Math.max(ROW_H, leftNos.length * ROW_H)
+  const cardProps = (no: number) => ({
+    no,
+    real: byNo.get(no),
+    homeCode: predicted[no]?.homeCode ?? null,
+    awayCode: predicted[no]?.awayCode ?? null,
+    pick: predictions[no] ?? null,
+    status: score.perMatch[no] ?? ('unpicked' as PickStatus),
+    onPick: (code: TeamCode) => setPrediction(no, code),
+  })
 
-  // On navigation, bring the reflowed board up to the top (below the pinned nav) —
-  // "move the next round up", as Apple does. Skip the very first render.
-  const boardRef = useRef<HTMLDivElement>(null)
+  // ---- mobile: two-round adaptive window + slide animation ----
+  const [focus, setFocus] = useState(0) // 0..maxFocus
+  const maxFocus = COLUMNS.length - 2
+  const dir = useRef(1)
+  const goFocus = (f: number) => {
+    const next = Math.max(0, Math.min(maxFocus, f))
+    dir.current = next >= focus ? 1 : -1
+    setFocus(next)
+  }
+  const mobileBoardRef = useRef<HTMLDivElement>(null)
   const mounted = useRef(false)
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
       return
     }
-    const el = boardRef.current
+    const el = mobileBoardRef.current
     if (!el) return
-    const y = window.scrollY + el.getBoundingClientRect().top - 132
+    const y = window.scrollY + el.getBoundingClientRect().top - 130
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
   }, [focus])
+
+  // ---- desktop: full bracket, scrubber mirrors horizontal scroll ----
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ left: 0, client: 1, full: 1 })
+  useEffect(() => {
+    if (!isDesktop) return
+    const el = scrollRef.current
+    if (!el) return
+    const measure = () => setBox({ left: el.scrollLeft, client: el.clientWidth, full: el.scrollWidth })
+    measure()
+    el.addEventListener('scroll', measure, { passive: true })
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', measure)
+      ro.disconnect()
+    }
+  }, [isDesktop])
+  const maxScroll = Math.max(0, box.full - box.client)
+  const deskLensW = Math.min(100, Math.max(18, (box.client / box.full) * 100))
+  const deskLensL = maxScroll > 0 ? (box.left / maxScroll) * (100 - deskLensW) : 0
+  const deskActive = maxScroll > 0 ? Math.round(box.left / DESK_COL_W) : 0
+
+  // scrubber props differ per layout
+  const nav = isDesktop
+    ? {
+        lensLeft: deskLensL,
+        lensWidth: deskLensW,
+        highlight: new Set([deskActive, deskActive + 1]),
+        onSeek: (frac: number) => scrollRef.current?.scrollTo({ left: frac * maxScroll }),
+        onTapRound: (i: number) => scrollRef.current?.scrollTo({ left: Math.min(maxScroll, i * DESK_COL_W), behavior: 'smooth' }),
+      }
+    : {
+        lensLeft: (focus / COLUMNS.length) * 100,
+        lensWidth: (2 / COLUMNS.length) * 100,
+        highlight: new Set([focus, focus + 1]),
+        onSeek: (frac: number) => goFocus(Math.round(frac * maxFocus)),
+        onTapRound: (i: number) => goFocus(Math.min(maxFocus, i)),
+      }
 
   return (
     <div className="animate-fade-in">
@@ -118,10 +174,7 @@ export function Predict() {
             </p>
           </div>
           {Object.keys(predictions).length > 0 && (
-            <button
-              onClick={clearPredictions}
-              className="rounded-pill border px-3 py-1.5 text-xs text-muted transition-colors hover:text-ink"
-            >
+            <button onClick={clearPredictions} className="rounded-pill border px-3 py-1.5 text-xs text-muted transition-colors hover:text-ink">
               Reset
             </button>
           )}
@@ -142,94 +195,118 @@ export function Predict() {
         </div>
       )}
 
-      <BracketNav rounds={COLUMNS} focus={focus} onFocus={setFocus} />
+      <BracketNav rounds={COLUMNS} {...nav} />
 
-      <div ref={boardRef} className="mx-auto w-full max-w-3xl">
-        <div className="mb-3 flex items-center gap-2 px-1 text-2xs font-semibold uppercase tracking-label text-faint">
-          <span className="text-ink">{ROUND_LABEL[leftStage]}</span>
-          {rightStage && (
-            <>
-              <ChevronRight size={12} className="text-faint" />
-              <span>{ROUND_LABEL[rightStage]}</span>
-            </>
-          )}
-        </div>
-
-        <div className="flex" style={{ minHeight }}>
-          {/* left / focused round */}
-          <div className="flex flex-1 flex-col">
-            {leftNos.map((no, i) => (
-              <div key={no} className="relative flex min-h-0 flex-1 items-center">
-                {rightStage && (
-                  <>
-                    <div className={cn('absolute top-1/2 h-px', LINE)} style={{ left: '100%', width: GUTTER / 2 }} />
-                    {i % 2 === 0 && (
-                      <div className={cn('absolute top-1/2 w-px', LINE)} style={{ left: `calc(100% + ${GUTTER / 2}px)`, height: '100%' }} />
-                    )}
-                  </>
-                )}
-                <MatchCard
-                  no={no}
-                  real={byNo.get(no)}
-                  homeCode={predicted[no]?.homeCode ?? null}
-                  awayCode={predicted[no]?.awayCode ?? null}
-                  pick={predictions[no] ?? null}
-                  status={score.perMatch[no] ?? 'unpicked'}
-                  onPick={(code) => setPrediction(no, code)}
-                />
-              </div>
+      {isDesktop ? (
+        <div ref={scrollRef} className="-mx-5 overflow-x-auto px-5 pb-4 sm:mx-0 sm:px-0">
+          <div className="flex" style={{ minHeight: cols[0].nos.length * ROW_H }}>
+            {cols.map((col, ci) => (
+              <Fragment key={col.stage}>
+                <div className="flex shrink-0 flex-col" style={{ width: DESK_CARD_W }}>
+                  {col.nos.map((no, i) => (
+                    <Slot key={no} hasNext={ci < cols.length - 1} hasPrev={ci > 0} topOfPair={i % 2 === 0}>
+                      <MatchCard {...cardProps(no)} />
+                    </Slot>
+                  ))}
+                </div>
+                {ci < cols.length - 1 && <div className="shrink-0" style={{ width: GUTTER }} />}
+              </Fragment>
             ))}
           </div>
-
-          {rightStage && (
-            <>
-              <div className="shrink-0" style={{ width: GUTTER }} />
+        </div>
+      ) : (
+        <div ref={mobileBoardRef} className="mx-auto w-full max-w-xl">
+          <div className="mb-3 flex items-center gap-2 px-1 text-2xs font-semibold uppercase tracking-label text-faint">
+            <span className="text-ink">{ROUND_LABEL[COLUMNS[focus]]}</span>
+            <ChevronRight size={12} className="text-faint" />
+            <span>{ROUND_LABEL[COLUMNS[focus + 1]]}</span>
+          </div>
+          <div key={focus} className={dir.current >= 0 ? 'animate-round-in-right' : 'animate-round-in-left'}>
+            <div className="flex" style={{ minHeight: cols[focus].nos.length * ROW_H }}>
               <div className="flex flex-1 flex-col">
-                {rightNos.map((no) => (
-                  <div key={no} className="relative flex min-h-0 flex-1 items-center">
-                    <div className={cn('absolute top-1/2 h-px', LINE)} style={{ right: '100%', width: GUTTER / 2 }} />
-                    <MatchCard
-                      no={no}
-                      real={byNo.get(no)}
-                      homeCode={predicted[no]?.homeCode ?? null}
-                      awayCode={predicted[no]?.awayCode ?? null}
-                      pick={predictions[no] ?? null}
-                      status={score.perMatch[no] ?? 'unpicked'}
-                      onPick={(code) => setPrediction(no, code)}
-                      muted
-                    />
-                  </div>
+                {cols[focus].nos.map((no, i) => (
+                  <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
+                    <MatchCard {...cardProps(no)} />
+                  </Slot>
                 ))}
               </div>
-            </>
-          )}
+              <div className="shrink-0" style={{ width: GUTTER }} />
+              <div className="flex flex-1 flex-col">
+                {cols[focus + 1].nos.map((no) => (
+                  <Slot key={no} hasNext={false} hasPrev topOfPair={false}>
+                    <MatchCard {...cardProps(no)} muted />
+                  </Slot>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+    </div>
+  )
+}
+
+/** One match cell with its rounded bracket connectors in the gutters. */
+function Slot({
+  hasNext,
+  hasPrev,
+  topOfPair,
+  children,
+}: {
+  hasNext: boolean
+  hasPrev: boolean
+  topOfPair: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div className="relative flex min-h-0 flex-1 items-center">
+      {/* connector INTO this card from the previous round (straight stub) */}
+      {hasPrev && <div className={cn('pointer-events-none absolute top-1/2 h-px', STUB)} style={{ right: '100%', width: GUTTER / 2 }} />}
+      {/* rounded elbow OUT to the next round — half the pair each */}
+      {hasNext &&
+        (topOfPair ? (
+          <div className={cn('pointer-events-none absolute rounded-tr-[12px] border-t border-r', CONN)} style={{ left: '100%', top: '50%', width: GUTTER / 2, height: '50%' }} />
+        ) : (
+          <div className={cn('pointer-events-none absolute rounded-br-[12px] border-b border-r', CONN)} style={{ left: '100%', top: 0, width: GUTTER / 2, height: '50%' }} />
+        ))}
+      {children}
     </div>
   )
 }
 
 /**
- * The Apple-Sports navigator: tappable round labels over a draggable minimap. Each
- * round is a stack of clean dashes (density falls off R32→SF) and the Final shows a
- * trophy; a lens marks the two rounds on screen. Drag it — or tap a round — to move.
+ * The navigator: round labels over a draggable minimap (clean dashes per round,
+ * a trophy for the Final). The lens marks the rounds on screen; drag it or tap a
+ * round to move. Same control on mobile (drives the window) and desktop (scroll).
  */
-function BracketNav({ rounds, focus, onFocus }: { rounds: Stage[]; focus: number; onFocus: (i: number) => void }) {
+function BracketNav({
+  rounds,
+  lensLeft,
+  lensWidth,
+  highlight,
+  onSeek,
+  onTapRound,
+}: {
+  rounds: Stage[]
+  lensLeft: number
+  lensWidth: number
+  highlight: Set<number>
+  onSeek: (frac: number) => void
+  onTapRound: (i: number) => void
+}) {
   const n = rounds.length
-  const maxFocus = n - 2
   const trackRef = useRef<HTMLDivElement>(null)
-  const dragging = useRef(false)
+  const grab = useRef<number | null>(null)
 
-  const focusFromX = (clientX: number) => {
+  const fracFromX = (clientX: number) => {
     const el = trackRef.current
-    if (!el) return focus
+    if (!el) return 0
     const r = el.getBoundingClientRect()
-    const seg = Math.floor(((clientX - r.left) / r.width) * n)
-    return Math.max(0, Math.min(maxFocus, seg))
+    const lensPx = (lensWidth / 100) * r.width
+    const usable = Math.max(1, r.width - lensPx)
+    const left = Math.max(0, Math.min(usable, clientX - r.left - (grab.current ?? lensPx / 2)))
+    return left / usable
   }
-
-  const lensLeft = (focus / n) * 100
-  const lensWidth = (2 / n) * 100
 
   return (
     <div className="sticky top-14 z-20 -mx-5 mb-5 select-none bg-canvas/90 px-5 pb-3 pt-3 backdrop-blur-xl sm:-mx-8 sm:px-8">
@@ -237,10 +314,10 @@ function BracketNav({ rounds, focus, onFocus }: { rounds: Stage[]; focus: number
         {rounds.map((r, i) => (
           <button
             key={r}
-            onClick={() => onFocus(Math.min(maxFocus, i))}
+            onClick={() => onTapRound(i)}
             className={cn(
               'flex-1 text-center font-grotesk text-xs font-bold uppercase tracking-label transition-colors',
-              i === focus || i === focus + 1 ? 'text-ink' : 'text-faint hover:text-muted',
+              highlight.has(i) ? 'text-ink' : 'text-faint hover:text-muted',
             )}
           >
             {r}
@@ -250,13 +327,18 @@ function BracketNav({ rounds, focus, onFocus }: { rounds: Stage[]; focus: number
       <div
         ref={trackRef}
         onPointerDown={(e) => {
-          dragging.current = true
-          e.currentTarget.setPointerCapture(e.pointerId)
-          onFocus(focusFromX(e.clientX))
+          const el = trackRef.current!
+          const r = el.getBoundingClientRect()
+          const lensPx = (lensWidth / 100) * r.width
+          const lensLeftPx = (lensLeft / 100) * r.width
+          const x = e.clientX - r.left
+          grab.current = x >= lensLeftPx && x <= lensLeftPx + lensPx ? x - lensLeftPx : lensPx / 2
+          el.setPointerCapture(e.pointerId)
+          onSeek(fracFromX(e.clientX))
         }}
-        onPointerMove={(e) => dragging.current && onFocus(focusFromX(e.clientX))}
-        onPointerUp={() => (dragging.current = false)}
-        onPointerCancel={() => (dragging.current = false)}
+        onPointerMove={(e) => grab.current != null && onSeek(fracFromX(e.clientX))}
+        onPointerUp={() => (grab.current = null)}
+        onPointerCancel={() => (grab.current = null)}
         className="relative h-12 cursor-grab touch-none overflow-hidden rounded-[16px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] active:cursor-grabbing dark:bg-white/[0.06] dark:ring-white/10"
       >
         <div className="pointer-events-none absolute inset-0 flex">
@@ -265,9 +347,7 @@ function BracketNav({ rounds, focus, onFocus }: { rounds: Stage[]; focus: number
               {i === n - 1 ? (
                 <Trophy size={18} className="text-muted" />
               ) : (
-                Array.from({ length: MINI_LINES[i] ?? 3 }).map((_, k) => (
-                  <div key={k} className={cn('h-[2px] w-full rounded-full', LINE)} />
-                ))
+                Array.from({ length: MINI_LINES[i] ?? 2 }).map((_, k) => <div key={k} className={cn('h-[2px] w-full rounded-full', STUB)} />)
               )}
             </div>
           ))}
@@ -322,27 +402,9 @@ function MatchCard({
           </span>
         )}
       </div>
-      <Side
-        code={homeCode}
-        label={def?.home.label}
-        score={real?.homeScore}
-        picked={pick != null && pick === homeCode}
-        status={status}
-        winner={real?.winnerCode}
-        finished={finished}
-        onPick={onPick}
-      />
+      <Side code={homeCode} label={def?.home.label} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
       <div className="my-0.5 h-px bg-black/5 dark:bg-white/[0.07]" />
-      <Side
-        code={awayCode}
-        label={def?.away.label}
-        score={real?.awayScore}
-        picked={pick != null && pick === awayCode}
-        status={status}
-        winner={real?.winnerCode}
-        finished={finished}
-        onPick={onPick}
-      />
+      <Side code={awayCode} label={def?.away.label} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
     </div>
   )
 }
@@ -391,13 +453,7 @@ function Side({
         ) : (
           <span className="h-[18px] w-[18px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
         )}
-        <span
-          className={cn(
-            'truncate text-[13px]',
-            team ? 'text-ink' : 'text-faint',
-            (isWinner || (picked && !finished) || correct) && 'font-semibold',
-          )}
-        >
+        <span className={cn('truncate text-[13px]', team ? 'text-ink' : 'text-faint', (isWinner || (picked && !finished) || correct) && 'font-semibold')}>
           {team ? team.name : label ?? '—'}
         </span>
         {correct && <Check size={12} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
