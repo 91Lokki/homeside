@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Crown, Pencil, Plus, Star, Trash2, X } from 'lucide-react'
+import { Check, Crown, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
 import {
@@ -40,7 +40,7 @@ const fmtDate = (ms: number | null) => (ms == null ? '' : new Date(ms).toLocaleD
 
 export function Fantasy() {
   const { matches } = useApp()
-  const { fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy } = useGames()
+  const { fantasy, setRoundPick, seedRound, setCaptain, resetFantasy } = useGames()
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
   const [selected, setSelected] = useState<Slot | null>(null)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
@@ -145,6 +145,7 @@ export function Fantasy() {
   }
   // In browse mode, a position is addable only while it (or Flex) still has room.
   const canAdd = (pos: PosCat) => (openSlot ? SLOT_ALLOWS[openSlot].includes(pos) : slotForPos(pos) !== null)
+  const teamFull = FORMATION.flat().every((s) => players.some((p) => p.slot === s))
 
   // Shared body for acting on a filled token — rendered in a desktop popover and
   // a mobile bottom sheet. Captain/Vice are real toggles; the captain can never be
@@ -156,7 +157,6 @@ export function Fantasy() {
     const key = playerKey(pick)
     const ps = selScore?.perPlayer[key]
     const isCap = squad?.captain === key
-    const isVice = squad?.vice === key
     const lines = ps?.detail.matches.flatMap((m) => m.lines) ?? []
     const clearRole = () => setRoundPick(focus, slot, { ...pick })
     const row = 'flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-sm font-medium transition-colors'
@@ -185,22 +185,6 @@ export function Fantasy() {
             <span className="flex-1 text-left">Captain <span className="text-faint">·2</span></span>
             {isCap && <Check size={16} className="shrink-0" />}
           </button>
-
-          {isCap ? (
-            <p className="flex items-center gap-2.5 px-3 py-2 text-2xs text-faint">
-              <Star size={14} className="shrink-0 opacity-50" /> Captain can&rsquo;t also be vice
-            </p>
-          ) : (
-            <button
-              onClick={() => (isVice ? clearRole() : setVice(focus, key))}
-              aria-pressed={isVice}
-              className={cn(row, isVice ? 'bg-team-soft text-team' : 'text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.05]')}
-            >
-              <Star size={16} className="shrink-0" />
-              <span className="flex-1 text-left">Vice</span>
-              {isVice && <Check size={16} className="shrink-0" />}
-            </button>
-          )}
 
           <div className="my-1 h-px bg-black/5 dark:bg-white/[0.07]" />
 
@@ -250,11 +234,12 @@ export function Fantasy() {
     const key = playerKey(pick)
     const ps = selScore?.perPlayer[key]
     const team = teamByCode[pick.teamCode]
-    const isCap = selScore?.effectiveCaptain === key // doubled this round (auto-vice aware)
-    const isNominalCap = squad?.captain === key
-    const isVice = squad?.vice === key
+    const isCap = squad?.captain === key
     const out = eliminated.has(pick.teamCode)
     const active = selected === slot
+    // Open the popover toward the pitch centre so a side token's menu never spills
+    // off the edge: left token opens right, right token opens left, rest centred.
+    const popPos = slot === 'MID' ? 'left-0' : slot === 'FLEX' ? 'right-0' : 'left-1/2 -translate-x-1/2'
     return (
       <div key={slot} className="relative flex w-[88px] flex-col items-center sm:w-[104px]">
         <button
@@ -268,9 +253,8 @@ export function Fantasy() {
             <span
               className={cn(
                 'grid place-items-center rounded-full bg-black/[0.04] p-[3px] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10',
-                (isCap || isNominalCap) && 'ring-2 ring-[var(--team-pure)]',
-                isVice && !isCap && !isNominalCap && 'ring-2 ring-team/40',
-                active && !isCap && !isNominalCap && !isVice && 'ring-2 ring-ink/40',
+                isCap && 'ring-2 ring-[var(--team-pure)]',
+                active && !isCap && 'ring-2 ring-ink/40',
               )}
             >
               <Flag code={pick.teamCode} size={46} />
@@ -280,14 +264,9 @@ export function Fantasy() {
                 {pick.number}
               </span>
             )}
-            {(isCap || isNominalCap) && (
+            {isCap && (
               <span className="absolute -left-1 -top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-team px-1 font-grotesk text-[9px] font-bold tnum text-team-ink">
-                {isCap ? 'C×2' : 'C'}
-              </span>
-            )}
-            {isVice && !isCap && !isNominalCap && (
-              <span className="absolute -left-1 -top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-team-soft px-1 font-grotesk text-[9px] font-bold tnum text-team">
-                VC
+                C×2
               </span>
             )}
           </span>
@@ -306,7 +285,7 @@ export function Fantasy() {
         {editable && active && isDesktop && (
           <>
             <div className="fixed inset-0 z-20" onClick={() => setSelected(null)} aria-hidden />
-            <div className="absolute left-1/2 top-[64px] z-30 w-[248px] -translate-x-1/2 animate-fade-in rounded-[18px] bg-canvas p-3 text-left ring-1 ring-inset ring-black/[0.08] backdrop-blur-xl dark:ring-white/10">
+            <div className={cn('absolute top-[64px] z-30 w-[240px] animate-fade-in rounded-[18px] bg-canvas p-3 text-left ring-1 ring-inset ring-black/[0.08] backdrop-blur-xl dark:ring-white/10', popPos)}>
               <TokenActions slot={slot} onClose={() => setSelected(null)} />
             </div>
           </>
@@ -372,8 +351,9 @@ export function Fantasy() {
           width instead of stranding a narrow pitch in the middle of the page */}
       <div className="lg:flex lg:items-start lg:gap-8">
         <div className="lg:w-[468px] lg:shrink-0">
-      {/* the five — an Apple pitch in formation (own goal top, attack bottom) */}
-      <div className="panel relative mx-auto w-full max-w-[440px] overflow-hidden px-3 py-5 sm:px-5 sm:py-7">
+      {/* the five — an Apple pitch in formation (own goal top, attack bottom).
+          No overflow-hidden so a token's action popover can extend past the edge. */}
+      <div className="panel relative mx-auto w-full max-w-[440px] px-3 py-5 sm:px-5 sm:py-7">
         {/* implied pitch markings — 1px hairlines only, no green, no fill */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute inset-3 rounded-[14px] border border-black/[0.05] dark:border-white/[0.06]" />
@@ -411,21 +391,29 @@ export function Fantasy() {
           document.body,
         )}
 
-      {editable && (
-        <p className="mt-3 text-2xs text-faint">
-          {prev
-            ? 'Your five carry over — transfer out anyone (eliminated or not) for this round, then set your Captain.'
-            : 'Pick your five, then choose a Captain (×2) and Vice. They carry through every knockout round.'}{' '}
-          If the Captain's team doesn't play this round, the Vice is doubled instead.
-        </p>
-      )}
         </div>
 
         {/* right (desktop): the player pool, FIFA-style — always present. Tapping a
             pitch slot filters it; otherwise picks drop into the first open spot.
             Hidden on mobile, where tapping a slot opens the full-screen picker. */}
         <div className="hidden lg:block lg:flex-1 lg:min-w-0">
-          {editable ? (
+          {!editable ? (
+            <div className="panel grid min-h-[200px] place-items-center p-8 text-center text-sm text-muted">
+              This round is locked and under way.
+            </div>
+          ) : teamFull && openSlot == null ? (
+            <div className="panel grid min-h-[320px] place-items-center p-8 text-center">
+              <div className="max-w-[22rem]">
+                <span className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-team-soft text-team">
+                  <Check size={22} />
+                </span>
+                <p className="font-grotesk text-lg font-semibold tracking-tight">Your five is set</p>
+                <p className="mt-1.5 text-sm leading-snug text-muted">
+                  Tap a player on the pitch to make them captain, change them, or remove them.
+                </p>
+              </div>
+            </div>
+          ) : (
             <PlayerPicker
               slot={openSlot}
               embedded
@@ -440,10 +428,6 @@ export function Fantasy() {
                 setOpenSlot(null)
               }}
             />
-          ) : (
-            <div className="panel grid min-h-[200px] place-items-center p-8 text-center text-sm text-muted">
-              This round is locked and under way.
-            </div>
           )}
         </div>
       </div>
