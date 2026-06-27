@@ -5,10 +5,13 @@ import { buildPredictedBracket, type Predictions } from '@/domain/predict'
 import { playerKey, type FantasyPick, type RoundSquad, type Round, type Slot } from '@/domain/fantasy'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/state/auth'
+import { useApp } from '@/state/store'
 
 const PRED_KEY = 'homeside.predictions'
 const FANT_KEY = 'homeside.fantasy.v2'
-const TEAM_KEY = 'homeside.team'
+// Whose data the local cache currently holds, so switching accounts in the same
+// browser never leaks the previous user's picks into a new account's row.
+const OWNER_KEY = 'homeside.owner'
 const SYNC_DEBOUNCE_MS = 800
 
 type FantasyRounds = Partial<Record<Round, RoundSquad>>
@@ -71,6 +74,7 @@ const Ctx = createContext<GamesCtx | null>(null)
 
 export function GamesProvider({ children }: { children: ReactNode }) {
   const { user, displayName } = useAuth()
+  const { homeCode, setHomeCode } = useApp()
   const [predictions, setPredictions] = useState<Predictions>(() => load(PRED_KEY, {}))
   const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
 
@@ -86,8 +90,24 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   const hydratedUserRef = useRef<string | null>(null)
   const userId = user?.id ?? null
 
-  // On sign-in: server row wins if it exists (mirror it down); otherwise this is
-  // a first login, so push whatever is in localStorage up to seed the row.
+  // The fingerprint of everything we sync, so we never re-upsert unchanged data
+  // (including the echo right after hydrating) — and so a home-team change alone
+  // still counts as a change worth saving.
+  const snapOf = (p: Predictions, f: FantasyRounds, home: string | null) =>
+    JSON.stringify({ predictions: p, fantasy: f, home: home ?? null })
+  const readOwner = () => {
+    try {
+      return localStorage.getItem(OWNER_KEY)
+    } catch {
+      return null
+    }
+  }
+
+  // On sign-in, reconcile this account with the cloud:
+  //  • server row exists → it wins; mirror picks AND home team down.
+  //  • no row, but local data belongs to a DIFFERENT account → start clean
+  //    (never seed a new account from the previous user's picks/team).
+  //  • no row, local is genuinely pre-login (or already ours) → migrate it up.
   useEffect(() => {
     if (!supabase || !userId || !user) {
       hydratedUserRef.current = null
@@ -99,7 +119,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const { data, error } = await supabase
         .from('picks')
-        .select('predictions, fantasy')
+        .select('predictions, fantasy, home_code')
         .eq('user_id', userId)
         .maybeSingle()
       if (cancelled) return
@@ -111,41 +131,49 @@ export function GamesProvider({ children }: { children: ReactNode }) {
       if (data) {
         const p = (data.predictions as Predictions) ?? {}
         const f = (data.fantasy as FantasyRounds) ?? {}
+        const home = (data.home_code as string | null) ?? null
         setPredictions(p)
         setFantasy(f)
-        lastSyncedRef.current = JSON.stringify({ predictions: p, fantasy: f })
+        setHomeCode(home)
+        lastSyncedRef.current = snapOf(p, f, home)
+      } else if (readOwner() && readOwner() !== userId) {
+        // local cache belongs to a different account — wipe to a clean slate.
+        setPredictions({})
+        setFantasy({})
+        setHomeCode(null)
+        const { error: upErr } = await supabase
+          .from('picks')
+          .upsert({ user_id: userId, email: user.email, display_name: displayName, predictions: {}, fantasy: {}, home_code: null })
+        if (!cancelled && !upErr) lastSyncedRef.current = snapOf({}, {}, null)
+        else if (upErr) console.warn('[sync] reset failed:', upErr.message) // eslint-disable-line no-console
       } else {
-        // No server row yet — seed it from the current local state.
-        const seed = { predictions, fantasy }
-        const { error: upErr } = await supabase.from('picks').upsert({
-          user_id: userId,
-          email: user.email,
-          display_name: displayName,
-          predictions: seed.predictions,
-          fantasy: seed.fantasy,
-          home_code: localStorage.getItem(TEAM_KEY),
-        })
-        if (!cancelled && !upErr) lastSyncedRef.current = JSON.stringify(seed)
-        else if (upErr) {
-          // eslint-disable-next-line no-console
-          console.warn('[sync] seed failed:', upErr.message)
-        }
+        // genuine pre-login data (or already ours) — migrate it up.
+        const { error: upErr } = await supabase
+          .from('picks')
+          .upsert({ user_id: userId, email: user.email, display_name: displayName, predictions, fantasy, home_code: homeCode })
+        if (!cancelled && !upErr) lastSyncedRef.current = snapOf(predictions, fantasy, homeCode)
+        else if (upErr) console.warn('[sync] seed failed:', upErr.message) // eslint-disable-line no-console
+      }
+      try {
+        localStorage.setItem(OWNER_KEY, userId)
+      } catch {
+        /* ignore */
       }
       if (!cancelled) hydratedUserRef.current = userId
     })()
     return () => {
       cancelled = true
     }
-    // Intentionally keyed only on the user — predictions/fantasy are read as the
-    // first-login seed, not as triggers (the upsert effect handles edits).
+    // Intentionally keyed only on the user — predictions/fantasy/homeCode are read
+    // as the first-login seed, not as triggers (the upsert effect handles edits).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, user])
 
-  // Debounced upsert: whenever picks change after the initial hydrate, push them.
+  // Debounced upsert: whenever picks OR the home team change after hydrate, push.
   useEffect(() => {
     if (!supabase || !userId || !user) return
     if (hydratedUserRef.current !== userId) return // wait for hydrate to finish
-    const snap = JSON.stringify({ predictions, fantasy })
+    const snap = snapOf(predictions, fantasy, homeCode)
     if (snap === lastSyncedRef.current) return // nothing actually changed
     const t = window.setTimeout(() => {
       void supabase!
@@ -156,7 +184,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
           display_name: displayName,
           predictions,
           fantasy,
-          home_code: localStorage.getItem(TEAM_KEY),
+          home_code: homeCode,
         })
         .then(({ error }) => {
           if (error) {
@@ -168,7 +196,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         })
     }, SYNC_DEBOUNCE_MS)
     return () => window.clearTimeout(t)
-  }, [predictions, fantasy, userId, user, displayName])
+  }, [predictions, fantasy, homeCode, userId, user, displayName])
 
   const setPrediction = useCallback((matchNo: number, code: TeamCode) => {
     setPredictions((p) => pruneStale({ ...p, [matchNo]: code }))

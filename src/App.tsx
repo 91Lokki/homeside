@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { CalendarDays, GitFork, Hexagon, Home as HomeIcon, Trophy, Users } from 'lucide-react'
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { CalendarDays, GitFork, Hexagon, Trophy, Users } from 'lucide-react'
+import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { DATA_META } from '@/data/meta'
 import { AppProvider, useApp } from '@/state/store'
 import { GamesProvider } from '@/state/games'
@@ -12,7 +12,6 @@ import { TeamPicker } from '@/components/TeamPicker'
 import { AuthButton } from '@/components/AuthButton'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { cn } from '@/lib/utils'
-import { Home } from '@/screens/Home'
 import { Predict } from '@/screens/Predict'
 import { Fantasy } from '@/screens/Fantasy'
 import { Team } from '@/screens/Team'
@@ -71,7 +70,7 @@ function Shell() {
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setPickerOpen(true)}
-              className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-3 transition-colors hover:border-ink/30"
+              className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-1 transition-colors hover:border-ink/30 sm:pr-3"
               title="Change team"
             >
               <span
@@ -90,14 +89,14 @@ function Shell() {
 
       <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-5 pb-24 pt-6 sm:px-8">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/schedule" replace />} />
           <Route path="/predict" element={<Predict />} />
           <Route path="/fantasy" element={<Fantasy />} />
           <Route path="/team" element={<Team />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/gallery" element={<Gallery />} />
           {authEnabled && <Route path="/league" element={<Leaderboard />} />}
-          <Route path="*" element={<Home />} />
+          <Route path="*" element={<Navigate to="/schedule" replace />} />
         </Routes>
       </main>
 
@@ -117,7 +116,6 @@ function Shell() {
 }
 
 const TABS = [
-  { to: '/', label: 'Home', short: 'Home', end: true, icon: HomeIcon },
   { to: '/predict', label: 'Predict', short: 'Predict', end: false, icon: GitFork },
   { to: '/fantasy', label: 'Fantasy', short: 'Fantasy', end: false, icon: Users },
   { to: '/team', label: 'Team', short: 'Team', end: false, icon: Hexagon },

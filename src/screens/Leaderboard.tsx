@@ -57,8 +57,10 @@ export function Leaderboard() {
       )
       const merged: PickRow[] = (picksRes.data ?? []).map((p) => {
         const email = (p.email as string | null) ?? null
-        const name =
+        const raw =
           (email && nameByEmail.get(email.toLowerCase())) || (p.display_name as string | null) || email || 'Player'
+        // Last-resort fallback is an email — show just the local part, not the domain.
+        const name = raw.includes('@') ? raw.split('@')[0] : raw
         return {
           user_id: p.user_id as string,
           email,
