@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { finishedFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
-import { AXIS_LABEL, computeRatings, type AxisKey } from '@/domain/ratings'
+import { AXIS_LABEL, buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
 import type { TeamMatchStats } from '@/lib/api'
 import { liveDataNote } from '@/lib/apiCopy'
 import { useMatchDetails } from '@/lib/matchData'
@@ -31,30 +31,45 @@ export function Team() {
 
   const finished = useMemo(() => (code ? finishedFor(matches, code) : []), [matches, code])
 
-  // Knockout box scores are the only ones that cost an API call; the group stage
-  // is served from the static ESPN bake below.
+  // Pull the live ESPN box score for EVERY finished match (group + knockout) so
+  // the radar reflects the real feed in real time. /api/match is hard-cached
+  // server-side and memoized per session, so one team's handful of matches stays
+  // well under the cap.
   const fixtureIds = useMemo(
-    () => finished.filter((m) => m.stage !== 'group').map((m) => m.apiFixtureId).filter((x): x is number => typeof x === 'number'),
+    () => finished.map((m) => m.apiFixtureId).filter((x): x is number => typeof x === 'number'),
     [finished],
   )
   const { details, loading } = useMatchDetails(fixtureIds)
 
   // Radar inputs, all from REAL data, never fabricated:
-  //  • group stage → real ESPN box scores (static, ZERO API key/quota), with the
-  //    seed's final scores as a gf/ga-only fallback if a match isn't baked yet
-  //  • knockouts → live box score when present, else the seed score
+  //  • prefer the LIVE ESPN box score for each finished match,
+  //  • for the group stage fall back to the static ESPN bake until every match is
+  //    fetched (so the card never flickers down to partial data),
+  //  • last resort is the final score alone (gf/ga only — other axes stay null).
   const stats = useMemo<TeamMatchStats[]>(() => {
+    const groupMatches = finished.filter((m) => m.stage === 'group')
+    const liveGroup = groupMatches
+      .map((m) => (m.apiFixtureId ? details[m.apiFixtureId]?.teamStats[code] : undefined))
+      .filter(Boolean) as TeamMatchStats[]
     const baked = GROUP_STATS[code]
-    const group: TeamMatchStats[] = baked?.length
-      ? baked
-      : (finished.filter((m) => m.stage === 'group').map((m) => resultStat(m, code)).filter(Boolean) as TeamMatchStats[])
+    const group: TeamMatchStats[] =
+      groupMatches.length > 0 && liveGroup.length === groupMatches.length
+        ? liveGroup
+        : baked?.length
+          ? baked
+          : (groupMatches.map((m) => resultStat(m, code)).filter(Boolean) as TeamMatchStats[])
     const ko: TeamMatchStats[] = finished
       .filter((m) => m.stage !== 'group')
       .map((m) => (m.apiFixtureId ? details[m.apiFixtureId]?.teamStats[code] : undefined) ?? resultStat(m, code))
       .filter(Boolean) as TeamMatchStats[]
     return [...group, ...ko]
   }, [finished, details, code])
-  const ratings = useMemo(() => computeRatings(stats), [stats])
+
+  // Dynamic rating standard: rank this team's axes against the whole field
+  // (every team's real group-stage box scores) so the scale adapts and no team
+  // is ever pinned to a flat 0 or a perfect 100.
+  const league = useMemo(() => buildLeague(Object.values(GROUP_STATS)), [])
+  const ratings = useMemo(() => computeRatings(stats, league), [stats, league])
 
   if (!homeTeam) return null
   const mood = moodFor(matches, code).mood

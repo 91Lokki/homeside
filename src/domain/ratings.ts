@@ -2,9 +2,11 @@ import type { TeamMatchStats } from '@/lib/api'
 
 /**
  * Team "ability card" ratings — every axis from REAL aggregated stats over the
- * team's finished matches (ESPN box scores). Axes scale to fixed, typical ranges
- * (not ranked against other teams). An axis with no underlying data stays null;
- * <2 matches marks the card provisional. Nothing is ever fabricated.
+ * team's finished matches (live ESPN box scores). Each axis is scored DYNAMICALLY
+ * against the rest of the field: a team's raw composite is placed on the field's
+ * 5th–95th-percentile spread and mapped into [20, 93], so the scale adapts to the
+ * tournament and no team is ever a flat 0 or a perfect 100. An axis with no data
+ * stays null; <2 matches marks the card provisional. Nothing is ever fabricated.
  */
 export type AxisKey = 'attack' | 'finishing' | 'possession' | 'defense' | 'creativity' | 'discipline'
 
@@ -57,9 +59,13 @@ const EMPTY: Record<AxisKey, number | null> = {
   discipline: null,
 }
 
-export function computeRatings(stats: TeamMatchStats[]): Ratings {
+const AXES: AxisKey[] = ['attack', 'finishing', 'possession', 'defense', 'creativity', 'discipline']
+
+/** The six raw composite axis values (0..100 on fixed anchors), BEFORE ranking
+ *  against the field. Null for an axis with no underlying data. */
+function rawAxes(stats: TeamMatchStats[]): Record<AxisKey, number | null> {
   const n = stats.length
-  if (n === 0) return { axes: { ...EMPTY }, playstyle: 'No matches yet', summary: '', matchesUsed: 0, provisional: true }
+  if (n === 0) return { ...EMPTY }
 
   const gf = avg(stats, (s) => s.goalsFor)
   const ga = avg(stats, (s) => s.goalsAgainst)
@@ -117,15 +123,55 @@ export function computeRatings(stats: TeamMatchStats[]): Ratings {
     [cards == null ? null : 100 - scale(cards, 0, 8), 0.4],
   ])
 
-  const axes: Record<AxisKey, number | null> = {
-    attack: round(attack),
-    finishing: round(finishing),
-    possession: round(possession),
-    defense: round(defense),
-    creativity: round(creativity),
-    discipline: round(discipline),
-  }
+  return { attack, finishing, possession, defense, creativity, discipline }
+}
 
+export type League = Record<AxisKey, number[]>
+
+/** Field distribution: every team's raw composite per axis, sorted ascending —
+ *  the basis for ranking a team dynamically against the rest of the field. */
+export function buildLeague(teamStats: TeamMatchStats[][]): League {
+  const cols: League = { attack: [], finishing: [], possession: [], defense: [], creativity: [], discipline: [] }
+  for (const s of teamStats) {
+    if (!s || s.length === 0) continue
+    const r = rawAxes(s)
+    for (const k of AXES) if (r[k] != null) cols[k].push(r[k] as number)
+  }
+  for (const k of AXES) cols[k].sort((a, b) => a - b)
+  return cols
+}
+
+// Dynamic scale: place a value on the field's 5th–95th-percentile spread, mapped
+// into [LO, HI]. Bounds stay off 0/100; outliers clamp to the bounds.
+const LO = 20
+const HI = 93
+function quantile(sorted: number[], q: number): number {
+  if (sorted.length === 0) return 0
+  if (sorted.length === 1) return sorted[0]
+  const pos = (sorted.length - 1) * q
+  const base = Math.floor(pos)
+  const next = sorted[base + 1]
+  return next == null ? sorted[base] : sorted[base] + (pos - base) * (next - sorted[base])
+}
+function relScale(v: number, sorted: number[]): number {
+  const lo = quantile(sorted, 0.05)
+  const hi = quantile(sorted, 0.95)
+  if (hi <= lo) return (LO + HI) / 2
+  const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)))
+  return LO + t * (HI - LO)
+}
+
+export function computeRatings(stats: TeamMatchStats[], league?: League): Ratings {
+  const n = stats.length
+  if (n === 0) return { axes: { ...EMPTY }, playstyle: 'No matches yet', summary: '', matchesUsed: 0, provisional: true }
+  const raw = rawAxes(stats)
+  const axes: Record<AxisKey, number | null> = { ...EMPTY }
+  for (const k of AXES) {
+    const v = raw[k]
+    if (v == null) continue
+    const dist = league?.[k]
+    axes[k] = round(dist && dist.length >= 6 ? relScale(v, dist) : v)
+  }
   return { axes, playstyle: describePlaystyle(axes), summary: describeSummary(axes), matchesUsed: n, provisional: n < 2 }
 }
 

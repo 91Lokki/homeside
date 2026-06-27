@@ -437,7 +437,7 @@ function MatchCard({
           {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
         </div>
         <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
-        <div className="mx-3 h-px bg-black/5 dark:bg-white/[0.07]" />
+        <div className="h-px bg-black/5 dark:bg-white/[0.07]" />
         <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
       </div>
     </div>
