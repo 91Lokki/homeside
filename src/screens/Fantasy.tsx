@@ -146,6 +146,19 @@ export function Fantasy() {
         </div>
       </div>
 
+      {openSlot ? (
+        <PlayerPicker
+          slot={openSlot}
+          taken={takenKeys}
+          isCountryFull={isCountryFull}
+          onClose={() => setOpenSlot(null)}
+          onPick={(p) => {
+            setRoundPick(focus, openSlot, p)
+            setOpenSlot(null)
+          }}
+        />
+      ) : (
+        <>
       {/* knockout progress bar — a timeline, not a switcher */}
       <KnockoutProgress nodes={progressNodes} />
 
@@ -268,18 +281,7 @@ export function Fantasy() {
           name. Knockout scoring grades as each real match finishes.
         </p>
       </section>
-
-      {openSlot && (
-        <PlayerPicker
-          slot={openSlot}
-          taken={takenKeys}
-          isCountryFull={isCountryFull}
-          onClose={() => setOpenSlot(null)}
-          onPick={(p) => {
-            setRoundPick(focus, openSlot, p)
-            setOpenSlot(null)
-          }}
-        />
+        </>
       )}
     </div>
   )
