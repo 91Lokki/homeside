@@ -3,7 +3,7 @@ import { ChevronLeft, Plus, Search } from 'lucide-react'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
 import { Flag } from './Flag'
-import { posCat, POS_ABBR, SLOT_ALLOWS, SLOT_LABEL, playerKey, type FantasyPick, type PosCat, type Slot } from '@/domain/fantasy'
+import { posCat, POS_ABBR, SLOT_ALLOWS, SLOT_LABEL, playerKey, type PosCat, type Slot } from '@/domain/fantasy'
 import type { TeamCode } from '@/domain/types'
 import { cn } from '@/lib/utils'
 
@@ -44,24 +44,30 @@ const POOL: IndexedPlayer[] = Object.entries(SQUADS).flatMap(([code, squad]) =>
  * squad view while choosing, with a back button, a sticky search, and a responsive
  * grid of player cards that fills the width on desktop and stacks on mobile.
  */
+const ALL_POS: PosCat[] = ['GK', 'DEF', 'MID', 'ATT']
+
 export function PlayerPicker({
   slot,
   onPick,
   onClose,
   taken,
   isCountryFull,
+  canAdd,
   embedded = false,
 }: {
-  slot: Slot
-  onPick: (p: FantasyPick) => void
+  /** The slot being filled, or null to browse the whole pool (picks auto-assign). */
+  slot: Slot | null
+  onPick: (p: { name: string; teamCode: TeamCode; position: PosCat; number: number | null }) => void
   onClose: () => void
   taken?: Set<string>
   isCountryFull?: (teamCode: TeamCode) => boolean
+  /** In browse mode, whether a position can still be added (an open slot exists). */
+  canAdd?: (pos: PosCat) => boolean
   /** Rendered as a persistent side panel (desktop) — hides the back button. */
   embedded?: boolean
 }) {
   const [query, setQuery] = useState('')
-  const allowed = SLOT_ALLOWS[slot]
+  const allowed = slot ? SLOT_ALLOWS[slot] : ALL_POS
 
   const results = useMemo(() => {
     const q = foldText(query.trim())
@@ -83,11 +89,24 @@ export function PlayerPicker({
       )}
 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
-        <h2 className="font-grotesk text-2xl font-bold tracking-tight">Pick your {SLOT_LABEL[slot].toLowerCase()}</h2>
-        <span className="text-2xs uppercase tracking-label text-faint">{results.length} available</span>
+        <h2 className="font-grotesk text-2xl font-bold tracking-tight">
+          {embedded ? 'Player pool' : `Pick your ${slot ? SLOT_LABEL[slot].toLowerCase() : 'player'}`}
+        </h2>
+        <span className="flex items-center gap-2 text-2xs uppercase tracking-label text-faint">
+          {embedded && slot && (
+            <button onClick={onClose} className="normal-case tracking-normal text-team hover:underline">
+              show all
+            </button>
+          )}
+          {results.length} available
+        </span>
       </div>
       <p className="mb-4 text-sm text-muted">
-        {slot === 'FLEX' ? 'Any outfielder — defender, midfielder or forward.' : 'Search any player — no suggestions, your call.'}
+        {slot
+          ? slot === 'FLEX'
+            ? 'Filling Flex — any outfielder (defender, midfielder or forward).'
+            : `Filling ${SLOT_LABEL[slot].toLowerCase()}.`
+          : 'Tap ＋ to add — each pick drops into the first open spot.'}
       </p>
 
       {/* sticky search so it stays reachable as the grid scrolls with the page */}
@@ -110,15 +129,17 @@ export function PlayerPicker({
         <ul className="panel divide-y divide-black/5 overflow-hidden dark:divide-white/[0.07]">
           {results.map((p) => {
             const full = isCountryFull?.(p.teamCode) ?? false
+            const noRoom = canAdd ? !canAdd(p.pos) : false
+            const disabled = full || noRoom
             return (
               <li key={playerKey(p)}>
                 <button
                   type="button"
-                  disabled={full}
-                  onClick={() => onPick({ slot, name: p.name, teamCode: p.teamCode, position: p.pos, number: p.number })}
+                  disabled={disabled}
+                  onClick={() => onPick({ name: p.name, teamCode: p.teamCode, position: p.pos, number: p.number })}
                   className={cn(
                     'group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors sm:px-4',
-                    full ? 'cursor-not-allowed opacity-40' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
+                    disabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.05]',
                   )}
                 >
                   <Flag code={p.teamCode} size={34} className="shrink-0" />
@@ -140,7 +161,7 @@ export function PlayerPicker({
                     aria-hidden
                     className={cn(
                       'grid h-8 w-8 shrink-0 place-items-center rounded-full ring-1 ring-inset transition-colors',
-                      full
+                      disabled
                         ? 'text-faint ring-black/5 dark:ring-white/10'
                         : 'text-ink ring-black/10 group-hover:bg-team group-hover:text-team-ink group-hover:ring-transparent dark:ring-white/15',
                     )}

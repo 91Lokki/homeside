@@ -9,13 +9,14 @@ import {
   ROUNDS,
   POS_ABBR,
   SCORING_RULES,
-  SLOTS,
+  SLOT_ALLOWS,
   SLOT_LABEL,
   countTransfers,
   countryCounts,
   playerKey,
   scoreRound,
   stageToRound,
+  type PosCat,
   type Round,
   type Slot,
 } from '@/domain/fantasy'
@@ -135,10 +136,14 @@ export function Fantasy() {
   }
   const takenKeys = new Set(players.filter((p) => p.slot !== openSlot).map(playerKey))
 
-  // The slot the right-hand pool is filling. On desktop the pool is always present:
-  // it follows an explicit pick (openSlot) or defaults to the next empty slot.
-  const firstEmpty = SLOTS.find((s) => !players.some((p) => p.slot === s)) ?? null
-  const poolSlot: Slot | null = openSlot ?? (isDesktop && editable ? firstEmpty : null)
+  // Where a browsed pick lands: the matching empty slot (exact position, else Flex).
+  const slotForPos = (pos: PosCat): Slot | null => {
+    if (!players.some((p) => p.slot === pos)) return pos as Slot
+    if (pos !== 'GK' && !players.some((p) => p.slot === 'FLEX')) return 'FLEX'
+    return null
+  }
+  // In browse mode, a position is addable only while it (or Flex) still has room.
+  const canAdd = (pos: PosCat) => (openSlot ? SLOT_ALLOWS[openSlot].includes(pos) : slotForPos(pos) !== null)
 
   // One pitch token (filled or empty). Closes over the round state + handlers.
   const renderSlot = (slot: Slot) => {
@@ -244,7 +249,8 @@ export function Fantasy() {
           isCountryFull={isCountryFull}
           onClose={() => setOpenSlot(null)}
           onPick={(p) => {
-            setRoundPick(focus, openSlot, p)
+            if (!openSlot) return
+            setRoundPick(focus, openSlot, { slot: openSlot, ...p })
             setOpenSlot(null)
           }}
         />
@@ -363,36 +369,36 @@ export function Fantasy() {
       )}
         </div>
 
-        {/* right (desktop): the player pool, FIFA-style — picks fill the active
-            slot (an explicit tap, else the next empty one). Hidden on mobile,
-            where tapping a slot opens the full-screen picker instead. */}
+        {/* right (desktop): the player pool, FIFA-style — always present. Tapping a
+            pitch slot filters it; otherwise picks drop into the first open spot.
+            Hidden on mobile, where tapping a slot opens the full-screen picker. */}
         <div className="hidden lg:block lg:flex-1 lg:min-w-0">
-          {editable && poolSlot ? (
+          {editable ? (
             <PlayerPicker
-              slot={poolSlot}
+              slot={openSlot}
               embedded
+              canAdd={canAdd}
               taken={takenKeys}
               isCountryFull={isCountryFull}
               onClose={() => setOpenSlot(null)}
               onPick={(p) => {
-                setRoundPick(focus, poolSlot, p)
+                const target = openSlot ?? slotForPos(p.position)
+                if (!target) return
+                setRoundPick(focus, target, { slot: target, ...p })
                 setOpenSlot(null)
               }}
             />
           ) : (
             <div className="panel grid min-h-[200px] place-items-center p-8 text-center text-sm text-muted">
-              {editable ? 'Your five is set — tap a player on the pitch to swap them.' : 'This round is locked and under way.'}
+              This round is locked and under way.
             </div>
           )}
         </div>
       </div>
 
-      {/* scoring reference — compact and tucked away, open when you want it */}
-      <details className="group mt-8">
-        <summary className="flex cursor-pointer list-none items-center gap-2">
-          <Label>How points work</Label>
-          <span className="text-2xs text-faint transition-transform group-open:rotate-90">▸</span>
-        </summary>
+      {/* scoring reference — always visible at the bottom, but compact */}
+      <section className="mt-8">
+        <Label>How points work</Label>
         <div className="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
           {SCORING_RULES.map((r) => (
             <div key={r.label} className="flex items-center justify-between gap-3 border-b py-1 text-2xs">
@@ -405,7 +411,7 @@ export function Fantasy() {
           Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team + name.
           Knockout scoring grades as each real match finishes.
         </p>
-      </details>
+      </section>
 
       <div className="mt-5 flex items-center gap-4">
         {selScore && selScore.transferPenalty > 0 && (
