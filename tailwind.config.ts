@@ -113,6 +113,10 @@ export default {
           from: { opacity: '1', transform: 'translateX(0)' },
           to: { opacity: '0', transform: 'translateX(38px)' },
         },
+        'slide-up': {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
       },
       animation: {
         breathe: 'breathe 6s var(--ease-calm, ease-in-out) infinite',
@@ -125,6 +129,7 @@ export default {
         'slide-from-left': 'slide-from-left 0.34s var(--ease-calm, ease-out) both',
         'slide-out-left': 'slide-out-left 0.34s var(--ease-calm, ease-out) both',
         'slide-out-right': 'slide-out-right 0.34s var(--ease-calm, ease-out) both',
+        'slide-up': 'slide-up 0.2s var(--ease-calm, ease-out) both',
       },
     },
   },
