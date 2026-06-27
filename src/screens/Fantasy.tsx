@@ -366,7 +366,7 @@ export function Fantasy() {
   )
 
   return (
-    <div className={cn('animate-fade-in', transferring && 'max-lg:pb-28')}>
+    <div className={cn('animate-fade-in', editable && 'max-lg:pb-28')}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Label>Knockout fantasy</Label>
@@ -497,22 +497,41 @@ export function Fantasy() {
       {/* mobile: the scoring panel sits below the pitch in view mode */}
       {!transferring && <div className="mt-8 lg:hidden"><HowToScore /></div>}
 
-      {/* view mode: enter transfers + (small) reset-everything */}
+      {/* view mode — desktop: a centred CTA below the two columns */}
       {!transferring && (
-        <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {editable ? (
+        <div className="mt-8 hidden flex-col items-center gap-3 lg:flex">
+          {editable && (
             <button
               onClick={startTransfers}
-              className="inline-flex items-center justify-center gap-2 rounded-pill bg-team px-5 py-3 font-grotesk text-sm font-semibold text-team-ink transition-opacity hover:opacity-90"
+              className="inline-flex items-center justify-center gap-2 rounded-pill bg-team px-7 py-3 font-grotesk text-sm font-semibold text-team-ink transition-opacity hover:opacity-90"
             >
               <ArrowLeftRight size={16} /> {players.length === 0 ? 'Pick your five' : 'Make transfers'}
             </button>
-          ) : (
-            <span />
           )}
           <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
         </div>
       )}
+
+      {/* view mode — mobile: a tiny in-flow reset link (the CTA itself floats, below) */}
+      {!transferring && (
+        <div className="mt-6 flex justify-center lg:hidden">
+          <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
+        </div>
+      )}
+
+      {/* view mode — mobile: floating "Make transfers" so it's always reachable */}
+      {!transferring && editable && !isDesktop && !selected &&
+        createPortal(
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/[0.06] bg-canvas/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
+            <button
+              onClick={startTransfers}
+              className="flex w-full items-center justify-center gap-2 rounded-pill bg-team px-5 py-3 font-grotesk text-sm font-semibold text-team-ink"
+            >
+              <ArrowLeftRight size={16} /> {players.length === 0 ? 'Pick your five' : 'Make transfers'}
+            </button>
+          </div>,
+          document.body,
+        )}
 
       {/* transfer mode: desktop sticky Save/Reset bar */}
       {transferring && (
