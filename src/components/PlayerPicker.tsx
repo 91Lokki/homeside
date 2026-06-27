@@ -109,8 +109,8 @@ export function PlayerPicker({
           : 'Tap ＋ to add — each pick drops into the first open spot.'}
       </p>
 
-      {/* sticky search so it stays reachable as the grid scrolls with the page */}
-      <div className="sticky top-2 z-10 mb-4">
+      {/* search sits above the framed, internally-scrolling pool */}
+      <div className="mb-4">
         <div className="flex items-center gap-2.5 rounded-pill bg-black/[0.04] px-4 py-3 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10">
           <Search size={16} className="shrink-0 text-faint" />
           <input
@@ -126,7 +126,7 @@ export function PlayerPicker({
       {results.length === 0 ? (
         <p className="px-1 py-10 text-center text-sm text-faint">No players match.</p>
       ) : (
-        <ul className="panel divide-y divide-black/5 overflow-hidden dark:divide-white/[0.07]">
+        <ul className="panel max-h-[64vh] divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
           {results.map((p) => {
             const full = isCountryFull?.(p.teamCode) ?? false
             const noRoom = canAdd ? !canAdd(p.pos) : false
