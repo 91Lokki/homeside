@@ -192,9 +192,13 @@ export function Team() {
                         key={p.name + (p.number ?? i)}
                         className="flex items-center gap-3 border-b border-black/5 py-2 last:border-0 dark:border-white/[0.07]"
                       >
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-sunken font-grotesk text-xs font-semibold tnum text-muted">
-                          {p.number ?? '—'}
-                        </span>
+                        {p.number != null ? (
+                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-sunken font-grotesk text-xs font-semibold tnum text-muted">
+                            {p.number}
+                          </span>
+                        ) : (
+                          <span aria-hidden className="h-7 w-7 shrink-0" />
+                        )}
                         <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{p.name}</span>
                         {p.club && <span className="max-w-[42%] shrink-0 truncate text-right text-2xs text-faint">{p.club}</span>}
                       </li>

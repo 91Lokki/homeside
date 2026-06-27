@@ -262,6 +262,10 @@ export function Fantasy() {
         )}
       </div>
 
+      {/* desktop: pitch on the left, scoring reference on the right — fills the
+          width instead of stranding a narrow pitch in the middle of the page */}
+      <div className="lg:flex lg:items-start lg:gap-8">
+        <div className="lg:w-[468px] lg:shrink-0">
       {/* the five — an Apple pitch in formation (own goal top, attack bottom) */}
       <div className="panel relative mx-auto w-full max-w-[440px] overflow-hidden px-3 py-5 sm:px-5 sm:py-7">
         {/* implied pitch markings — 1px hairlines only, no green, no fill */}
@@ -349,30 +353,34 @@ export function Fantasy() {
           If the Captain's team doesn't play this round, the Vice is doubled instead.
         </p>
       )}
-
-      <div className="mt-4 flex items-center gap-4">
-        {selScore && selScore.transferPenalty > 0 && (
-          <span className="text-xs text-amber-600 dark:text-amber-500">Transfer penalty this round: −{selScore.transferPenalty} pts</span>
-        )}
-        <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
-      </div>
-
-      {/* scoring legend */}
-      <section className="mt-8">
-        <Label>How points work</Label>
-        <div className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-          {SCORING_RULES.map((r) => (
-            <div key={r.label} className="flex items-center justify-between border-b py-1.5 text-sm">
-              <span className="text-muted">{r.label}</span>
-              <span className="font-medium tnum">{r.value}</span>
-            </div>
-          ))}
         </div>
-        <p className="mt-3 text-2xs text-faint">
-          Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team +
-          name. Knockout scoring grades as each real match finishes.
-        </p>
-      </section>
+
+        {/* right rail (desktop) — the scoring reference + reset */}
+        <div className="mt-8 lg:mt-0 lg:flex-1 lg:min-w-0">
+          <section>
+            <Label>How points work</Label>
+            <div className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+              {SCORING_RULES.map((r) => (
+                <div key={r.label} className="flex items-center justify-between border-b py-1.5 text-sm">
+                  <span className="text-muted">{r.label}</span>
+                  <span className="font-medium tnum">{r.value}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-2xs text-faint">
+              Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team +
+              name. Knockout scoring grades as each real match finishes.
+            </p>
+          </section>
+
+          <div className="mt-6 flex items-center gap-4">
+            {selScore && selScore.transferPenalty > 0 && (
+              <span className="text-xs text-amber-600 dark:text-amber-500">Transfer penalty this round: −{selScore.transferPenalty} pts</span>
+            )}
+            <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
+          </div>
+        </div>
+      </div>
         </>
       )}
     </div>

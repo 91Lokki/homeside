@@ -2700,7 +2700,7 @@ export const SQUADS: Record<string, TeamSquad> = {
       {
         "name": "Assan Ouédraogo",
         "position": "MF",
-        "number": null,
+        "number": 25,
         "club": "RB Leipzig"
       },
       {
@@ -3874,157 +3874,157 @@ export const SQUADS: Record<string, TeamSquad> = {
       {
         "name": "Thibaut Courtois",
         "position": "GK",
-        "number": null,
+        "number": 1,
         "club": "Real Madrid"
       },
       {
         "name": "Senne Lammens",
         "position": "GK",
-        "number": null,
+        "number": 12,
         "club": "Manchester United"
       },
       {
         "name": "Mike Penders",
         "position": "GK",
-        "number": null,
+        "number": 13,
         "club": "Strasbourg"
       },
       {
         "name": "Timothy Castagne",
         "position": "DF",
-        "number": null,
+        "number": 21,
         "club": "Fulham"
       },
       {
         "name": "Zeno Debast",
         "position": "DF",
-        "number": null,
+        "number": 2,
         "club": "Sporting CP"
       },
       {
         "name": "Maxim De Cuyper",
         "position": "DF",
-        "number": null,
+        "number": 5,
         "club": "Brighton & Hove Albion"
       },
       {
         "name": "Koni De Winter",
         "position": "DF",
-        "number": null,
+        "number": 16,
         "club": "AC Milan"
       },
       {
         "name": "Brandon Mechele",
         "position": "DF",
-        "number": null,
+        "number": 4,
         "club": "Club Brugge"
       },
       {
         "name": "Thomas Meunier",
         "position": "DF",
-        "number": null,
+        "number": 15,
         "club": "Lille"
       },
       {
         "name": "Nathan Ngoy",
         "position": "DF",
-        "number": null,
+        "number": 25,
         "club": "Lille"
       },
       {
         "name": "Joaquin Seys",
         "position": "DF",
-        "number": null,
+        "number": 18,
         "club": "Club Brugge"
       },
       {
         "name": "Arthur Theate",
         "position": "DF",
-        "number": null,
+        "number": 3,
         "club": "Eintracht Frankfurt"
       },
       {
         "name": "Kevin De Bruyne",
         "position": "MF",
-        "number": null,
+        "number": 7,
         "club": "Napoli"
       },
       {
         "name": "Amadou Onana",
         "position": "MF",
-        "number": null,
+        "number": 24,
         "club": "Aston Villa"
       },
       {
         "name": "Nicolas Raskin",
         "position": "MF",
-        "number": null,
+        "number": 23,
         "club": "Rangers"
       },
       {
         "name": "Youri Tielemans",
         "position": "MF",
-        "number": null,
+        "number": 8,
         "club": "Aston Villa"
       },
       {
         "name": "Hans Vanaken",
         "position": "MF",
-        "number": null,
+        "number": 20,
         "club": "Club Brugge"
       },
       {
         "name": "Axel Witsel",
         "position": "MF",
-        "number": null,
+        "number": 6,
         "club": "Girona"
       },
       {
         "name": "Charles De Ketelaere",
         "position": "FW",
-        "number": null,
+        "number": 17,
         "club": "Atalanta"
       },
       {
         "name": "Jeremy Doku",
         "position": "FW",
-        "number": null,
+        "number": 11,
         "club": "Manchester City"
       },
       {
         "name": "Matias Fernandez-Pardo",
         "position": "FW",
-        "number": null,
+        "number": 26,
         "club": "Lille"
       },
       {
         "name": "Romelu Lukaku",
         "position": "FW",
-        "number": null,
+        "number": 9,
         "club": "Napoli"
       },
       {
         "name": "Dodi Lukebakio",
         "position": "FW",
-        "number": null,
+        "number": 14,
         "club": "Benfica"
       },
       {
         "name": "Diego Moreira",
         "position": "FW",
-        "number": null,
+        "number": 19,
         "club": "Strasbourg"
       },
       {
         "name": "Alexis Saelemaekers",
         "position": "FW",
-        "number": null,
+        "number": 22,
         "club": "AC Milan"
       },
       {
         "name": "Leandro Trossard",
         "position": "FW",
-        "number": null,
+        "number": 10,
         "club": "Arsenal"
       }
     ],
@@ -4196,157 +4196,157 @@ export const SQUADS: Record<string, TeamSquad> = {
       {
         "name": "Alireza Beiranvand",
         "position": "GK",
-        "number": null,
+        "number": 1,
         "club": "Tractor"
       },
       {
         "name": "Hossein Hosseini",
         "position": "GK",
-        "number": null,
+        "number": 22,
         "club": "Sepahan"
       },
       {
         "name": "Payam Niazmand",
         "position": "GK",
-        "number": null,
+        "number": 12,
         "club": "Persepolis"
       },
       {
         "name": "Ehsan Hajsafi",
         "position": "DF",
-        "number": null,
+        "number": 3,
         "club": "Sepahan"
       },
       {
         "name": "Milad Mohammadi",
         "position": "DF",
-        "number": null,
+        "number": 5,
         "club": "Persepolis"
       },
       {
         "name": "Ramin Rezaeian",
         "position": "DF",
-        "number": null,
+        "number": 23,
         "club": "Foolad"
       },
       {
         "name": "Hossein Kanaanizadegan",
         "position": "DF",
-        "number": null,
+        "number": 13,
         "club": "Persepolis"
       },
       {
         "name": "Shojae Khalilzadeh",
         "position": "DF",
-        "number": null,
+        "number": 4,
         "club": "Tractor"
       },
       {
         "name": "Saleh Hardani",
         "position": "DF",
-        "number": null,
+        "number": 2,
         "club": "Esteghlal"
       },
       {
         "name": "Ali Nemati",
         "position": "DF",
-        "number": null,
+        "number": 19,
         "club": "Foolad"
       },
       {
         "name": "Danial Eiri",
         "position": "DF",
-        "number": null,
+        "number": 25,
         "club": "Malavan"
       },
       {
         "name": "Alireza Jahanbakhsh",
         "position": "MF",
-        "number": null,
+        "number": 7,
         "club": "Dender"
       },
       {
         "name": "Saeid Ezatolahi",
         "position": "MF",
-        "number": null,
+        "number": 6,
         "club": "Shabab Al-Ahli"
       },
       {
         "name": "Saman Ghoddos",
         "position": "MF",
-        "number": null,
+        "number": 14,
         "club": "Ittihad Kalba"
       },
       {
         "name": "Mehdi Torabi",
         "position": "MF",
-        "number": null,
+        "number": 16,
         "club": "Tractor"
       },
       {
         "name": "Rouzbeh Cheshmi",
         "position": "MF",
-        "number": null,
+        "number": 15,
         "club": "Esteghlal"
       },
       {
         "name": "Mohammad Mohebi",
         "position": "MF",
-        "number": null,
+        "number": 8,
         "club": "Rostov"
       },
       {
         "name": "Mehdi Ghayedi",
         "position": "MF",
-        "number": null,
+        "number": 10,
         "club": "Al-Nasr"
       },
       {
         "name": "Mohammad Ghorbani",
         "position": "MF",
-        "number": null,
+        "number": 21,
         "club": "Al Wahda"
       },
       {
         "name": "Aria Yousefi",
         "position": "MF",
-        "number": null,
+        "number": 17,
         "club": "Sepahan"
       },
       {
         "name": "Amirmohammad Razzaghinia",
         "position": "MF",
-        "number": null,
+        "number": 26,
         "club": "Esteghlal"
       },
       {
         "name": "Mehdi Taremi",
         "position": "FW",
-        "number": null,
+        "number": 9,
         "club": "Olympiacos"
       },
       {
         "name": "Shahriyar Moghanlou",
         "position": "FW",
-        "number": null,
+        "number": 20,
         "club": "Ittihad Kalba"
       },
       {
         "name": "Amirhossein Hosseinzadeh",
         "position": "FW",
-        "number": null,
+        "number": 18,
         "club": "Tractor"
       },
       {
         "name": "Ali Alipour",
         "position": "FW",
-        "number": null,
+        "number": 11,
         "club": "Persepolis"
       },
       {
         "name": "Dennis Dargahi",
         "position": "FW",
-        "number": null,
+        "number": 24,
         "club": "Standard Liège"
       }
     ],
@@ -4507,7 +4507,7 @@ export const SQUADS: Record<string, TeamSquad> = {
       {
         "name": "Logan Rogerson",
         "position": "FW",
-        "number": null,
+        "number": 7,
         "club": "Auckland FC"
       }
     ],
@@ -5323,157 +5323,157 @@ export const SQUADS: Record<string, TeamSquad> = {
       {
         "name": "Édouard Mendy",
         "position": "GK",
-        "number": null,
+        "number": 16,
         "club": "Al-Ahli"
       },
       {
         "name": "Mory Diaw",
         "position": "GK",
-        "number": null,
+        "number": 23,
         "club": "Le Havre"
       },
       {
         "name": "Yehvann Diouf",
         "position": "GK",
-        "number": null,
+        "number": 1,
         "club": "OGC Nice"
       },
       {
         "name": "Kalidou Koulibaly",
         "position": "DF",
-        "number": null,
+        "number": 3,
         "club": "Al-Hilal"
       },
       {
         "name": "Krépin Diatta",
         "position": "DF",
-        "number": null,
+        "number": 15,
         "club": "AS Monaco"
       },
       {
         "name": "Moussa Niakhaté",
         "position": "DF",
-        "number": null,
+        "number": 19,
         "club": "Lyon"
       },
       {
         "name": "Ismaïl Jakobs",
         "position": "DF",
-        "number": null,
+        "number": 14,
         "club": "Galatasaray"
       },
       {
         "name": "Abdoulaye Seck",
         "position": "DF",
-        "number": null,
+        "number": 4,
         "club": "Maccabi Haifa"
       },
       {
         "name": "El Hadji Malick Diouf",
         "position": "DF",
-        "number": null,
+        "number": 25,
         "club": "West Ham United"
       },
       {
         "name": "Mamadou Sarr",
         "position": "DF",
-        "number": null,
+        "number": 2,
         "club": "Chelsea"
       },
       {
         "name": "Antoine Mendy",
         "position": "DF",
-        "number": null,
+        "number": 24,
         "club": "OGC Nice"
       },
       {
         "name": "Idrissa Gana Gueye",
         "position": "MF",
-        "number": null,
+        "number": 5,
         "club": "Everton"
       },
       {
         "name": "Pape Gueye",
         "position": "MF",
-        "number": null,
+        "number": 26,
         "club": "Villarreal"
       },
       {
         "name": "Pape Matar Sarr",
         "position": "MF",
-        "number": null,
+        "number": 17,
         "club": "Tottenham Hotspur"
       },
       {
         "name": "Lamine Camara",
         "position": "MF",
-        "number": null,
+        "number": 8,
         "club": "AS Monaco"
       },
       {
         "name": "Pathé Ciss",
         "position": "MF",
-        "number": null,
+        "number": 6,
         "club": "Rayo Vallecano"
       },
       {
         "name": "Habib Diarra",
         "position": "MF",
-        "number": null,
+        "number": 21,
         "club": "Sunderland"
       },
       {
         "name": "Bara Sapoko Ndiaye",
         "position": "MF",
-        "number": null,
+        "number": 22,
         "club": "Bayern Munich"
       },
       {
         "name": "Sadio Mané",
         "position": "FW",
-        "number": null,
+        "number": 10,
         "club": "Al-Nassr"
       },
       {
         "name": "Ismaïla Sarr",
         "position": "FW",
-        "number": null,
+        "number": 18,
         "club": "Crystal Palace"
       },
       {
         "name": "Iliman Ndiaye",
         "position": "FW",
-        "number": null,
+        "number": 13,
         "club": "Everton"
       },
       {
         "name": "Nicolas Jackson",
         "position": "FW",
-        "number": null,
+        "number": 11,
         "club": "Bayern Munich (on loan from Chelsea)"
       },
       {
         "name": "Bamba Dieng",
         "position": "FW",
-        "number": null,
+        "number": 9,
         "club": "Lorient"
       },
       {
         "name": "Chérif Ndiaye",
         "position": "FW",
-        "number": null,
+        "number": 12,
         "club": "Samsunspor"
       },
       {
         "name": "Ibrahim Mbaye",
         "position": "FW",
-        "number": null,
+        "number": 20,
         "club": "Paris Saint-Germain"
       },
       {
         "name": "Assane Diao",
         "position": "FW",
-        "number": null,
+        "number": 7,
         "club": "Como"
       }
     ],
