@@ -57,6 +57,7 @@ interface GamesCtx {
   fantasy: FantasyRounds
   setRoundPick: (round: Round, slot: Slot, pick: FantasyPick | null) => void
   seedRound: (round: Round, players: FantasyPick[]) => void
+  setRoundSquad: (round: Round, squad: RoundSquad) => void
   setCaptain: (round: Round, key: string) => void
   setVice: (round: Round, key: string) => void
   resetFantasy: () => void
@@ -99,6 +100,14 @@ export function GamesProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  /** Replace a round's whole squad in one write (used to commit a transfer draft). */
+  const setRoundSquad = useCallback((round: Round, squad: RoundSquad) => {
+    setFantasy((fr) => ({
+      ...fr,
+      [round]: { players: squad.players.map((p) => ({ ...p })), captain: squad.captain, vice: squad.vice },
+    }))
+  }, [])
+
   const setCaptain = useCallback((round: Round, key: string) => {
     setFantasy((fr) => {
       const cur = fr[round]
@@ -119,8 +128,8 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   const resetFantasy = useCallback(() => setFantasy({}), [])
 
   const value = useMemo<GamesCtx>(
-    () => ({ predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy }),
-    [predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setCaptain, setVice, resetFantasy],
+    () => ({ predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, setVice, resetFantasy }),
+    [predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, setVice, resetFantasy],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

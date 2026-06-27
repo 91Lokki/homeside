@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Crown, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ArrowLeftRight, Check, Crown, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
 import {
@@ -17,8 +17,10 @@ import {
   playerKey,
   scoreRound,
   stageToRound,
+  type FantasyPick,
   type PosCat,
   type Round,
+  type RoundSquad,
   type Slot,
 } from '@/domain/fantasy'
 import { currentRound, eliminatedTeams, isRoundLocked, previousRound, roundFirstKickoff } from '@/domain/fantasyRounds'
@@ -40,10 +42,15 @@ const fmtDate = (ms: number | null) => (ms == null ? '' : new Date(ms).toLocaleD
 
 export function Fantasy() {
   const { matches } = useApp()
-  const { fantasy, setRoundPick, seedRound, setCaptain, resetFantasy } = useGames()
+  const { fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy } = useGames()
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
   const [selected, setSelected] = useState<Slot | null>(null)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+  // FIFA-style modes: 'view' shows the scoring panel; 'transfer' opens the pool and
+  // edits a local DRAFT that only commits on Save (so abandoning discards cleanly).
+  const [mode, setMode] = useState<'view' | 'transfer'>('view')
+  const [draft, setDraft] = useState<RoundSquad | null>(null)
+  const emptySquad = (): RoundSquad => ({ players: [], captain: null, vice: null })
 
   // A slow clock so the timeline flips to LIVE at kickoff even between data polls.
   const [now, setNow] = useState(() => Date.now())
@@ -72,8 +79,15 @@ export function Fantasy() {
   const focus: Round = inPlay ?? cur
   const editable = focus === cur && !isRoundLocked(focus, now)
 
-  // A stale selection must not outlive a round change or an edit-state flip.
-  useEffect(() => { setSelected(null) }, [focus, editable])
+  // A stale selection (or an in-progress draft) must not outlive a round change or
+  // an edit-state flip — abandon the draft and fall back to view mode.
+  useEffect(() => {
+    setSelected(null)
+    setMode('view')
+    setDraft(null)
+    setOpenSlot(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus, editable])
 
   const prev = previousRound(focus)
   const prevPlayers = (prev && fantasy[prev]?.players) || []
@@ -83,7 +97,11 @@ export function Fantasy() {
     if (editable && !fantasy[focus] && prev && fantasy[prev]) seedRound(focus, fantasy[prev]!.players)
   }, [editable, focus, prev, fantasy, seedRound])
 
-  const squad = fantasy[focus]
+  // While transferring, the pitch/pool/token-actions all read the local draft;
+  // otherwise the committed squad. One indirection keeps every downstream read intact.
+  const committed = fantasy[focus]
+  const transferring = mode === 'transfer' && draft != null
+  const squad = transferring ? draft : committed
   const players = squad?.players ?? []
   const quotaMax = COUNTRY_QUOTA[focus]
   const counts = countryCounts(players)
@@ -146,6 +164,35 @@ export function Fantasy() {
   // In browse mode, a position is addable only while it (or Flex) still has room.
   const canAdd = (pos: PosCat) => (openSlot ? SLOT_ALLOWS[openSlot].includes(pos) : slotForPos(pos) !== null)
 
+  // ---- transfer draft (local; commits only on Save) ----
+  const cloneSquad = (s: RoundSquad | undefined) =>
+    ({ players: (s?.players ?? []).map((p) => ({ ...p })), captain: s?.captain ?? null, vice: s?.vice ?? null })
+  const draftPick = (slot: Slot, pick: FantasyPick | null) =>
+    setDraft((d) => {
+      const cur = d ?? emptySquad()
+      const removed = cur.players.find((p) => p.slot === slot)
+      const next = cur.players.filter((p) => p.slot !== slot)
+      if (pick) next.push(pick)
+      let { captain, vice } = cur
+      if (removed) {
+        const k = playerKey(removed)
+        if (captain === k) captain = null
+        if (vice === k) vice = null
+      }
+      return { players: next, captain, vice }
+    })
+  const draftCaptain = (key: string) => setDraft((d) => (d ? { ...d, captain: d.captain === key ? null : key } : d))
+  const startTransfers = () => { setDraft(cloneSquad(committed)); setMode('transfer'); setSelected(null); setOpenSlot(null) }
+  const saveTransfers = () => { if (draft) setRoundSquad(focus, draft); setMode('view'); setDraft(null); setSelected(null); setOpenSlot(null) }
+  const cancelTransfers = () => { setMode('view'); setDraft(null); setSelected(null); setOpenSlot(null) }
+  const resetDraft = () => { setDraft(cloneSquad(committed)); setSelected(null); setOpenSlot(null) }
+  // Captain works in both modes: drafted while transferring, committed in view.
+  const toggleCaptain = (slot: Slot, key: string, isCap: boolean) => {
+    if (transferring) { draftCaptain(key); return }
+    if (isCap) setRoundPick(focus, slot, { ...players.find((p) => p.slot === slot)! })
+    else setCaptain(focus, key)
+  }
+
   // Shared body for acting on a filled token — rendered in a desktop popover and
   // a mobile bottom sheet. Captain/Vice are real toggles; the captain can never be
   // offered Vice (no silent no-op). Toggle-off re-sets the same pick, which makes
@@ -157,7 +204,6 @@ export function Fantasy() {
     const ps = selScore?.perPlayer[key]
     const isCap = squad?.captain === key
     const lines = ps?.detail.matches.flatMap((m) => m.lines) ?? []
-    const clearRole = () => setRoundPick(focus, slot, { ...pick })
     const row = 'flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-sm font-medium transition-colors'
     return (
       <>
@@ -176,7 +222,7 @@ export function Fantasy() {
 
         <div className="mt-2.5 flex flex-col gap-0.5">
           <button
-            onClick={() => (isCap ? clearRole() : setCaptain(focus, key))}
+            onClick={() => toggleCaptain(slot, key, isCap)}
             aria-pressed={isCap}
             className={cn(row, isCap ? 'bg-team-soft text-team' : 'text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.05]')}
           >
@@ -185,17 +231,21 @@ export function Fantasy() {
             {isCap && <Check size={16} className="shrink-0" />}
           </button>
 
-          <div className="my-1 h-px bg-black/5 dark:bg-white/[0.07]" />
+          {transferring && (
+            <>
+              <div className="my-1 h-px bg-black/5 dark:bg-white/[0.07]" />
 
-          <button onClick={() => { onClose(); setOpenSlot(slot) }} className={cn(row, 'text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.05]')}>
-            <Pencil size={16} className="shrink-0" />
-            <span className="flex-1 text-left">Change player</span>
-          </button>
+              <button onClick={() => { onClose(); setOpenSlot(slot) }} className={cn(row, 'text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.05]')}>
+                <Pencil size={16} className="shrink-0" />
+                <span className="flex-1 text-left">Change player</span>
+              </button>
 
-          <button onClick={() => { setRoundPick(focus, slot, null); onClose() }} className={cn(row, 'text-faint hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400')}>
-            <Trash2 size={16} className="shrink-0" />
-            <span className="flex-1 text-left">Remove</span>
-          </button>
+              <button onClick={() => { draftPick(slot, null); onClose() }} className={cn(row, 'text-faint hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400')}>
+                <Trash2 size={16} className="shrink-0" />
+                <span className="flex-1 text-left">Remove</span>
+              </button>
+            </>
+          )}
         </div>
 
         {lines.length > 0 && (
@@ -211,7 +261,7 @@ export function Fantasy() {
   const renderSlot = (slot: Slot) => {
     const pick = players.find((p) => p.slot === slot)
     if (!pick) {
-      if (!editable) {
+      if (!transferring) {
         return (
           <div key={slot} className="flex w-[88px] flex-col items-center sm:w-[104px]">
             <span className="h-[52px] w-[52px] rounded-full border border-dashed border-black/10 dark:border-white/15" />
@@ -293,8 +343,30 @@ export function Fantasy() {
     )
   }
 
+  // The scoring reference — fills the same 640px frame as the pool so it aligns
+  // with the pitch in view mode.
+  const HowToScore = () => (
+    <section className="panel flex w-full flex-col overflow-hidden lg:h-[640px]">
+      <div className="border-b border-black/5 px-5 py-4 dark:border-white/[0.07]">
+        <h2 className="font-grotesk text-xl font-bold tracking-tight">How to score</h2>
+        <p className="mt-1 text-2xs text-faint">Real ESPN box-score events, graded as each match finishes. Captain scores ×2.</p>
+      </div>
+      <ul className="min-h-0 flex-1 divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
+        {SCORING_RULES.map((r) => (
+          <li key={r.label} className="flex items-center justify-between gap-4 px-5 py-2.5">
+            <span className="text-sm text-muted">{r.label}</span>
+            <span className="shrink-0 font-grotesk text-sm font-medium tnum text-ink">{r.value}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="border-t border-black/5 px-5 py-3 text-2xs text-faint dark:border-white/[0.07]">
+        Player matching is best-effort by team + name.
+      </p>
+    </section>
+  )
+
   return (
-    <div className="animate-fade-in">
+    <div className={cn('animate-fade-in', transferring && 'max-lg:pb-28')}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <Label>Knockout fantasy</Label>
@@ -312,7 +384,7 @@ export function Fantasy() {
         </div>
       </div>
 
-      {!isDesktop && openSlot ? (
+      {!isDesktop && transferring && openSlot ? (
         <PlayerPicker
           slot={openSlot}
           taken={takenKeys}
@@ -320,7 +392,7 @@ export function Fantasy() {
           onClose={() => setOpenSlot(null)}
           onPick={(p) => {
             if (!openSlot) return
-            setRoundPick(focus, openSlot, { slot: openSlot, ...p })
+            draftPick(openSlot, { slot: openSlot, ...p })
             setOpenSlot(null)
           }}
         />
@@ -397,7 +469,11 @@ export function Fantasy() {
             pitch slot filters it; otherwise picks drop into the first open spot.
             Hidden on mobile, where tapping a slot opens the full-screen picker. */}
         <div className="hidden lg:block lg:flex-1 lg:min-w-0">
-          {editable ? (
+          {!editable ? (
+            <div className="panel grid h-[640px] place-items-center p-8 text-center text-sm text-muted">
+              This round is locked and under way.
+            </div>
+          ) : transferring ? (
             <PlayerPicker
               slot={openSlot}
               embedded
@@ -408,41 +484,84 @@ export function Fantasy() {
               onPick={(p) => {
                 const target = openSlot ?? slotForPos(p.position)
                 if (!target) return
-                setRoundPick(focus, target, { slot: target, ...p })
+                draftPick(target, { slot: target, ...p })
                 setOpenSlot(null)
               }}
             />
           ) : (
-            <div className="panel grid h-[640px] place-items-center p-8 text-center text-sm text-muted">
-              This round is locked and under way.
-            </div>
+            <HowToScore />
           )}
         </div>
       </div>
 
-      {/* scoring reference — always visible at the bottom, but compact */}
-      <section className="mt-8">
-        <Label>How points work</Label>
-        <div className="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-          {SCORING_RULES.map((r) => (
-            <div key={r.label} className="flex items-center justify-between gap-3 border-b py-1 text-2xs">
-              <span className="text-muted">{r.label}</span>
-              <span className="font-medium tnum text-ink">{r.value}</span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-2.5 text-2xs text-faint">
-          Scored from real ESPN box-score events (goals, assists, cards). Player matching is best-effort by team + name.
-          Knockout scoring grades as each real match finishes.
-        </p>
-      </section>
+      {/* mobile: the scoring panel sits below the pitch in view mode */}
+      {!transferring && <div className="mt-8 lg:hidden"><HowToScore /></div>}
 
-      <div className="mt-5 flex items-center gap-4">
-        {selScore && selScore.transferPenalty > 0 && (
-          <span className="text-xs text-amber-600 dark:text-amber-500">Transfer penalty this round: −{selScore.transferPenalty} pts</span>
+      {/* view mode: enter transfers + (small) reset-everything */}
+      {!transferring && (
+        <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {editable ? (
+            <button
+              onClick={startTransfers}
+              className="inline-flex items-center justify-center gap-2 rounded-pill bg-team px-5 py-3 font-grotesk text-sm font-semibold text-team-ink transition-opacity hover:opacity-90"
+            >
+              <ArrowLeftRight size={16} /> {players.length === 0 ? 'Pick your five' : 'Make transfers'}
+            </button>
+          ) : (
+            <span />
+          )}
+          <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
+        </div>
+      )}
+
+      {/* transfer mode: desktop sticky Save/Reset bar */}
+      {transferring && (
+        <div className="sticky bottom-4 z-30 mt-6 hidden lg:block">
+          <div className="panel flex items-center justify-between gap-4 px-5 py-3">
+            <div className="text-xs text-muted">
+              {prev ? (
+                <>
+                  Transfers <span className="font-medium tnum text-ink">{transfersUsed}{Number.isFinite(free) ? ` / ${free} free` : ''}</span>
+                  {paid > 0 && <span className="text-amber-600 dark:text-amber-500"> · −{paid * 3} pts on save</span>}
+                </>
+              ) : (
+                <span>Unlimited changes — build your five</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button onClick={resetDraft} className="rounded-pill px-4 py-2.5 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.1] hover:text-ink dark:ring-white/15">Reset</button>
+              <button onClick={cancelTransfers} className="rounded-pill px-4 py-2.5 text-sm font-medium text-muted hover:text-ink">Cancel</button>
+              <button onClick={saveTransfers} className="inline-flex items-center gap-2 rounded-pill bg-team px-5 py-2.5 text-sm font-semibold text-team-ink hover:opacity-90">
+                <Check size={16} /> Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* transfer mode: mobile fixed Save/Reset bar (portaled; only when no sheet/picker is up) */}
+      {transferring && !isDesktop && !openSlot && !selected &&
+        createPortal(
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-black/[0.06] bg-canvas/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
+            <div className="mb-2 text-center text-2xs text-muted">
+              {prev ? (
+                <>
+                  Transfers <span className="font-medium tnum text-ink">{transfersUsed}{Number.isFinite(free) ? ` / ${free}` : ''}</span>
+                  {paid > 0 && <span className="text-amber-600 dark:text-amber-500"> · −{paid * 3} pts</span>}
+                </>
+              ) : (
+                <span>Unlimited changes</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button onClick={resetDraft} className="flex-1 rounded-pill px-4 py-3 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.1] dark:ring-white/15">Reset</button>
+              <button onClick={saveTransfers} className="inline-flex flex-[2] items-center justify-center gap-2 rounded-pill bg-team px-4 py-3 text-sm font-semibold text-team-ink">
+                <Check size={16} /> Save
+              </button>
+            </div>
+          </div>,
+          document.body,
         )}
-        <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
-      </div>
         </>
       )}
     </div>
