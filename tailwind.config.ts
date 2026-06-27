@@ -95,14 +95,6 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.35' },
         },
-        'round-in-right': {
-          from: { opacity: '0', transform: 'translateX(28px)' },
-          to: { opacity: '1', transform: 'translateX(0)' },
-        },
-        'round-in-left': {
-          from: { opacity: '0', transform: 'translateX(-28px)' },
-          to: { opacity: '1', transform: 'translateX(0)' },
-        },
       },
       animation: {
         breathe: 'breathe 6s var(--ease-calm, ease-in-out) infinite',
@@ -111,8 +103,6 @@ export default {
         rise: 'rise 0.7s var(--ease-calm, ease-out) both',
         radar: 'radar 0.7s var(--ease-calm, ease-out) both',
         'live-pulse': 'live-pulse 1.4s ease-in-out infinite',
-        'round-in-right': 'round-in-right 0.34s var(--ease-calm, ease-out) both',
-        'round-in-left': 'round-in-left 0.34s var(--ease-calm, ease-out) both',
       },
     },
   },

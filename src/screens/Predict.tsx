@@ -11,17 +11,18 @@ import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { cn } from '@/lib/utils'
 
-/** Left-to-right knockout rounds (no GS — Predict is about picking winners). */
 const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
-const ROUND_LABEL: Record<string, string> = { R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' }
 /** Minimap dash counts per round (the Final shows a trophy). */
 const MINI_LINES = [5, 4, 3, 2]
-const ROW_H = 84
-const GUTTER = 36
-const DESK_CARD_W = 224
-const DESK_COL_W = DESK_CARD_W + GUTTER
-const CONN = 'border-black/25 dark:border-white/30'
-const STUB = 'bg-black/25 dark:bg-white/30'
+const CARD_W = 172
+const GUTTER = 26
+const COL_W = CARD_W + GUTTER
+const ROW_H = 124
+const CONN = 'border-black/15 dark:border-white/20'
+const STUB = 'bg-black/15 dark:bg-white/20'
+
+const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '')
+const fmtTime = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
 
 /** True bracket position of every match (in-order walk of the feeder graph), so a
  *  column sorted by it puts each pair beside the match it feeds. */
@@ -88,43 +89,10 @@ export function Predict() {
     finalOcc && (predictions[104] === finalOcc.homeCode || predictions[104] === finalOcc.awayCode) ? predictions[104] : null
   const champion = champCode ? teamByCode[champCode] : null
 
-  const cardProps = (no: number) => ({
-    no,
-    real: byNo.get(no),
-    homeCode: predicted[no]?.homeCode ?? null,
-    awayCode: predicted[no]?.awayCode ?? null,
-    pick: predictions[no] ?? null,
-    status: score.perMatch[no] ?? ('unpicked' as PickStatus),
-    onPick: (code: TeamCode) => setPrediction(no, code),
-  })
-
-  // ---- mobile: two-round adaptive window + slide animation ----
-  const [focus, setFocus] = useState(0) // 0..maxFocus
-  const maxFocus = COLUMNS.length - 2
-  const dir = useRef(1)
-  const goFocus = (f: number) => {
-    const next = Math.max(0, Math.min(maxFocus, f))
-    dir.current = next >= focus ? 1 : -1
-    setFocus(next)
-  }
-  const mobileBoardRef = useRef<HTMLDivElement>(null)
-  const mounted = useRef(false)
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true
-      return
-    }
-    const el = mobileBoardRef.current
-    if (!el) return
-    const y = window.scrollY + el.getBoundingClientRect().top - 130
-    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
-  }, [focus])
-
-  // ---- desktop: full bracket, scrubber mirrors horizontal scroll ----
+  // One continuous, connected bracket; navigating slides it left (smooth scroll).
   const scrollRef = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ left: 0, client: 1, full: 1 })
   useEffect(() => {
-    if (!isDesktop) return
     const el = scrollRef.current
     if (!el) return
     const measure = () => setBox({ left: el.scrollLeft, client: el.clientWidth, full: el.scrollWidth })
@@ -138,26 +106,31 @@ export function Predict() {
     }
   }, [isDesktop])
   const maxScroll = Math.max(0, box.full - box.client)
-  const deskLensW = Math.min(100, Math.max(18, (box.client / box.full) * 100))
-  const deskLensL = maxScroll > 0 ? (box.left / maxScroll) * (100 - deskLensW) : 0
-  const deskActive = maxScroll > 0 ? Math.round(box.left / DESK_COL_W) : 0
+  const lensWidth = Math.min(100, Math.max(16, (box.client / box.full) * 100))
+  const lensLeft = maxScroll > 0 ? (box.left / maxScroll) * (100 - lensWidth) : 0
+  const activeRound = maxScroll > 0 ? Math.min(COLUMNS.length - 1, Math.round(box.left / COL_W)) : 0
 
-  // scrubber props differ per layout
-  const nav = isDesktop
-    ? {
-        lensLeft: deskLensL,
-        lensWidth: deskLensW,
-        highlight: new Set([deskActive, deskActive + 1]),
-        onSeek: (frac: number) => scrollRef.current?.scrollTo({ left: frac * maxScroll }),
-        onTapRound: (i: number) => scrollRef.current?.scrollTo({ left: Math.min(maxScroll, i * DESK_COL_W), behavior: 'smooth' }),
-      }
-    : {
-        lensLeft: (focus / COLUMNS.length) * 100,
-        lensWidth: (2 / COLUMNS.length) * 100,
-        highlight: new Set([focus, focus + 1]),
-        onSeek: (frac: number) => goFocus(Math.round(frac * maxFocus)),
-        onTapRound: (i: number) => goFocus(Math.min(maxFocus, i)),
-      }
+  const goToRound = (i: number) => {
+    const sc = scrollRef.current
+    if (!sc) return
+    sc.scrollTo({ left: Math.min(maxScroll, i * COL_W), behavior: 'smooth' }) // slide the board left
+    const el = sc.querySelector<HTMLElement>(`[data-round-start="${COLUMNS[i]}"]`)
+    if (el) {
+      const y = window.scrollY + el.getBoundingClientRect().top - 150
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
+    }
+  }
+  const scrubTo = (frac: number) => scrollRef.current?.scrollTo({ left: frac * maxScroll })
+
+  const cardProps = (no: number) => ({
+    no,
+    real: byNo.get(no),
+    homeCode: predicted[no]?.homeCode ?? null,
+    awayCode: predicted[no]?.awayCode ?? null,
+    pick: predictions[no] ?? null,
+    status: score.perMatch[no] ?? ('unpicked' as PickStatus),
+    onPick: (code: TeamCode) => setPrediction(no, code),
+  })
 
   return (
     <div className="animate-fade-in">
@@ -195,58 +168,52 @@ export function Predict() {
         </div>
       )}
 
-      <BracketNav rounds={COLUMNS} {...nav} />
-
-      {isDesktop ? (
-        <div ref={scrollRef} className="-mx-5 overflow-x-auto px-5 pb-4 sm:mx-0 sm:px-0">
-          <div className="flex" style={{ minHeight: cols[0].nos.length * ROW_H }}>
-            {cols.map((col, ci) => (
-              <Fragment key={col.stage}>
-                <div className="flex shrink-0 flex-col" style={{ width: DESK_CARD_W }}>
-                  {col.nos.map((no, i) => (
-                    <Slot key={no} hasNext={ci < cols.length - 1} hasPrev={ci > 0} topOfPair={i % 2 === 0}>
-                      <MatchCard {...cardProps(no)} />
-                    </Slot>
-                  ))}
-                </div>
-                {ci < cols.length - 1 && <div className="shrink-0" style={{ width: GUTTER }} />}
+      {/* Navigator — minimap + lens on mobile; plain round labels on desktop. */}
+      <div className="sticky top-14 z-20 -mx-5 mb-4 select-none bg-canvas/90 px-5 pb-3 pt-3 backdrop-blur-xl sm:-mx-8 sm:px-8">
+        {isDesktop ? (
+          <div className="mx-auto flex max-w-fit">
+            {COLUMNS.map((r, i) => (
+              <Fragment key={r}>
+                <button
+                  onClick={() => goToRound(i)}
+                  style={{ width: CARD_W }}
+                  className={cn(
+                    'shrink-0 text-center font-grotesk text-xs font-bold uppercase tracking-label transition-colors',
+                    i === activeRound ? 'text-ink' : 'text-faint hover:text-muted',
+                  )}
+                >
+                  {r}
+                </button>
+                {i < COLUMNS.length - 1 && <div className="shrink-0" style={{ width: GUTTER }} />}
               </Fragment>
             ))}
           </div>
-        </div>
-      ) : (
-        <div ref={mobileBoardRef} className="mx-auto w-full max-w-xl">
-          <div className="mb-3 flex items-center gap-2 px-1 text-2xs font-semibold uppercase tracking-label text-faint">
-            <span className="text-ink">{ROUND_LABEL[COLUMNS[focus]]}</span>
-            <ChevronRight size={12} className="text-faint" />
-            <span>{ROUND_LABEL[COLUMNS[focus + 1]]}</span>
-          </div>
-          <div key={focus} className={dir.current >= 0 ? 'animate-round-in-right' : 'animate-round-in-left'}>
-            <div className="flex" style={{ minHeight: cols[focus].nos.length * ROW_H }}>
-              <div className="flex flex-1 flex-col">
-                {cols[focus].nos.map((no, i) => (
-                  <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
-                    <MatchCard {...cardProps(no)} />
+        ) : (
+          <BracketNav rounds={COLUMNS} lensLeft={lensLeft} lensWidth={lensWidth} activeRound={activeRound} onSeek={scrubTo} onTapRound={goToRound} />
+        )}
+      </div>
+
+      <div ref={scrollRef} className="-mx-5 overflow-x-auto px-5 pb-6 sm:mx-0 sm:px-0">
+        <div className="mx-auto flex w-max" style={{ minHeight: cols[0].nos.length * ROW_H }}>
+          {cols.map((col, ci) => (
+            <Fragment key={col.stage}>
+              <div className="flex shrink-0 flex-col" style={{ width: CARD_W }}>
+                {col.nos.map((no, i) => (
+                  <Slot key={no} hasNext={ci < cols.length - 1} hasPrev={ci > 0} topOfPair={i % 2 === 0}>
+                    <MatchCard {...cardProps(no)} anchor={i === 0 ? col.stage : undefined} />
                   </Slot>
                 ))}
               </div>
-              <div className="shrink-0" style={{ width: GUTTER }} />
-              <div className="flex flex-1 flex-col">
-                {cols[focus + 1].nos.map((no) => (
-                  <Slot key={no} hasNext={false} hasPrev topOfPair={false}>
-                    <MatchCard {...cardProps(no)} muted />
-                  </Slot>
-                ))}
-              </div>
-            </div>
-          </div>
+              {ci < cols.length - 1 && <div className="shrink-0" style={{ width: GUTTER }} />}
+            </Fragment>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
-/** One match cell with its rounded bracket connectors in the gutters. */
+/** One match cell with its slim, lightly-rounded bracket connectors in the gutters. */
 function Slot({
   hasNext,
   hasPrev,
@@ -260,44 +227,37 @@ function Slot({
 }) {
   return (
     <div className="relative flex min-h-0 flex-1 items-center">
-      {/* connector INTO this card from the previous round (straight stub) */}
       {hasPrev && <div className={cn('pointer-events-none absolute top-1/2 h-px', STUB)} style={{ right: '100%', width: GUTTER / 2 }} />}
-      {/* rounded elbow OUT to the next round — half the pair each */}
       {hasNext &&
         (topOfPair ? (
-          <div className={cn('pointer-events-none absolute rounded-tr-[12px] border-t border-r', CONN)} style={{ left: '100%', top: '50%', width: GUTTER / 2, height: '50%' }} />
+          <div className={cn('pointer-events-none absolute rounded-tr-[5px] border-t border-r', CONN)} style={{ left: '100%', top: '50%', width: GUTTER / 2, height: '50%' }} />
         ) : (
-          <div className={cn('pointer-events-none absolute rounded-br-[12px] border-b border-r', CONN)} style={{ left: '100%', top: 0, width: GUTTER / 2, height: '50%' }} />
+          <div className={cn('pointer-events-none absolute rounded-br-[5px] border-b border-r', CONN)} style={{ left: '100%', top: 0, width: GUTTER / 2, height: '50%' }} />
         ))}
       {children}
     </div>
   )
 }
 
-/**
- * The navigator: round labels over a draggable minimap (clean dashes per round,
- * a trophy for the Final). The lens marks the rounds on screen; drag it or tap a
- * round to move. Same control on mobile (drives the window) and desktop (scroll).
- */
+/** Mobile navigator: round labels over a draggable minimap (clean dashes, trophy). */
 function BracketNav({
   rounds,
   lensLeft,
   lensWidth,
-  highlight,
+  activeRound,
   onSeek,
   onTapRound,
 }: {
   rounds: Stage[]
   lensLeft: number
   lensWidth: number
-  highlight: Set<number>
+  activeRound: number
   onSeek: (frac: number) => void
   onTapRound: (i: number) => void
 }) {
   const n = rounds.length
   const trackRef = useRef<HTMLDivElement>(null)
   const grab = useRef<number | null>(null)
-
   const fracFromX = (clientX: number) => {
     const el = trackRef.current
     if (!el) return 0
@@ -307,18 +267,14 @@ function BracketNav({
     const left = Math.max(0, Math.min(usable, clientX - r.left - (grab.current ?? lensPx / 2)))
     return left / usable
   }
-
   return (
-    <div className="sticky top-14 z-20 -mx-5 mb-5 select-none bg-canvas/90 px-5 pb-3 pt-3 backdrop-blur-xl sm:-mx-8 sm:px-8">
+    <>
       <div className="mb-2 flex px-1">
         {rounds.map((r, i) => (
           <button
             key={r}
             onClick={() => onTapRound(i)}
-            className={cn(
-              'flex-1 text-center font-grotesk text-xs font-bold uppercase tracking-label transition-colors',
-              highlight.has(i) ? 'text-ink' : 'text-faint hover:text-muted',
-            )}
+            className={cn('flex-1 text-center font-grotesk text-xs font-bold uppercase tracking-label transition-colors', i === activeRound || i === activeRound + 1 ? 'text-ink' : 'text-faint hover:text-muted')}
           >
             {r}
           </button>
@@ -339,13 +295,13 @@ function BracketNav({
         onPointerMove={(e) => grab.current != null && onSeek(fracFromX(e.clientX))}
         onPointerUp={() => (grab.current = null)}
         onPointerCancel={() => (grab.current = null)}
-        className="relative h-12 cursor-grab touch-none overflow-hidden rounded-[16px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] active:cursor-grabbing dark:bg-white/[0.06] dark:ring-white/10"
+        className="relative h-11 cursor-grab touch-none overflow-hidden rounded-[14px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] active:cursor-grabbing dark:bg-white/[0.06] dark:ring-white/10"
       >
         <div className="pointer-events-none absolute inset-0 flex">
           {rounds.map((r, i) => (
             <div key={r} className="flex flex-1 flex-col items-center justify-center gap-[3px] px-3">
               {i === n - 1 ? (
-                <Trophy size={18} className="text-muted" />
+                <Trophy size={16} className="text-muted" />
               ) : (
                 Array.from({ length: MINI_LINES[i] ?? 2 }).map((_, k) => <div key={k} className={cn('h-[2px] w-full rounded-full', STUB)} />)
               )}
@@ -353,65 +309,52 @@ function BracketNav({
           ))}
         </div>
         <div
-          className="pointer-events-none absolute inset-y-1 flex items-center justify-between rounded-[12px] bg-black/[0.06] px-1 ring-2 ring-inset ring-black/40 transition-[left] duration-200 ease-calm dark:bg-white/15 dark:ring-white/70"
+          className="pointer-events-none absolute inset-y-1 flex items-center justify-between rounded-[11px] bg-black/[0.06] px-1 ring-2 ring-inset ring-black/40 transition-[left] duration-200 ease-calm dark:bg-white/15 dark:ring-white/70"
           style={{ left: `${lensLeft}%`, width: `${lensWidth}%` }}
         >
-          <ChevronLeft size={14} className="text-muted" />
-          <ChevronRight size={14} className="text-muted" />
+          <ChevronLeft size={13} className="text-muted" />
+          <ChevronRight size={13} className="text-muted" />
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
 function MatchCard({
   no,
+  anchor,
   real,
   homeCode,
   awayCode,
   pick,
   status,
   onPick,
-  muted,
 }: {
   no: number
+  anchor?: Stage
   real: ResolvedBracketMatch | undefined
   homeCode: TeamCode | null
   awayCode: TeamCode | null
   pick: TeamCode | null
   status: PickStatus
   onPick: (code: TeamCode) => void
-  muted?: boolean
 }) {
   const def = BRACKET.find((b) => b.matchNo === no)
   const finished = real?.status === 'finished'
   return (
-    <div
-      className={cn(
-        'relative z-10 w-full rounded-[16px] p-1.5 ring-1 ring-inset backdrop-blur-xl',
-        muted
-          ? 'bg-black/[0.02] ring-black/[0.05] dark:bg-white/[0.03] dark:ring-white/[0.07]'
-          : 'bg-black/[0.04] ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10',
-      )}
-    >
-      <div className="mb-1 flex items-center justify-between px-1.5">
-        <span className="text-[9px] font-medium uppercase tracking-label text-faint">M{no}</span>
-        {finished && (
-          <span className="rounded-full bg-black/[0.04] px-1.5 py-px text-[9px] font-semibold uppercase tracking-label text-faint dark:bg-white/10">
-            FT
-          </span>
-        )}
+    <div data-round-start={anchor} style={{ scrollMarginTop: 150 }} className="w-full overflow-hidden rounded-[14px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10">
+      <div className="px-3 pb-1 pt-2 text-2xs text-faint">
+        {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
       </div>
-      <Side code={homeCode} label={def?.home.label} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
-      <div className="my-0.5 h-px bg-black/5 dark:bg-white/[0.07]" />
-      <Side code={awayCode} label={def?.away.label} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+      <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+      <div className="mx-3 h-px bg-black/5 dark:bg-white/[0.07]" />
+      <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
     </div>
   )
 }
 
 function Side({
   code,
-  label,
   score,
   picked,
   status,
@@ -420,7 +363,6 @@ function Side({
   onPick,
 }: {
   code: TeamCode | null
-  label?: string
   score: number | null | undefined
   picked: boolean
   status: PickStatus
@@ -439,25 +381,23 @@ function Side({
       disabled={!code}
       onClick={() => code && onPick(code)}
       className={cn(
-        'flex w-full items-center justify-between gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors',
-        code && 'hover:bg-black/5 dark:hover:bg-white/10',
-        picked && !finished && 'bg-team-soft ring-1 ring-inset ring-team/40',
-        correct && 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/30',
+        'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
+        code && 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
+        picked && !finished && 'bg-team-soft',
+        correct && 'bg-emerald-500/15',
         wrong && 'opacity-40',
         dim && !wrong && 'opacity-45',
       )}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        {team ? (
-          <Flag code={code} size={18} />
-        ) : (
-          <span className="h-[18px] w-[18px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
-        )}
-        <span className={cn('truncate text-[13px]', team ? 'text-ink' : 'text-faint', (isWinner || (picked && !finished) || correct) && 'font-semibold')}>
-          {team ? team.name : label ?? '—'}
-        </span>
-        {correct && <Check size={12} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
+      {team ? (
+        <Flag code={code} size={22} className="shrink-0" />
+      ) : (
+        <span className="h-[22px] w-[22px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
+      )}
+      <span className={cn('flex-1 truncate text-[15px]', team ? 'font-semibold text-ink' : 'text-faint', (isWinner || (picked && !finished) || correct) && 'font-semibold')}>
+        {team ? team.name : 'TBD'}
       </span>
+      {correct && <Check size={13} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
       {score != null && <span className="font-grotesk text-sm font-bold tnum text-ink">{score}</span>}
     </button>
   )
