@@ -129,7 +129,7 @@ export function Predict() {
     // The Final has only one match, so its preview column would be short; give the
     // window enough height to seat the centered Final plus the third-place card
     // beneath it without overlap.
-    const winH = previewIsFinal ? Math.max(cols[f].nos.length * ROW_H, 340) : cols[f].nos.length * ROW_H
+    const winH = previewIsFinal ? Math.max(cols[f].nos.length * ROW_H, 360) : cols[f].nos.length * ROW_H
     return (
       <div className="flex w-full" style={{ minHeight: winH }}>
         {/* focused round (left) — connectors fan into the next column */}
@@ -147,15 +147,12 @@ export function Predict() {
         <div className="relative flex flex-1 flex-col">
           {cols[f + 1].nos.map((no) => (
             <Slot key={no} hasNext={false} hasPrev topOfPair>
-              <MatchCard {...cardProps(no)} muted />
+              <MatchCard {...cardProps(no)} muted label={previewIsFinal ? 'Final' : undefined} />
             </Slot>
           ))}
           {previewIsFinal && (
-            <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 64 }}>
-              <p className="mb-1.5 text-center font-grotesk text-2xs font-bold uppercase tracking-label text-faint">
-                Third Place Match
-              </p>
-              <MatchCard {...cardProps(THIRD_NO)} muted />
+            <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 76 }}>
+              <MatchCard {...cardProps(THIRD_NO)} muted label="Third Place Match" />
             </div>
           )}
         </div>
@@ -265,17 +262,14 @@ export function Predict() {
                   <div className="relative flex shrink-0 flex-col" style={{ width: CARD_W }}>
                     {col.nos.map((no, i) => (
                       <Slot key={no} hasNext={ci < cols.length - 1} hasPrev={ci > 0} topOfPair={i % 2 === 0}>
-                        <MatchCard {...cardProps(no)} />
+                        <MatchCard {...cardProps(no)} label={col.stage === 'F' ? 'Final' : undefined} />
                       </Slot>
                     ))}
                     {/* Third-place play-off sits below the centered Final, wired to
                         nothing — positioned out of flow so the Final stays centered. */}
                     {col.stage === 'F' && (
-                      <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 64 }}>
-                        <p className="mb-1.5 text-center font-grotesk text-2xs font-bold uppercase tracking-label text-faint">
-                          Third Place Match
-                        </p>
-                        <MatchCard {...cardProps(THIRD_NO)} muted />
+                      <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 76 }}>
+                        <MatchCard {...cardProps(THIRD_NO)} muted label="Third Place Match" />
                       </div>
                     )}
                   </div>
@@ -412,6 +406,7 @@ function MatchCard({
   status,
   onPick,
   muted,
+  label,
 }: {
   no: number
   real: ResolvedBracketMatch | undefined
@@ -421,22 +416,30 @@ function MatchCard({
   status: PickStatus
   onPick: (code: TeamCode) => void
   muted?: boolean
+  label?: string
 }) {
   const def = BRACKET.find((b) => b.matchNo === no)
   const finished = real?.status === 'finished'
   return (
-    <div
-      className={cn(
-        'w-full overflow-hidden rounded-[10px] font-system ring-1 ring-inset',
-        muted ? 'bg-black/[0.02] ring-black/[0.05] dark:bg-white/[0.03] dark:ring-white/[0.07]' : 'bg-black/[0.04] ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10',
+    <div className="relative w-full">
+      {/* a round label sitting at the card's top-left (out of flow, so it never
+          shifts the card or gets clipped by the card's overflow). */}
+      {label && (
+        <span className="absolute -top-[19px] left-1 font-grotesk text-2xs font-bold uppercase tracking-label text-faint">{label}</span>
       )}
-    >
-      <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
-        {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
+      <div
+        className={cn(
+          'w-full overflow-hidden rounded-[10px] font-system ring-1 ring-inset',
+          muted ? 'bg-black/[0.02] ring-black/[0.05] dark:bg-white/[0.03] dark:ring-white/[0.07]' : 'bg-black/[0.04] ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10',
+        )}
+      >
+        {/* one quiet divider: the date header sits above the two teams */}
+        <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
+          {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
+        </div>
+        <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+        <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
       </div>
-      <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
-      <div className="mx-3 h-px bg-black/5 dark:bg-white/[0.07]" />
-      <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
     </div>
   )
 }
