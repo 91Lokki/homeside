@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Check, ChevronLeft, ChevronRight, Trophy } from 'lucide-react'
+import { Check, Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
 import { resolveBracket } from '@/domain/bracket'
@@ -15,10 +15,9 @@ const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
 const CARD_W = 176
 const GUTTER = 26
 const COL_W = CARD_W + GUTTER
-// Flat cards (~66px) sit centered in a tall slot, so there is comfortable, even
-// air (~45px) above and below each one — Apple keeps the cards short but the
-// vertical spacing generous, especially the tight R32 pairs.
-const ROW_H = 122
+// Flat cards (~66px) sit centered in a slot, leaving moderate, even air between
+// them — Apple keeps the cards short but the spacing comfortable, not cramped.
+const ROW_H = 108
 const THIRD_NO = 103 // third-place play-off (BRACKET stage "F3")
 const SLIDE_MS = 380
 const CONN = 'border-black/15 dark:border-white/20'
@@ -127,8 +126,12 @@ export function Predict() {
   /** A focused-round window: the focused column + the next (preview) column. */
   const renderWindow = (f: number) => {
     const previewIsFinal = cols[f + 1].stage === 'F'
+    // The Final has only one match, so its preview column would be short; give the
+    // window enough height to seat the centered Final plus the third-place card
+    // beneath it without overlap.
+    const winH = previewIsFinal ? Math.max(cols[f].nos.length * ROW_H, 340) : cols[f].nos.length * ROW_H
     return (
-      <div className="flex w-full" style={{ minHeight: cols[f].nos.length * ROW_H }}>
+      <div className="flex w-full" style={{ minHeight: winH }}>
         {/* focused round (left) — connectors fan into the next column */}
         <div className="flex flex-1 flex-col">
           {cols[f].nos.map((no, i) => (
@@ -138,20 +141,20 @@ export function Predict() {
           ))}
         </div>
         <div className="shrink-0" style={{ width: GUTTER }} />
-        {/* preview round (right) — a rounded stub runs off the right edge toward the
-            round that isn't revealed yet, unless this preview is already the Final */}
-        <div className="flex flex-1 flex-col">
+        {/* preview round (right). The Final's match stays centered (so its connector
+            lines up with the SF pair); the third-place card is positioned below it,
+            outside the flex flow, wired to nothing. */}
+        <div className="relative flex flex-1 flex-col">
           {cols[f + 1].nos.map((no) => (
-            <Slot key={no} hasNext={false} hasPrev topOfPair edgeStub={!previewIsFinal}>
+            <Slot key={no} hasNext={false} hasPrev topOfPair>
               <MatchCard {...cardProps(no)} muted />
             </Slot>
           ))}
           {previewIsFinal && (
-            <div className="mt-7">
+            <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 64 }}>
               <p className="mb-1.5 text-center font-grotesk text-2xs font-bold uppercase tracking-label text-faint">
                 Third Place Match
               </p>
-              {/* stands alone — no bracket lines connect to it */}
               <MatchCard {...cardProps(THIRD_NO)} muted />
             </div>
           )}
@@ -259,15 +262,16 @@ export function Predict() {
             <div className="mx-auto flex w-max" style={{ minHeight: cols[0].nos.length * ROW_H }}>
               {cols.map((col, ci) => (
                 <Fragment key={col.stage}>
-                  <div className="flex shrink-0 flex-col" style={{ width: CARD_W }}>
+                  <div className="relative flex shrink-0 flex-col" style={{ width: CARD_W }}>
                     {col.nos.map((no, i) => (
                       <Slot key={no} hasNext={ci < cols.length - 1} hasPrev={ci > 0} topOfPair={i % 2 === 0}>
                         <MatchCard {...cardProps(no)} />
                       </Slot>
                     ))}
-                    {/* Third-place play-off sits under the Final, wired to nothing. */}
+                    {/* Third-place play-off sits below the centered Final, wired to
+                        nothing — positioned out of flow so the Final stays centered. */}
                     {col.stage === 'F' && (
-                      <div className="mt-7">
+                      <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 64 }}>
                         <p className="mb-1.5 text-center font-grotesk text-2xs font-bold uppercase tracking-label text-faint">
                           Third Place Match
                         </p>
@@ -337,13 +341,11 @@ function Slot({
   hasNext,
   hasPrev,
   topOfPair,
-  edgeStub,
   children,
 }: {
   hasNext: boolean
   hasPrev: boolean
   topOfPair: boolean
-  edgeStub?: boolean
   children: ReactNode
 }) {
   return (
@@ -355,11 +357,6 @@ function Slot({
         ) : (
           <div className={cn('pointer-events-none absolute rounded-br-[4px] border-b border-r', CONN)} style={{ left: '100%', top: 0, width: GUTTER / 2, height: '50%' }} />
         ))}
-      {/* a short rounded stub off the right edge — hints the bracket continues to
-          the next (not-yet-revealed) round, so a round switch reads as continuous. */}
-      {edgeStub && (
-        <div className={cn('pointer-events-none absolute top-1/2 -translate-y-1/2 rounded-r-[4px] border-y border-r', CONN)} style={{ left: '100%', width: 16, height: 9 }} />
-      )}
       {children}
     </div>
   )
@@ -386,14 +383,11 @@ function MobileNav({ focus, maxFocus, onFocus }: { focus: number; maxFocus: numb
       onPointerMove={(e) => e.currentTarget.hasPointerCapture(e.pointerId) && onFocus(focusFromX(e.clientX))}
       className="relative h-11 cursor-grab touch-none select-none overflow-hidden rounded-[14px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] active:cursor-grabbing dark:bg-white/[0.06] dark:ring-white/10"
     >
-      {/* lens (behind labels) marks the two rounds on screen */}
+      {/* lens (behind labels) marks the two rounds on screen — minimal, no arrows */}
       <div
-        className="pointer-events-none absolute inset-y-1 flex items-center justify-between rounded-[11px] bg-black/[0.05] px-1 ring-2 ring-inset ring-black/30 transition-[left] duration-300 ease-calm dark:bg-white/12 dark:ring-white/60"
+        className="pointer-events-none absolute inset-y-1 rounded-[11px] bg-black/[0.05] ring-2 ring-inset ring-black/30 transition-[left] duration-300 ease-calm dark:bg-white/12 dark:ring-white/60"
         style={{ left: `${(focus / n) * 100}%`, width: `${(2 / n) * 100}%` }}
-      >
-        <ChevronLeft size={13} className="text-muted" />
-        <ChevronRight size={13} className="text-muted" />
-      </div>
+      />
       <div className="pointer-events-none absolute inset-0 flex">
         {COLUMNS.map((r, i) => (
           <div key={r} className="flex flex-1 items-center justify-center">
