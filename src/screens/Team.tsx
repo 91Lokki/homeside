@@ -193,15 +193,8 @@ export function Team() {
           <Flag code={t.code} size={48} className="shrink-0" />
           <div className="min-w-0">
             <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{t.name}</h1>
-            {t.nameTC && <span className="mt-1.5 block font-tc text-base text-faint">{t.nameTC}</span>}
           </div>
         </div>
-        {t.symbol && (
-          <p className="mt-4 text-sm text-muted">
-            <span className="text-faint">National emblem · </span>
-            {t.symbol}
-          </p>
-        )}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">
             {t.pot === 1 ? 'Top seed · Pot 1' : `Pot ${t.pot}`}
