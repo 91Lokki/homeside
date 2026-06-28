@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent as ReactTouchEvent } from 'react'
 import { computeQualification, finishedFor, liveMatchFor, nextMatchFor, recordFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
 import { AXIS_LABEL, buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
@@ -92,6 +92,46 @@ export function Team() {
   const ratings = useMemo(() => computeRatings(stats, league), [stats, league])
   const qualMap = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
+  // Mobile swipe order: home team, then its same-group opponents (one swipe
+  // away), then everyone else in a fixed, stable order. Cyclic.
+  const order = useMemo(() => {
+    if (!homeTeam) return []
+    const h = homeTeam.code
+    const sameGroup = TEAMS.filter((t) => t.group === homeTeam.group && t.code !== h).map((t) => t.code)
+    const rest = TEAMS.filter((t) => t.group !== homeTeam.group)
+      .sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
+      .map((t) => t.code)
+    return [h, ...sameGroup, ...rest]
+  }, [homeTeam])
+
+  // Slide direction for the switch animation + a one-time mobile swipe hint.
+  const [dir, setDir] = useState<'next' | 'prev' | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const [showHint, setShowHint] = useState(() => {
+    try {
+      return !localStorage.getItem('homeside.teamSwipeHint')
+    } catch {
+      return false
+    }
+  })
+  const dismissHint = useCallback(() => {
+    setShowHint((on) => {
+      if (on) {
+        try {
+          localStorage.setItem('homeside.teamSwipeHint', '1')
+        } catch {
+          /* ignore */
+        }
+      }
+      return false
+    })
+  }, [])
+  useEffect(() => {
+    if (!showHint) return
+    const t = window.setTimeout(dismissHint, 5000)
+    return () => window.clearTimeout(t)
+  }, [showHint, dismissHint])
+
   if (!homeTeam || !team) return null
 
   // Team accent scoped to THIS page only (overrides the global --team within this
@@ -105,6 +145,37 @@ export function Team() {
   } as CSSProperties
   const browsingAway = team.code !== homeTeam.code
 
+  // Switch the viewed team. `selectTeam` (dropdown / Back) fades; swiping slides.
+  const selectTeam = (c: string) => {
+    setDir(null)
+    setViewCode(c)
+  }
+  const swipe = (delta: 1 | -1) => {
+    if (order.length === 0) return
+    const i = order.indexOf(team.code)
+    const ni = ((i < 0 ? 0 : i) + delta + order.length) % order.length
+    setDir(delta === 1 ? 'next' : 'prev')
+    setViewCode(order[ni])
+  }
+  const onTouchStart = (e: ReactTouchEvent) => {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+  }
+  const onTouchEnd = (e: ReactTouchEvent) => {
+    const s = touchStart.current
+    touchStart.current = null
+    if (!s) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - s.x
+    const dy = t.clientY - s.y
+    // Commit only a clearly-horizontal swipe, so vertical scrolling is untouched.
+    if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      dismissHint()
+      swipe(dx < 0 ? 1 : -1)
+    }
+  }
+  const animClass = dir === 'next' ? 'animate-slide-from-right' : dir === 'prev' ? 'animate-slide-from-left' : 'animate-fade-in'
+
   const rec = recordFor(matches, code)
   const qual = qualMap.get(code)
   const live = liveMatchFor(matches, code)
@@ -117,23 +188,42 @@ export function Team() {
     (squad?.players ?? []).filter((p) => p.position === pos).sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
 
   return (
-    <div className="grid grid-cols-1 gap-4 animate-fade-in lg:grid-cols-12 lg:items-start" style={teamVars}>
-      {/* Team switcher — browse any national team. Local to this page: it never
-          changes the global home team or colour (see viewCode above). */}
-      <div className="flex flex-wrap items-center gap-2 lg:col-span-12">
-        <span className="label mr-1">Viewing</span>
-        <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={setViewCode} />
-        {browsingAway && (
-          <button
-            onClick={() => setViewCode(homeTeam.code)}
-            className="rounded-pill px-3 py-1.5 text-2xs font-medium text-faint transition-colors hover:text-ink"
-          >
-            ← Back to {homeTeam.name}
-          </button>
-        )}
+    <div className="animate-fade-in" style={teamVars} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* Controls — desktop: searchable selector + Back. Mobile: swipe instead
+          (no selector); a subtle Back chip or a one-time hint sits here. */}
+      <div className="mb-4 flex min-h-[2.25rem] items-center gap-2">
+        <div className="hidden items-center gap-2 sm:flex">
+          <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} />
+          {browsingAway && (
+            <button
+              onClick={() => selectTeam(homeTeam.code)}
+              className="rounded-pill px-3 py-1.5 text-2xs font-medium text-faint transition-colors hover:text-ink"
+            >
+              ← Back to {homeTeam.name}
+            </button>
+          )}
+        </div>
+        <div className="flex w-full items-center justify-center sm:hidden">
+          {browsingAway ? (
+            <button
+              onClick={() => selectTeam(homeTeam.code)}
+              className="inline-flex items-center gap-1.5 rounded-pill bg-black/[0.04] px-3 py-1.5 text-2xs font-medium text-muted ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10"
+            >
+              ← Back to {homeTeam.name}
+            </button>
+          ) : showHint ? (
+            <span className="text-2xs font-medium tracking-wide text-faint opacity-80">‹ Swipe to explore teams ›</span>
+          ) : null}
+        </div>
       </div>
 
-      {/* Identity hero — calm national-team banner. No result data here. */}
+      {/* Swipeable team profile — re-keyed per team so each switch slides/fades. */}
+      <div
+        key={team.code}
+        className={cn('grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start', animClass)}
+        style={{ overflowX: 'clip' }}
+      >
+        {/* Identity hero — calm national-team banner. No result data here. */}
       <section className="relative overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5 sm:px-7 lg:col-span-12">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
         <div className="pointer-events-none absolute right-4 top-3 animate-breathe sm:right-6">
@@ -303,6 +393,7 @@ export function Team() {
             </section>
           </>
         )}
+      </div>
       </div>
     </div>
   )
