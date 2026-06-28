@@ -4,6 +4,7 @@ import { ChevronDown, Search, X } from 'lucide-react'
 import { TEAMS, teamByCode } from '@/data/teams'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { cn } from '@/lib/utils'
 import { Flag } from './Flag'
 
@@ -19,6 +20,7 @@ export function TeamSwitcher({
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const t = useT()
+  const tName = useTName()
   const isDesktop = useMediaQuery('(min-width: 640px)')
   const cur = teamByCode[current]
 
@@ -63,7 +65,7 @@ export function TeamSwitcher({
               )}
             >
               <Flag code={tm.code} size={24} className="shrink-0" />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{tm.name}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{tName(tm)}</span>
               {tm.code === homeCode && (
                 <span className="shrink-0 rounded-full bg-sunken px-1.5 py-0.5 text-[10px] font-semibold text-faint">{t.switcherHome}</span>
               )}
@@ -85,7 +87,7 @@ export function TeamSwitcher({
         className="flex items-center gap-2.5 rounded-pill bg-black/[0.04] py-1.5 pl-2 pr-3 ring-1 ring-inset ring-black/[0.06] transition-colors hover:bg-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10 dark:hover:bg-white/[0.1]"
       >
         <Flag code={current} size={22} className="shrink-0" />
-        <span className="text-sm font-semibold text-ink">{cur?.name ?? current}</span>
+        <span className="text-sm font-semibold text-ink">{tName(cur, current)}</span>
         <ChevronDown size={15} className={cn('text-faint transition-transform duration-300 ease-calm', open && 'rotate-180')} />
       </button>
 

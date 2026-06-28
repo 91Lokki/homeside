@@ -32,6 +32,7 @@ import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { cn } from '@/lib/utils'
 
 const ROUND_SHORT: Record<Round, string> = { R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', FINAL: 'Final' }
@@ -83,6 +84,7 @@ export function Fantasy() {
   const [draft, setDraft] = useState<RoundSquad | null>(null)
   const emptySquad = (): RoundSquad => ({ players: [], captain: null })
   const t = useT()
+  const tName = useTName()
 
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -221,7 +223,7 @@ export function Fantasy() {
           <div className="min-w-0 flex-1">
             <p className="truncate font-grotesk text-sm font-medium leading-tight">{pick.name}</p>
             <p className="truncate text-2xs text-faint">
-              {t.fantasyPosAbbr[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {t.fantasySlotLabel[slot]}
+              {t.fantasyPosAbbr[pick.position] ?? pick.position} · {tName(teamByCode[pick.teamCode], pick.teamCode)} · {t.fantasySlotLabel[slot]}
             </p>
           </div>
           <button onClick={onClose} aria-label="Done" className="shrink-0 rounded-full p-1 text-faint hover:bg-black/[0.05] hover:text-ink dark:hover:bg-white/[0.06]">

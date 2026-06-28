@@ -20,6 +20,7 @@ import { FormDots, Label, Stat } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useTheme } from '@/state/theme'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { accentOn, rgba, readableInkOn } from '@/lib/prng'
 import { cn } from '@/lib/utils'
 
@@ -38,6 +39,7 @@ export function Team() {
   const { homeTeam, matches, apiStatus, healthKnown } = useApp()
   const { isDark } = useTheme()
   const t = useT()
+  const tName = useTName()
 
   const [viewCode, setViewCode] = useState(homeTeam?.code ?? '')
   const team = teamByCode[viewCode] ?? homeTeam
@@ -160,7 +162,7 @@ export function Team() {
         <div className="mt-2.5 flex items-center gap-3.5">
           <Flag code={tm.code} size={48} className="shrink-0" />
           <div className="min-w-0">
-            <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{tm.name}</h1>
+            <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{tName(tm)}</h1>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -186,7 +188,7 @@ export function Team() {
               onClick={() => selectTeam(homeTeam.code)}
               className="rounded-pill px-3 py-1.5 text-2xs font-medium text-faint transition-colors hover:text-ink"
             >
-              {t.teamBackTo(homeTeam.name)}
+              {t.teamBackTo(tName(homeTeam))}
             </button>
           )}
         </div>
@@ -197,7 +199,7 @@ export function Team() {
               onClick={() => selectTeam(homeTeam.code)}
               className="inline-flex items-center gap-1.5 rounded-pill bg-black/[0.04] px-3 py-1.5 text-2xs font-medium text-muted ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10"
             >
-              {t.teamBackToMobile(homeTeam.name)}
+              {t.teamBackToMobile(tName(homeTeam))}
             </button>
           )}
         </div>
@@ -236,7 +238,7 @@ export function Team() {
           <span className="ml-auto inline-flex items-center gap-2 rounded-pill bg-sunken px-3 py-1.5 text-2xs font-medium text-muted">
             {live ? <span className="font-semibold text-team">{t.teamLive}</span> : <span className="text-faint">{t.teamNext}</span>}
             <Flag code={oppCode} size={16} />
-            <span className="truncate text-ink">{teamByCode[oppCode]?.name ?? oppCode}</span>
+            <span className="truncate text-ink">{tName(teamByCode[oppCode], oppCode)}</span>
             {!live && <span className="tnum text-faint">{new Date(next.kickoff).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
           </span>
         )}
@@ -246,7 +248,7 @@ export function Team() {
         {!squad?.players?.length ? (
           <>
             <h2 className="mb-5 font-grotesk text-2xl font-semibold tracking-tight">{t.teamSquad}</h2>
-            <p className="text-sm text-muted">{t.teamNoSquad(team.name)}</p>
+            <p className="text-sm text-muted">{t.teamNoSquad(tName(team))}</p>
           </>
         ) : keyPlayers.length > 0 ? (
           <>
@@ -316,7 +318,7 @@ export function Team() {
       <div className="flex flex-col gap-4 lg:col-span-5">
         {noData ? (
           <div className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-6 text-sm text-muted">
-            {t.teamAbilityNoData(team.name, apiStatus, healthKnown)}
+            {t.teamAbilityNoData(tName(team), apiStatus, healthKnown)}
           </div>
         ) : (
           <>

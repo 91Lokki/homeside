@@ -12,6 +12,7 @@ import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { cn } from '@/lib/utils'
 
 const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
@@ -57,6 +58,7 @@ export function Predict() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [confirming, setConfirming] = useState(false)
   const t = useT()
+  const tName = useTName()
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const byNo = useMemo(() => new Map(resolved.map((m) => [m.matchNo, m])), [resolved])
@@ -228,7 +230,7 @@ export function Predict() {
         <div className="panel mb-6 inline-flex items-center gap-2 px-4 py-2">
           <Label>{t.predictChampion}</Label>
           <Flag code={champCode} size={20} />
-          <span className="font-grotesk text-lg font-semibold text-team">{champion.name}</span>
+          <span className="font-grotesk text-lg font-semibold text-team">{tName(champion)}</span>
         </div>
       )}
 
@@ -327,7 +329,7 @@ export function Predict() {
                 <Lock size={18} />
               </div>
               <h2 className="font-grotesk text-xl font-semibold tracking-tight">{t.predictConfirmTitle}</h2>
-              <p className="mt-2 text-sm text-muted">{t.predictConfirmDesc(champion?.name ?? null)}</p>
+              <p className="mt-2 text-sm text-muted">{t.predictConfirmDesc(champion ? tName(champion) : null)}</p>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   onClick={() => setConfirming(false)}
@@ -492,6 +494,7 @@ function Side({
   locked?: boolean
   tTBD: string
 }) {
+  const tName = useTName()
   const team = code ? teamByCode[code] : null
   const isWinner = finished && winner === code
   const correct = picked && status === 'correct'
@@ -516,7 +519,7 @@ function Side({
       ) : (
         <span className="h-[19px] w-[19px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
       )}
-      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? team.name : tTBD}</span>
+      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? tName(team) : tTBD}</span>
       {correct && <Check size={13} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
       {score != null && <span className="text-sm font-bold tnum text-ink">{score}</span>}
     </button>

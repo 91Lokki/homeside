@@ -9,6 +9,7 @@ import { ThemeProvider, useTheme } from '@/state/theme'
 import { LangProvider } from '@/state/lang'
 import { authEnabled } from '@/lib/supabase'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
 import { AuthButton } from '@/components/AuthButton'
@@ -47,6 +48,7 @@ function Shell() {
   const { homeCode, homeTeam, setHomeCode, connected } = useApp()
   const { isDark } = useTheme()
   const t = useT()
+  const tName = useTName()
   const [pickerOpen, setPickerOpen] = useState(false)
 
   // Onboarding gate — no home team yet, or the user chose to change it.
@@ -96,7 +98,7 @@ function Shell() {
               >
                 {homeTeam?.code}
               </span>
-              <span className="hidden text-xs font-medium sm:inline">{homeTeam?.name}</span>
+              <span className="hidden text-xs font-medium sm:inline">{tName(homeTeam)}</span>
             </button>
             <AuthButton />
             <LangToggle />

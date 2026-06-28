@@ -1,93 +1,190 @@
-# Homeside · a calm 2026 World Cup companion
+# Homeside
 
-Pick one national team as your **home team** and the app becomes its cozy home
-base — centered on a little **mascot you bond with** as the team plays its real
-matches. Not a stats dashboard; a quiet companion for the summer.
+Homeside is an unofficial 2026 World Cup companion app focused on two games:
+knockout bracket prediction and a small fantasy roster game. Around those games
+it provides a home-team experience, live-ish schedule/results, team pages, and an
+optional private league leaderboard.
 
-- **Home base** — your team's original mascot front and centre, with bond level,
-  the real W/D/L record, the star player, and squad members that unlock as the
-  bond grows.
-- **Schedule** — all 12 groups (A–L) with standings and fixtures in your local
-  time, real final scores, and a light report (goals, possession, shots) for
-  finished games.
-- **Knockout bracket** — the 32-team bracket (R32 → Final) using the official
-  FIFA pairing rules, with your team's path highlighted.
+## What It Does
 
-### Principles (enforced in the code, not just the copy)
+- **Predict**: pick every knockout winner from the Round of 32 through the final.
+  Picks propagate forward through the bracket, can be locked, and are scored only
+  when real matches finish.
+- **Fantasy**: build a 5-player knockout roster by round: GK, DEF, MID, ATT, and
+  FLEX. It supports captains, transfers, country quotas, eliminated-team handling,
+  player photos, and key-player markers.
+- **Team**: browse every national team, see the chosen home team styling/mascot,
+  form, next match, squad, key players, and an ability card built from real match
+  stats when available.
+- **Schedule**: group standings, fixtures, live score display, qualification
+  state, and finished-match reports.
+- **League**: optional Supabase-backed sign-in and leaderboard for Predict and
+  Fantasy scores.
+- **Personalization**: home team, team-colored theme, light/dark mode, and
+  English/Chinese UI strings.
 
-- Growth is driven **only by real, finished match results** — see
-  [`src/domain/bond.ts`](src/domain/bond.ts). A win grows the bond most, a draw a
-  little less, and even a loss nudges it forward (you kept the mascot company).
-  **It is never punished.**
-- **No manual engagement** — there is no cheer button, no feeding, no check-in.
-  Nothing in the UI can push progress; it only ever reflects real matches.
-- **No simulation** — no win-probability, no "what if". With no API key the
-  mascot simply holds at its real current state rather than advancing on
-  fabricated data.
-- The mascots are **original** (seeded generative SVG), not the official 2026
-  mascots or any existing IP.
+## Current Scoring
+
+### Predict
+
+Predict scores one thing: did the user pick the real winner of a finished
+knockout match?
+
+| Stage | Correct pick |
+| --- | ---: |
+| Round of 32 | 1 |
+| Round of 16 | 2 |
+| Quarter-final | 3 |
+| Semi-final | 5 |
+| Third-place match | 1 |
+| Final | 8 |
+
+A perfect bracket is 63 points. There is no scoreline prediction, margin bonus,
+upset bonus, or extra champion bonus.
+
+### Fantasy
+
+Fantasy scoring uses only fields the current ESPN feed can supply reliably:
+
+| Event | Points |
+| --- | --- |
+| Goal | FWD +4, MID +5, DEF/GK +6 |
+| Assist | +3 |
+| Clean sheet | DEF/GK +4, MID +1 |
+| GK saves | +1 per 3 saves |
+| In-play penalty scored | goal points by position |
+| In-play penalty missed | -2 |
+| Shootout kick scored | +2 |
+| Shootout kick missed | -1 |
+| Yellow card | -1 |
+| Red card | -3 |
+| Own goal | -2 |
+
+There are no appearance, minutes, tackles, interceptions, recoveries,
+clearances, blocks, passing, possession, xG, or xA fantasy points.
+
+## Data Sources
+
+- Static tournament seed data lives in `src/data/*`: teams, fixtures, bracket
+  wiring, squads, team stats, player photos, flags, and key-player metadata.
+- The seed snapshot is recorded in `src/data/meta.ts` and is currently verified
+  as of `2026-06-25`.
+- Runtime match data comes from ESPN's public soccer site API through local
+  proxy routes:
+  - `GET /api/fixtures`
+  - `GET /api/fixtures?date=YYYY-MM-DD`
+  - `GET /api/match?fixture=ESPN_EVENT_ID`
+- The app never fabricates future results. If ESPN data is unavailable, it keeps
+  using the committed seed snapshot.
+- Supabase is optional and stores raw user state: predictions, fantasy rosters,
+  home team, and display name. Scores are recomputed client-side from match data.
 
 ## Stack
 
-Vite + React 18 + TypeScript + Tailwind. A thin **Vercel Edge** proxy in
-[`/api`](api) keeps the Highlightly Football API key server-side. The mascot and
-ambient field are seeded generative art (no heavy dependencies).
+- Vite
+- React 18
+- TypeScript
+- Tailwind CSS
+- React Router
+- Supabase client, optional
+- Vercel Edge-style API handlers in `api/`
+- Vitest for domain tests
 
-## Local development
+## Local Development
 
 ```bash
 npm install
-echo "HIGHLIGHTLY_KEY=<your key>" > .env.local   # optional; omit to use the snapshot
-npm run dev          # http://localhost:5173
+npm run dev
 ```
 
-`npm run dev` runs the `/api` functions itself (a small Vite middleware) and
-reads `.env.local` — no Vercel CLI needed. With a key, real **finished** results
-are fetched on load and refreshed every few hours (low-frequency; no in-match
-live polling). Without a key, every `/api` route returns a "no data" signal and
-the app stays on the committed real snapshot.
+The Vite dev server also serves the `api/` routes, so Vercel CLI is not required
+for local development.
 
-## Deploying to Vercel
+Useful scripts:
 
-1. Import the repo into Vercel (framework preset: **Vite**).
-2. Add environment variables (Project → Settings → Environment Variables):
+```bash
+npm run typecheck
+npm run build
+npm run test
+npm run preview
+```
 
-   | Variable | Value |
-   | --- | --- |
-   | `HIGHLIGHTLY_KEY` | your Highlightly API key |
-   | `WC_LEAGUE_ID` | `1635` |
-   | `WC_SEASON` | `2026` |
+Optional local Supabase env:
 
-3. Deploy. The serverless functions in `/api` are detected automatically and the
-   SPA rewrite in [`vercel.json`](vercel.json) handles client routing.
+```bash
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+```
 
-> These variables are **server-side only** — never prefix them with `VITE_`, which
-> would inline them into the browser bundle.
+When these are absent, auth and the League tab stay disabled. Local state still
+works through `localStorage`.
 
-## The data snapshot
+## Deploying
 
-`src/data/*` is generated from a cross-verified research snapshot of the real
-2026 World Cup (the draw + all results as of `2026-06-25`, the FIFA bracket
-wiring, squads, and team colours/symbols). To regenerate after refreshing
-`.research/`:
+The app is intended for Vercel as a Vite project.
+
+1. Import the repo.
+2. Use the Vite framework preset.
+3. Optionally set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+4. Deploy.
+
+The API routes under `api/` are detected automatically, and `vercel.json` keeps
+client-side routing working for the SPA.
+
+## Project Structure
+
+```text
+api/                  ESPN proxy routes and shared proxy helper
+docs/                 setup/design notes
+exports/              generated export artifacts
+public/players/       downloaded player portraits
+scripts/              seed, squad, ESPN, and player-photo utilities
+supabase/             optional league schema
+src/
+  components/         reusable UI, player avatars, flags, mascot art
+  data/               generated/static tournament data
+  domain/             pure scoring, bracket, standings, fantasy, ratings logic
+  lib/                API normalization, i18n helpers, Supabase client, utilities
+  screens/            Predict, Fantasy, Team, Schedule, League, Home
+  state/              app, auth, game, language, and theme state
+```
+
+## Core Files
+
+- `src/domain/predict.ts`: bracket prediction scoring and predicted-bracket
+  propagation.
+- `src/domain/bracket.ts`: real bracket resolution from group standings and
+  finished knockout results.
+- `src/domain/fantasy.ts`: roster slots, fantasy scoring, transfers, and quotas.
+- `src/domain/fantasyRounds.ts`: round locks, current round, and live polling
+  windows.
+- `src/state/store.tsx`: home team, theme color, ESPN result polling, and seed
+  merge.
+- `src/state/games.tsx`: prediction/fantasy state, local persistence, Supabase
+  sync, and predict lock state.
+- `src/screens/Predict.tsx`: bracket prediction UI.
+- `src/screens/Fantasy.tsx`: fantasy roster UI and round scoring display.
+- `src/screens/Team.tsx`: team browsing, key players, squad, and ability card.
+- `src/screens/Schedule.tsx`: group standings, fixtures, live scores, and match
+  reports.
+- `src/screens/Leaderboard.tsx`: optional Supabase league leaderboard.
+
+## Generated Data
+
+The seed files are generated by scripts and should be treated as data, not hand
+edited unless the task is specifically about correcting the snapshot.
+
+Common scripts:
 
 ```bash
 node scripts/build-seed.mjs
+node scripts/build-squads.mjs
+node scripts/build-player-photos.mjs
+node scripts/download-player-photos.mjs
+node scripts/fetch-espn.mjs
 ```
 
-## Project structure
+## Notes
 
-```
-api/            Vercel Edge proxy (key stays here): fixtures, match
-src/
-  data/         generated seed snapshot (teams, fixtures, bracket, squads, meta)
-  domain/       pure logic: types, record/standings, results-only bond, bracket resolver
-  state/        theme (team colour + dark mode) and the low-frequency results store
-  components/   mascot (seeded SVG), ambient field, onboarding, match report, atoms
-  screens/      home base · schedule · bracket
-scripts/        build-seed.mjs (research -> typed data)
-docs/           the ambiance design note
-```
-
-Homeside is an unofficial fan project with original mascots; it is not affiliated
-with FIFA.
+Homeside is an unofficial fan project. It is not affiliated with FIFA, ESPN, or
+any national federation.

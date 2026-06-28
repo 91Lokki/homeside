@@ -13,11 +13,13 @@ import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { DATA_META } from '@/data/meta'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 
 export function Home() {
   const { homeTeam, matches } = useApp()
   const { predictions, fantasy } = useGames()
   const t = useT()
+  const tName = useTName()
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const predScore = useMemo(() => scorePredictions(predictions, resolved), [predictions, resolved])
@@ -32,7 +34,7 @@ export function Home() {
           <p className="mt-2 max-w-md text-muted">{t.homeDesc}</p>
         </div>
         {homeTeam && (
-          <Link to="/team" className="hidden shrink-0 sm:block" title={`${homeTeam.name} — ability card`}>
+          <Link to="/team" className="hidden shrink-0 sm:block" title={`${tName(homeTeam)} — ability card`}>
             <Mascot code={homeTeam.code} color={homeTeam.color} color2={homeTeam.color2} symbol={homeTeam.symbol} mood={moodFor(matches, homeTeam.code).mood} size={104} />
           </Link>
         )}
@@ -64,7 +66,7 @@ export function Home() {
               {homeTeam.code}
             </span>
             <div>
-              <p className="text-sm font-medium">{t.homeAbilityCard(homeTeam.name)}</p>
+              <p className="text-sm font-medium">{t.homeAbilityCard(tName(homeTeam))}</p>
               <p className="text-2xs text-faint">{t.homeAbilitySub}</p>
             </div>
           </div>
