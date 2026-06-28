@@ -300,9 +300,8 @@ export function Team() {
           </>
         ) : keyPlayers.length > 0 ? (
           <>
-            <div className="mb-4 flex items-baseline justify-between">
+            <div className="mb-4">
               <h2 className="font-grotesk text-2xl font-semibold tracking-tight">Players to know</h2>
-              <span className="text-2xs uppercase tracking-label text-faint">{keyPlayers.length} key</span>
             </div>
             <ul className="space-y-1.5">
               {keyPlayers.map(({ player, archetypes }) => (
@@ -310,12 +309,9 @@ export function Team() {
                   key={pKey(player)}
                   className="flex items-center gap-3 rounded-2xl bg-black/[0.03] px-3 py-2.5 ring-1 ring-inset ring-black/[0.05] dark:bg-white/[0.04] dark:ring-white/[0.07]"
                 >
-                  <PlayerAvatar teamCode={code} name={player.name} number={player.number} size={44} className="shrink-0" />
+                  <PlayerAvatar teamCode={code} name={player.name} number={player.number} size={44} flagBadge={false} className="shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <Star size={13} className="shrink-0 fill-team text-team" aria-label="Key player" />
-                      <span className="truncate text-[15px] font-semibold text-ink">{player.name}</span>
-                    </div>
+                    <span className="block truncate text-[15px] font-semibold text-ink">{player.name}</span>
                     <p className="mt-0.5 truncate text-2xs text-faint">
                       {POS_NAME[player.position] ?? player.position}
                       {player.club ? ` · ${player.club}` : ''}
