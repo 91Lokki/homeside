@@ -95,7 +95,8 @@
     html.theme-transition *::after {
       transition:
         background-color 0.5s var(--ease-calm),
-        border-color 0.5s var(--ease-calm) !important;
+        border-color 0.5s var(--ease-calm),
+        opacity 0.5s var(--ease-calm) !important;
       transition-delay: 0s !important;
     }
   }
