@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BRACKET } from '@/data/bracket'
 import type { TeamCode } from '@/domain/types'
-import { buildPredictedBracket, type Predictions } from '@/domain/predict'
+import { buildPredictedBracket, hasMatchStarted, LOCKED_AT_KEY, PICKED_AT_KEY, type Predictions } from '@/domain/predict'
 import { playerKey, type FantasyPick, type RoundSquad, type Round, type Slot } from '@/domain/fantasy'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/state/auth'
@@ -40,6 +40,7 @@ function safeSet(key: string, value: string) {
 /** Drop downstream predictions made stale by an upstream change (see Predict). */
 function pruneStale(preds: Predictions): Predictions {
   const next = { ...preds }
+  const pickedAt = { ...(next[PICKED_AT_KEY] ?? {}) }
   for (let guard = 0; guard < 8; guard++) {
     const occ = buildPredictedBracket(BRACKET, [], next)
     let changed = false
@@ -50,12 +51,30 @@ function pruneStale(preds: Predictions): Predictions {
       const o = occ[m.matchNo]
       if (!o || (pick !== o.homeCode && pick !== o.awayCode)) {
         delete next[m.matchNo]
+        delete pickedAt[String(m.matchNo)]
         changed = true
       }
     }
     if (!changed) break
   }
-  return next
+  return { ...next, [PICKED_AT_KEY]: pickedAt }
+}
+
+function stampMissingPredictionTimes(preds: Predictions, at: number = Date.now()): Predictions {
+  const pickedAt = { ...(preds[PICKED_AT_KEY] ?? {}) }
+  let changed = false
+  for (const m of BRACKET) {
+    if (preds[m.matchNo] != null && pickedAt[String(m.matchNo)] == null) {
+      pickedAt[String(m.matchNo)] = at
+      changed = true
+    }
+  }
+  if ((preds as Record<string, unknown>)[LOCK_FLAG] === true && preds[LOCKED_AT_KEY] == null) {
+    changed = true
+  }
+  return changed
+    ? ({ ...preds, [PICKED_AT_KEY]: pickedAt, [LOCKED_AT_KEY]: preds[LOCKED_AT_KEY] ?? at } as Predictions)
+    : preds
 }
 
 const emptySquad = (): RoundSquad => ({ players: [], captain: null })
@@ -80,7 +99,7 @@ const Ctx = createContext<GamesCtx | null>(null)
 export function GamesProvider({ children }: { children: ReactNode }) {
   const { user, displayName } = useAuth()
   const { homeCode, setHomeCode } = useApp()
-  const [predictions, setPredictions] = useState<Predictions>(() => load(PRED_KEY, {}))
+  const [predictions, setPredictions] = useState<Predictions>(() => stampMissingPredictionTimes(load(PRED_KEY, {})))
   const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
   // Once a bracket is confirmed it can no longer be edited. The lock lives INSIDE
   // the predictions blob under a reserved key, so it rides every existing
@@ -138,7 +157,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         return
       }
       if (data) {
-        const p = (data.predictions as Predictions) ?? {}
+        const p = stampMissingPredictionTimes((data.predictions as Predictions) ?? {})
         const f = (data.fantasy as FantasyRounds) ?? {}
         const home = (data.home_code as string | null) ?? null
         setPredictions(p)
@@ -210,11 +229,16 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   }, [predictions, fantasy, homeCode, userId, user, displayName])
 
   const setPrediction = useCallback((matchNo: number, code: TeamCode) => {
-    setPredictions((p) => pruneStale({ ...p, [matchNo]: code }))
+    const match = BRACKET.find((m) => m.matchNo === matchNo)
+    if (match && hasMatchStarted(match)) return
+    setPredictions((p) => {
+      const pickedAt = { ...(p[PICKED_AT_KEY] ?? {}), [String(matchNo)]: Date.now() }
+      return pruneStale({ ...p, [matchNo]: code, [PICKED_AT_KEY]: pickedAt } as Predictions)
+    })
   }, [])
   const clearPredictions = useCallback(() => setPredictions({}), [])
   const lockPredictions = useCallback(
-    () => setPredictions((p) => ({ ...p, [LOCK_FLAG]: true }) as unknown as Predictions),
+    () => setPredictions((p) => ({ ...p, [LOCK_FLAG]: true, [LOCKED_AT_KEY]: p[LOCKED_AT_KEY] ?? Date.now() }) as unknown as Predictions),
     [],
   )
 

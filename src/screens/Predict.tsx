@@ -4,7 +4,7 @@ import { Check, Lock, Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
 import { resolveBracket } from '@/domain/bracket'
-import { buildPredictedBracket, scorePredictions, type PickStatus } from '@/domain/predict'
+import { buildPredictedBracket, hasMatchStarted, scorePredictions, type PickStatus } from '@/domain/predict'
 import type { ResolvedBracketMatch, SlotSource, Stage, TeamCode } from '@/domain/types'
 import { Flag } from '@/components/Flag'
 import { Label } from '@/components/ui/atoms'
@@ -27,6 +27,7 @@ const STUB = 'bg-black/15 dark:bg-white/20'
 
 const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '')
 const fmtTime = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
+const fmtScore = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 const BRACKET_POS: Record<number, number> = (() => {
   const byNo = new Map(BRACKET.map((b) => [b.matchNo, b]))
@@ -59,6 +60,12 @@ export function Predict() {
   const [confirming, setConfirming] = useState(false)
   const t = useT()
   const tName = useTName()
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const byNo = useMemo(() => new Map(resolved.map((m) => [m.matchNo, m])), [resolved])
@@ -82,18 +89,23 @@ export function Predict() {
     finalOcc && (predictions[104] === finalOcc.homeCode || predictions[104] === finalOcc.awayCode) ? predictions[104] : null
   const champion = champCode ? teamByCode[champCode] : null
 
-  const cardProps = (no: number) => ({
-    no,
-    real: byNo.get(no),
-    homeCode: predicted[no]?.homeCode ?? null,
-    awayCode: predicted[no]?.awayCode ?? null,
-    pick: predictions[no] ?? null,
-    status: score.perMatch[no] ?? ('unpicked' as PickStatus),
-    locked: predictLocked,
-    onPick: (code: TeamCode) => {
-      if (!predictLocked) setPrediction(no, code)
-    },
-  })
+  const cardProps = (no: number) => {
+    const real = byNo.get(no)
+    const def = BRACKET.find((b) => b.matchNo === no)
+    const matchClosed = hasMatchStarted(real ?? def ?? {}, now)
+    return {
+      no,
+      real,
+      homeCode: predicted[no]?.homeCode ?? null,
+      awayCode: predicted[no]?.awayCode ?? null,
+      pick: predictions[no] ?? null,
+      status: score.perMatch[no] ?? ('unpicked' as PickStatus),
+      locked: predictLocked || matchClosed,
+      onPick: (code: TeamCode) => {
+        if (!predictLocked && !matchClosed) setPrediction(no, code)
+      },
+    }
+  }
 
   const complete = useMemo(
     () =>
@@ -198,8 +210,11 @@ export function Predict() {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="font-grotesk text-2xl font-semibold tnum leading-none">{score.points}</p>
+            <p className="font-grotesk text-2xl font-semibold tnum leading-none">{fmtScore(score.points)}</p>
             <p className="text-2xs text-faint">{t.predictGraded(score.correct, score.graded)}</p>
+            {score.earlyLockBonus > 0 && (
+              <p className="mt-0.5 text-2xs text-team">{t.predictScoreBreakdown(score.basePoints, score.earlyLockBonus)}</p>
+            )}
           </div>
           {predictLocked ? (
             <span className="inline-flex items-center gap-1.5 rounded-pill bg-team-soft px-3 py-1.5 text-xs font-semibold text-team">
@@ -225,6 +240,7 @@ export function Predict() {
         </div>
       </div>
       <p className="mb-6 max-w-2xl text-sm text-muted">{t.predictDesc}</p>
+      <p className="-mt-4 mb-6 max-w-2xl text-2xs text-faint">{t.predictBonusHint}</p>
 
       {champion && (
         <div className="panel mb-6 inline-flex items-center gap-2 px-4 py-2">

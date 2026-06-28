@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   scorePredictions,
   buildPredictedBracket,
+  LOCKED_AT_KEY,
+  PICKED_AT_KEY,
   ROUND_POINTS,
   type Predictions,
 } from '@/domain/predict'
@@ -28,6 +30,7 @@ function rbm(opts: {
   winnerCode?: TeamCode | null
   homeCode?: TeamCode | null
   awayCode?: TeamCode | null
+  kickoff?: string
 }): ResolvedBracketMatch {
   return {
     matchNo: opts.matchNo,
@@ -42,6 +45,7 @@ function rbm(opts: {
     awayScore: null,
     status: opts.status ?? 'scheduled',
     winnerCode: opts.winnerCode ?? null,
+    kickoff: opts.kickoff,
   }
 }
 
@@ -84,7 +88,7 @@ describe('scorePredictions', () => {
   describe('empty / trivial inputs', () => {
     it('returns all-zero totals and empty perMatch for no resolved matches', () => {
       const s = scorePredictions({ 73: 'ARG' }, [])
-      expect(s).toEqual({ points: 0, correct: 0, graded: 0, perMatch: {} })
+      expect(s).toEqual({ points: 0, basePoints: 0, earlyLockBonus: 0, correct: 0, graded: 0, perMatch: {} })
     })
 
     it('marks every resolved match unpicked when predictions is empty', () => {
@@ -163,6 +167,76 @@ describe('scorePredictions', () => {
       expect(s.graded).toBe(0)
       expect(s.correct).toBe(0)
       expect(s.points).toBe(0)
+    })
+
+    it("'late' when the pick was recorded after kickoff, and awards no points", () => {
+      const resolved = [
+        rbm({
+          matchNo: 73,
+          stage: 'R32',
+          status: 'finished',
+          winnerCode: 'ARG',
+          homeCode: 'ARG',
+          awayCode: 'BRA',
+          kickoff: '2026-06-28T19:00:00Z',
+        }),
+      ]
+      const predictions = {
+        73: 'ARG',
+        [PICKED_AT_KEY]: { 73: new Date('2026-06-28T19:00:01Z').getTime() },
+      } as Predictions
+      const s = scorePredictions(predictions, resolved)
+      expect(s.perMatch[73]).toBe('late')
+      expect(s.correct).toBe(0)
+      expect(s.graded).toBe(0)
+      expect(s.points).toBe(0)
+    })
+
+    it('adds the early-lock multiplier only when the bracket was locked before kickoff', () => {
+      const resolved = [
+        rbm({
+          matchNo: 104,
+          stage: 'F',
+          status: 'finished',
+          winnerCode: 'ARG',
+          homeCode: 'ARG',
+          awayCode: 'BRA',
+          kickoff: '2026-07-19T19:00:00Z',
+        }),
+      ]
+      const predictions = {
+        104: 'ARG',
+        [PICKED_AT_KEY]: { 104: new Date('2026-07-18T19:00:00Z').getTime() },
+        [LOCKED_AT_KEY]: new Date('2026-07-18T20:00:00Z').getTime(),
+      } as Predictions
+      const s = scorePredictions(predictions, resolved)
+      expect(s.basePoints).toBe(8)
+      expect(s.earlyLockBonus).toBe(1.6)
+      expect(s.points).toBe(9.6)
+      expect(s.perMatch[104]).toBe('correct')
+    })
+
+    it('does not add early-lock bonus when the bracket was locked after kickoff', () => {
+      const resolved = [
+        rbm({
+          matchNo: 104,
+          stage: 'F',
+          status: 'finished',
+          winnerCode: 'ARG',
+          homeCode: 'ARG',
+          awayCode: 'BRA',
+          kickoff: '2026-07-19T19:00:00Z',
+        }),
+      ]
+      const predictions = {
+        104: 'ARG',
+        [PICKED_AT_KEY]: { 104: new Date('2026-07-18T19:00:00Z').getTime() },
+        [LOCKED_AT_KEY]: new Date('2026-07-19T19:00:01Z').getTime(),
+      } as Predictions
+      const s = scorePredictions(predictions, resolved)
+      expect(s.basePoints).toBe(8)
+      expect(s.earlyLockBonus).toBe(0)
+      expect(s.points).toBe(8)
     })
   })
 

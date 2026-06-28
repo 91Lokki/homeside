@@ -1,7 +1,13 @@
 import type { BracketMatch, ResolvedBracketMatch, Stage, TeamCode } from './types'
 
 /** User's predicted winner per bracket match number. */
-export type Predictions = Record<number, TeamCode>
+export const PICKED_AT_KEY = '__pickedAt'
+export const LOCKED_AT_KEY = '__lockedAt'
+export const EARLY_LOCK_MULTIPLIER = 1.2
+export type Predictions = Record<number, TeamCode> & {
+  [PICKED_AT_KEY]?: Record<string, number>
+  [LOCKED_AT_KEY]?: number
+}
 
 /** Points for a correct pick, weighted by how deep the round is. */
 export const ROUND_POINTS: Record<Stage, number> = {
@@ -14,22 +20,26 @@ export const ROUND_POINTS: Record<Stage, number> = {
   F: 8,
 }
 
-export type PickStatus = 'correct' | 'wrong' | 'pending' | 'unpicked'
+export type PickStatus = 'correct' | 'wrong' | 'pending' | 'unpicked' | 'late'
 
 export interface PredictScore {
   points: number
+  basePoints: number
+  earlyLockBonus: number
   correct: number
   graded: number
   perMatch: Record<number, PickStatus>
 }
 
 /**
- * Grade predictions against REAL finished results only. A pick is graded once
- * that real match is finished; correct → points (round-weighted). Never inspects
- * or invents future outcomes.
+ * Grade predictions against REAL finished results only. A pick is valid only if
+ * it was recorded before that match's kickoff; late picks stay visible but score
+ * nothing. Never inspects or invents future outcomes.
  */
 export function scorePredictions(predictions: Predictions, resolved: ResolvedBracketMatch[]): PredictScore {
   let points = 0
+  let basePoints = 0
+  let earlyLockBonus = 0
   let correct = 0
   let graded = 0
   const perMatch: Record<number, PickStatus> = {}
@@ -40,11 +50,19 @@ export function scorePredictions(predictions: Predictions, resolved: ResolvedBra
       perMatch[m.matchNo] = 'unpicked'
       continue
     }
+    if (isLatePrediction(predictions, m)) {
+      perMatch[m.matchNo] = 'late'
+      continue
+    }
     if (m.status === 'finished' && m.winnerCode) {
       graded++
       if (pick === m.winnerCode) {
         correct++
-        points += ROUND_POINTS[m.stage] ?? 1
+        const base = ROUND_POINTS[m.stage] ?? 1
+        const bonus = hasEarlyLockBonus(predictions, m) ? roundTenth(base * (EARLY_LOCK_MULTIPLIER - 1)) : 0
+        basePoints += base
+        earlyLockBonus = roundTenth(earlyLockBonus + bonus)
+        points = roundTenth(points + base + bonus)
         perMatch[m.matchNo] = 'correct'
       } else {
         perMatch[m.matchNo] = 'wrong'
@@ -53,7 +71,45 @@ export function scorePredictions(predictions: Predictions, resolved: ResolvedBra
       perMatch[m.matchNo] = 'pending'
     }
   }
-  return { points, correct, graded, perMatch }
+  return { points, basePoints, earlyLockBonus, correct, graded, perMatch }
+}
+
+export function pickedAtFor(predictions: Predictions, matchNo: number): number | null {
+  const ts = predictions[PICKED_AT_KEY]?.[String(matchNo)]
+  return typeof ts === 'number' && Number.isFinite(ts) ? ts : null
+}
+
+export function lockedAtFor(predictions: Predictions): number | null {
+  const ts = predictions[LOCKED_AT_KEY]
+  return typeof ts === 'number' && Number.isFinite(ts) ? ts : null
+}
+
+export function kickoffMs(match: { kickoff?: string }): number | null {
+  if (!match.kickoff) return null
+  const ms = new Date(match.kickoff).getTime()
+  return Number.isFinite(ms) ? ms : null
+}
+
+export function hasMatchStarted(match: { kickoff?: string }, now: number = Date.now()): boolean {
+  const deadline = kickoffMs(match)
+  return deadline != null && now >= deadline
+}
+
+export function isLatePrediction(predictions: Predictions, match: { matchNo: number; kickoff?: string }): boolean {
+  const deadline = kickoffMs(match)
+  if (deadline == null) return false
+  const pickedAt = pickedAtFor(predictions, match.matchNo)
+  return pickedAt == null || pickedAt > deadline
+}
+
+export function hasEarlyLockBonus(predictions: Predictions, match: { kickoff?: string }): boolean {
+  const deadline = kickoffMs(match)
+  const lockedAt = lockedAtFor(predictions)
+  return deadline != null && lockedAt != null && lockedAt <= deadline
+}
+
+function roundTenth(n: number): number {
+  return Math.round(n * 10) / 10
 }
 
 export interface PredictedOccupants {
