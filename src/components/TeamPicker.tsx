@@ -5,6 +5,7 @@ import type { Team } from '@/domain/types'
 import { readableInkOn, rgba, teamFillColor } from '@/lib/prng'
 import { useTheme } from '@/state/theme'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { cn } from '@/lib/utils'
 import { Flag } from './Flag'
 import { Mascot } from './mascot/Mascot'
@@ -28,6 +29,7 @@ export function TeamPicker({
 }) {
   const { isDark } = useTheme()
   const t = useT()
+  const tName = useTName()
   const [query, setQuery] = useState('')
   const [preview, setPreview] = useState<Team | null>(null)
 
@@ -92,7 +94,7 @@ export function TeamPicker({
                   >
                     <Flag code={tm.code} size={30} />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold leading-tight text-ink">{tm.name}</span>
+                      <span className="block truncate text-sm font-semibold leading-tight text-ink">{tName(tm)}</span>
                     </span>
                   </button>
                 ))}
@@ -108,6 +110,7 @@ export function TeamPicker({
 function MeetView({ team, onBack, onConfirm, isCurrent }: { team: Team; onBack: () => void; onConfirm: () => void; isCurrent: boolean }) {
   const { isDark } = useTheme()
   const t = useT()
+  const tName = useTName()
   const btnBg = teamFillColor(team.color, team.color2, isDark)
   const ink = readableInkOn(btnBg)
 
@@ -128,10 +131,10 @@ function MeetView({ team, onBack, onConfirm, isCurrent }: { team: Team; onBack: 
             <p className="text-2xs font-semibold uppercase tracking-label text-faint">{t.pickerGroupHero(team.group)}</p>
             <div className="mt-3 flex items-center gap-3.5">
               <Flag code={team.code} size={44} />
-              <h1 className="font-grotesk text-4xl font-bold tracking-tight">{team.name}</h1>
+              <h1 className="font-grotesk text-4xl font-bold tracking-tight">{tName(team)}</h1>
             </div>
 
-            <p className="mt-5 max-w-sm text-muted">{t.pickerHeroDesc(team.name, team.symbol)}</p>
+            <p className="mt-5 max-w-sm text-muted">{t.pickerHeroDesc(tName(team), team.symbol)}</p>
 
             <button
               onClick={onConfirm}

@@ -6,6 +6,7 @@ import { Flag } from '@/components/Flag'
 import { MatchReport } from '@/components/MatchReport'
 import { useApp } from '@/state/store'
 import { useT } from '@/lib/useT'
+import { useTName } from '@/lib/useTName'
 import { cn } from '@/lib/utils'
 
 const GLASS = 'bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10'
@@ -48,6 +49,7 @@ function SectionHead({ label, sub }: { label: string; sub?: string }) {
 export function Schedule() {
   const { matches, homeCode, homeTeam, apiStatus, healthKnown, lastUpdated } = useApp()
   const t = useT()
+  const tName = useTName()
   const [group, setGroup] = useState<GroupId>(homeTeam?.group ?? 'A')
   const [openId, setOpenId] = useState<string | null>(null)
 
@@ -82,7 +84,7 @@ export function Schedule() {
       <header className="px-1">
         <h1 className="font-grotesk text-3xl font-bold tracking-tight">{t.scheduleTitle}</h1>
         <p className="mt-1.5 text-sm text-muted">
-          {homeTeam ? t.scheduleFollowing(homeTeam.name, homeTeam.group) : '2026'}
+          {homeTeam ? t.scheduleFollowing(tName(homeTeam), homeTeam.group) : '2026'}
         </p>
       </header>
 
@@ -136,7 +138,7 @@ export function Schedule() {
                   </span>
                   <span className="flex items-center gap-2.5 truncate">
                     <Flag code={row.code} size={22} />
-                    <span className={cn('truncate font-medium', isHome ? 'text-team' : 'text-ink')}>{tm?.name ?? row.code}</span>
+                    <span className={cn('truncate font-medium', isHome ? 'text-team' : 'text-ink')}>{tName(tm, row.code)}</span>
                   </span>
                   <span className="text-center tnum text-muted">{row.played}</span>
                   <span className="text-center tnum text-muted">{row.win}</span>
@@ -217,6 +219,7 @@ function FixtureCard({
   onToggle: () => void
 }) {
   const t = useT()
+  const tName = useTName()
   const home = m.homeCode ? teamByCode[m.homeCode] : null
   const away = m.awayCode ? teamByCode[m.awayCode] : null
   const finished = m.status === 'finished'
@@ -270,8 +273,8 @@ function FixtureCard({
         </span>
         <div className="col-start-5 row-start-1 flex justify-center"><Flag code={m.awayCode} size={40} /></div>
 
-        <span className="col-start-1 row-start-2 mt-2.5 truncate text-center text-sm font-medium text-muted">{home?.name ?? m.homeCode}</span>
-        <span className="col-start-5 row-start-2 mt-2.5 truncate text-center text-sm font-medium text-muted">{away?.name ?? m.awayCode}</span>
+        <span className="col-start-1 row-start-2 mt-2.5 truncate text-center text-sm font-medium text-muted">{tName(home, m.homeCode ?? undefined)}</span>
+        <span className="col-start-5 row-start-2 mt-2.5 truncate text-center text-sm font-medium text-muted">{tName(away, m.awayCode ?? undefined)}</span>
       </div>
     </button>
   )
