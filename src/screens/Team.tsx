@@ -8,9 +8,13 @@ import { useMatchDetails } from '@/lib/matchData'
 import { GROUP_STATS } from '@/data/teamStats'
 import { SQUADS } from '@/data/squads'
 import { TEAMS, teamByCode } from '@/data/teams'
+import { KEY_PLAYERS } from '@/data/keyPlayers'
 import type { Match } from '@/domain/types'
+import { playerKey } from '@/domain/fantasy'
+import { ChevronDown, Star } from 'lucide-react'
 import { Flag } from '@/components/Flag'
 import { Mascot } from '@/components/mascot/Mascot'
+import { PlayerAvatar } from '@/components/PlayerAvatar'
 import { RadarChart } from '@/components/RadarChart'
 import { TeamSwitcher } from '@/components/TeamSwitcher'
 import { FormDots, Label, Stat } from '@/components/ui/atoms'
@@ -26,6 +30,7 @@ const POS_LINES = [
   ['MF', 'Midfielders'],
   ['FW', 'Forwards'],
 ] as const
+const POS_NAME: Record<string, string> = { GK: 'Goalkeeper', DF: 'Defender', MF: 'Midfielder', FW: 'Forward' }
 
 /** Fallback stats from a real final score alone (Attack/Defense only) — used when
  *  no box score is available; the other axes stay null (never fabricated). */
@@ -92,6 +97,9 @@ export function Team() {
   const ratings = useMemo(() => computeRatings(stats, league), [stats, league])
   const qualMap = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
+  // Collapsed by default so "Players to know" stays the priority read.
+  const [fullSquadOpen, setFullSquadOpen] = useState(false)
+
   if (!homeTeam || !team) return null
 
   // Team accent scoped to a subtree only (overrides --team within it), never
@@ -120,6 +128,54 @@ export function Team() {
   const noData = stats.length === 0
   const byLine = (pos: 'GK' | 'DF' | 'MF' | 'FW') =>
     (squad?.players ?? []).filter((p) => p.position === pos).sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
+
+  // Curated key players for this team, resolved against the real squad roster
+  // (keeps the hand-picked order from KEY_PLAYERS). `keyKeys` lets the full squad
+  // mark the same players with a low-key star.
+  const pKey = (p: { name: string; number?: number | null }) => playerKey({ teamCode: code, name: p.name, number: p.number })
+  const playerByKey = new Map((squad?.players ?? []).map((p) => [pKey(p), p]))
+  const keyPlayers = KEY_PLAYERS.filter((m) => m.teamCode === code)
+    .map((m) => ({ player: playerByKey.get(m.playerId), archetypes: m.archetypes }))
+    .filter((x): x is { player: NonNullable<ReturnType<typeof playerByKey.get>>; archetypes: typeof x.archetypes } => Boolean(x.player))
+  const keyKeys = new Set(keyPlayers.map((x) => pKey(x.player)))
+
+  // The complete roster, grouped by position. Key players keep a low-key star.
+  const renderFullSquad = () => (
+    <div className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2">
+      {POS_LINES.map(([pos, title]) => {
+        const rows = byLine(pos)
+        if (!rows.length) return null
+        return (
+          <div key={pos}>
+            <div className="mb-2 flex items-baseline gap-2">
+              <span className="font-grotesk text-2xs font-semibold tracking-[0.14em] text-muted">{title}</span>
+              <span className="h-px flex-1 bg-hairline" />
+              <span className="font-grotesk text-2xs tnum text-faint">{rows.length}</span>
+            </div>
+            <ul className="font-system">
+              {rows.map((p, i) => (
+                <li
+                  key={p.name + (p.number ?? i)}
+                  className="flex items-center gap-3 border-b border-black/5 py-2 last:border-0 dark:border-white/[0.07]"
+                >
+                  {p.number != null ? (
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-sunken font-grotesk text-xs font-semibold tnum text-muted">
+                      {p.number}
+                    </span>
+                  ) : (
+                    <span aria-hidden className="h-7 w-7 shrink-0" />
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{p.name}</span>
+                  {keyKeys.has(pKey(p)) && <Star size={11} className="shrink-0 fill-team text-team opacity-70" aria-label="Key player" />}
+                  {p.club && <span className="max-w-[40%] shrink-0 truncate text-right text-2xs text-faint">{p.club}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      })}
+    </div>
+  )
 
   // One hero "card" for any team, with its own scoped colour.
   const renderHero = (t: typeof team, hMood: typeof mood, hQual: typeof qual, vars: CSSProperties) => (
@@ -232,52 +288,82 @@ export function Team() {
         )}
       </section>
 
-      {/* Squad — the first-class roster, grouped by position. */}
+      {/* Players to know — curated key players first; the full roster collapses
+          in beneath them. Not a Fantasy pitch card: a calm, scannable list. */}
       <section className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-5 sm:p-7 lg:col-span-7">
-        <div className="mb-5 flex items-baseline justify-between">
-          <h2 className="font-grotesk text-2xl font-semibold tracking-tight">Squad</h2>
-          <span className="text-2xs uppercase tracking-label text-faint">
-            {squad?.players?.length ?? 0} players{squad && !squad.verified ? ' · unconfirmed' : ''}
-          </span>
-        </div>
         {!squad?.players?.length ? (
-          <p className="text-sm text-muted">
-            The squad list for {team.name} isn&rsquo;t available yet — it appears once verified from a public source (never fabricated).
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2">
-            {POS_LINES.map(([pos, title]) => {
-              const rows = byLine(pos)
-              if (!rows.length) return null
-              return (
-                <div key={pos}>
-                  <div className="mb-2 flex items-baseline gap-2">
-                    <span className="font-grotesk text-2xs font-semibold tracking-[0.14em] text-muted">{title}</span>
-                    <span className="h-px flex-1 bg-hairline" />
-                    <span className="font-grotesk text-2xs tnum text-faint">{rows.length}</span>
+          <>
+            <h2 className="mb-5 font-grotesk text-2xl font-semibold tracking-tight">Squad</h2>
+            <p className="text-sm text-muted">
+              The squad list for {team.name} isn&rsquo;t available yet — it appears once verified from a public source (never fabricated).
+            </p>
+          </>
+        ) : keyPlayers.length > 0 ? (
+          <>
+            <div className="mb-4 flex items-baseline justify-between">
+              <h2 className="font-grotesk text-2xl font-semibold tracking-tight">Players to know</h2>
+              <span className="text-2xs uppercase tracking-label text-faint">{keyPlayers.length} key</span>
+            </div>
+            <ul className="space-y-1.5">
+              {keyPlayers.map(({ player, archetypes }) => (
+                <li
+                  key={pKey(player)}
+                  className="flex items-center gap-3 rounded-2xl bg-black/[0.03] px-3 py-2.5 ring-1 ring-inset ring-black/[0.05] dark:bg-white/[0.04] dark:ring-white/[0.07]"
+                >
+                  <PlayerAvatar teamCode={code} name={player.name} number={player.number} size={44} className="shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <Star size={13} className="shrink-0 fill-team text-team" aria-label="Key player" />
+                      <span className="truncate text-[15px] font-semibold text-ink">{player.name}</span>
+                    </div>
+                    <p className="mt-0.5 truncate text-2xs text-faint">
+                      {POS_NAME[player.position] ?? player.position}
+                      {player.club ? ` · ${player.club}` : ''}
+                    </p>
                   </div>
-                  <ul className="font-system">
-                    {rows.map((p, i) => (
-                      <li
-                        key={p.name + (p.number ?? i)}
-                        className="flex items-center gap-3 border-b border-black/5 py-2 last:border-0 dark:border-white/[0.07]"
-                      >
-                        {p.number != null ? (
-                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-sunken font-grotesk text-xs font-semibold tnum text-muted">
-                            {p.number}
-                          </span>
-                        ) : (
-                          <span aria-hidden className="h-7 w-7 shrink-0" />
-                        )}
-                        <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-ink">{p.name}</span>
-                        {p.club && <span className="max-w-[42%] shrink-0 truncate text-right text-2xs text-faint">{p.club}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            })}
-          </div>
+                  {archetypes.length > 0 && (
+                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                      {archetypes.map((a) => (
+                        <span key={a} className="rounded-pill bg-sunken px-2 py-0.5 text-[10px] font-semibold text-muted">
+                          {a}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-5 border-t border-hairline pt-3">
+              <button
+                onClick={() => setFullSquadOpen((o) => !o)}
+                aria-expanded={fullSquadOpen}
+                className="flex w-full items-center justify-between gap-2 py-1 text-left"
+              >
+                <span className="font-grotesk text-2xs font-semibold uppercase tracking-[0.14em] text-muted">
+                  Full squad
+                  <span className="ml-2 font-system normal-case tracking-normal text-faint">
+                    {squad.players.length} players{!squad.verified ? ' · unconfirmed' : ''}
+                  </span>
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={cn('shrink-0 text-faint transition-transform duration-300 ease-calm', fullSquadOpen && 'rotate-180')}
+                />
+              </button>
+              {fullSquadOpen && <div className="mt-4 animate-fade-in">{renderFullSquad()}</div>}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-5 flex items-baseline justify-between">
+              <h2 className="font-grotesk text-2xl font-semibold tracking-tight">Squad</h2>
+              <span className="text-2xs uppercase tracking-label text-faint">
+                {squad.players.length} players{!squad.verified ? ' · unconfirmed' : ''}
+              </span>
+            </div>
+            {renderFullSquad()}
+          </>
         )}
       </section>
 
