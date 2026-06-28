@@ -222,15 +222,14 @@ describe('countryCounts', () => {
 })
 
 /* -------------------------------------------------------------------------- */
-/* scoreRound — captain doubling & auto-vice                                   */
+/* scoreRound — captain doubling (no vice)                                     */
 /* -------------------------------------------------------------------------- */
 
 describe('scoreRound — captaincy', () => {
   // Two ATT picks. ATT goal = +4 each.
   const cap = pick({ name: 'Captain', teamCode: 'ARG', position: 'ATT', number: 9 })
-  const vice = pick({ name: 'Vice', teamCode: 'BRA', position: 'ATT', number: 10 })
+  const other = pick({ name: 'Other', teamCode: 'BRA', position: 'ATT', number: 10 })
 
-  // Captain (ARG) scored a goal in their match; vice (BRA) scored too.
   const argMatch = detail({
     fixtureId: 1,
     home: 'ARG',
@@ -241,63 +240,51 @@ describe('scoreRound — captaincy', () => {
     fixtureId: 2,
     home: 'BRA',
     away: 'YYY',
-    events: [ev({ type: 'Goal', player: 'Vice', teamCode: 'BRA' })],
+    events: [ev({ type: 'Goal', player: 'Other', teamCode: 'BRA' })],
   })
 
-  const squad: RoundSquad = {
-    players: [cap, vice],
-    captain: playerKey(cap),
-    vice: playerKey(vice),
-  }
+  const squad: RoundSquad = { players: [cap, other], captain: playerKey(cap) }
 
   it("doubles the captain's points when the captain's team featured", () => {
-    const r = scoreRound('QF', squad, [cap, vice], detailsForFrom(argMatch, braMatch))
-    // Captain: 4 * 2 = 8 ; Vice: 4 * 1 = 4 ; total 12, no transfers
+    const r = scoreRound('QF', squad, [cap, other], detailsForFrom(argMatch, braMatch))
+    // Captain: 4 * 2 = 8 ; Other: 4 * 1 = 4 ; total 12, no transfers
     expect(r.effectiveCaptain).toBe(playerKey(cap))
     expect(r.perPlayer[playerKey(cap)].base).toBe(4)
     expect(r.perPlayer[playerKey(cap)].isCaptain).toBe(true)
     expect(r.perPlayer[playerKey(cap)].final).toBe(8)
-    expect(r.perPlayer[playerKey(vice)].isCaptain).toBe(false)
-    expect(r.perPlayer[playerKey(vice)].final).toBe(4)
+    expect(r.perPlayer[playerKey(other)].isCaptain).toBe(false)
+    expect(r.perPlayer[playerKey(other)].final).toBe(4)
     expect(r.points).toBe(12)
   })
 
-  it("auto-doubles the VICE when the captain's team did NOT feature (detailsFor returns [])", () => {
-    // ARG (captain) eliminated -> only BRA match exists
-    const r = scoreRound('QF', squad, [cap, vice], detailsForFrom(braMatch))
-    expect(r.effectiveCaptain).toBe(playerKey(vice))
-    // Captain base 0 (no match), not doubled
+  it('gives the captain 0 when their team is eliminated — no vice fallback', () => {
+    // ARG (captain) is out → only BRA match exists. Captain base 0, ×2 = 0.
+    const r = scoreRound('QF', squad, [cap, other], detailsForFrom(braMatch))
+    expect(r.effectiveCaptain).toBe(playerKey(cap)) // captain stays nominal
     expect(r.perPlayer[playerKey(cap)].base).toBe(0)
-    expect(r.perPlayer[playerKey(cap)].isCaptain).toBe(false)
+    expect(r.perPlayer[playerKey(cap)].isCaptain).toBe(true)
     expect(r.perPlayer[playerKey(cap)].final).toBe(0)
-    // Vice base 4, doubled -> 8
-    expect(r.perPlayer[playerKey(vice)].isCaptain).toBe(true)
-    expect(r.perPlayer[playerKey(vice)].final).toBe(8)
-    expect(r.points).toBe(8)
+    // the other player is NOT auto-promoted to captain; scores its single value
+    expect(r.perPlayer[playerKey(other)].isCaptain).toBe(false)
+    expect(r.perPlayer[playerKey(other)].final).toBe(4)
+    expect(r.points).toBe(4)
   })
 
-  it('keeps the nominal captain when NOBODY featured (no doubling lands on anyone present)', () => {
-    const r = scoreRound('QF', squad, [cap, vice], NONE)
-    // captain team didn't play, vice team didn't play -> fall through to nominal captain
+  it('keeps the nominal captain (×2 of 0) when nobody featured', () => {
+    const r = scoreRound('QF', squad, [cap, other], NONE)
     expect(r.effectiveCaptain).toBe(playerKey(cap))
     expect(r.perPlayer[playerKey(cap)].isCaptain).toBe(true)
-    expect(r.perPlayer[playerKey(cap)].base).toBe(0)
     expect(r.perPlayer[playerKey(cap)].final).toBe(0)
     expect(r.points).toBe(0)
   })
 
-  it('falls back to nominal captain when the captain pick cannot be found at all', () => {
-    const orphan: RoundSquad = { players: [cap, vice], captain: 'NOPE·Ghost·', vice: playerKey(vice) }
-    const r = scoreRound('QF', orphan, [cap, vice], detailsForFrom(argMatch, braMatch))
-    // capPick undefined -> vicePick featured (BRA) -> effectiveCaptain = vice
-    expect(r.effectiveCaptain).toBe(playerKey(vice))
-    expect(r.perPlayer[playerKey(vice)].isCaptain).toBe(true)
-    expect(r.perPlayer[playerKey(vice)].final).toBe(8)
-  })
-
-  it('doubles the captain when BOTH captain and vice teams featured (captain kept)', () => {
-    const r = scoreRound('QF', squad, [cap, vice], detailsForFrom(argMatch, braMatch))
-    expect(r.effectiveCaptain).toBe(playerKey(cap))
+  it('doubles nobody when there is no captain', () => {
+    const r = scoreRound('QF', { players: [cap, other], captain: null }, [cap, other], detailsForFrom(argMatch, braMatch))
+    expect(r.effectiveCaptain).toBeNull()
+    expect(r.perPlayer[playerKey(cap)].isCaptain).toBe(false)
+    expect(r.perPlayer[playerKey(cap)].final).toBe(4)
+    expect(r.perPlayer[playerKey(other)].final).toBe(4)
+    expect(r.points).toBe(8)
   })
 })
 
@@ -316,7 +303,6 @@ describe('scoreRound — transfers & penalties', () => {
   const squad = (players: FantasyPick[]): RoundSquad => ({
     players,
     captain: playerKey(players[0]),
-    vice: players[1] ? playerKey(players[1]) : null,
   })
 
   it('R32 has unlimited free transfers (Infinity) → never any paid transfers', () => {
@@ -393,7 +379,7 @@ describe('scoreRound — transfers & penalties', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('scoreRound — point scoring by position and event', () => {
-  const single = (p: FantasyPick): RoundSquad => ({ players: [p], captain: null, vice: null })
+  const single = (p: FantasyPick): RoundSquad => ({ players: [p], captain: null })
 
   it('awards goal points by position: ATT +4, MID +5, DEF +6, GK +6', () => {
     const cases: Array<[PosCat, number]> = [
@@ -721,7 +707,7 @@ describe('scoreRound — point scoring by position and event', () => {
 
 describe('scoreRound — empty & boundary inputs', () => {
   it('handles an empty squad with no transfers', () => {
-    const r = scoreRound('QF', { players: [], captain: null, vice: null }, [], NONE)
+    const r = scoreRound('QF', { players: [], captain: null }, [], NONE)
     expect(r.points).toBe(0)
     expect(r.transfersUsed).toBe(0)
     expect(r.paidTransfers).toBe(0)
@@ -729,16 +715,16 @@ describe('scoreRound — empty & boundary inputs', () => {
     expect(r.perPlayer).toEqual({})
   })
 
-  it('keeps a null nominal captain when there is no captain/vice and nobody featured', () => {
+  it('keeps a null nominal captain when there is no captain and nobody featured', () => {
     const p = pick({ name: 'Solo', teamCode: 'ARG', position: 'ATT', number: 9 })
-    const r = scoreRound('QF', { players: [p], captain: null, vice: null }, [p], NONE)
+    const r = scoreRound('QF', { players: [p], captain: null }, [p], NONE)
     expect(r.effectiveCaptain).toBeNull()
     expect(r.perPlayer[playerKey(p)].isCaptain).toBe(false)
   })
 
   it('records the granted freeTransfers in the result for every round', () => {
     const p = pick({ name: 'Solo', teamCode: 'ARG', position: 'ATT', number: 9 })
-    const sq: RoundSquad = { players: [p], captain: null, vice: null }
+    const sq: RoundSquad = { players: [p], captain: null }
     expect(scoreRound('R32', sq, [], NONE).freeTransfers).toBe(Infinity)
     expect(scoreRound('R16', sq, [], NONE).freeTransfers).toBe(2)
     expect(scoreRound('QF', sq, [], NONE).freeTransfers).toBe(2)
@@ -776,8 +762,8 @@ describe('scoreFantasyTotal', () => {
     }
 
     const fantasy: Partial<Record<Round, RoundSquad>> = {
-      R32: { players: [cap, other], captain: playerKey(cap), vice: playerKey(other) },
-      R16: { players: [cap, other], captain: playerKey(cap), vice: playerKey(other) },
+      R32: { players: [cap, other], captain: playerKey(cap) },
+      R16: { players: [cap, other], captain: playerKey(cap) },
     }
 
     // R32: cap goal 4 *2 = 8, other 0; transfers unlimited (free Infinity) -> +8
@@ -795,8 +781,8 @@ describe('scoreFantasyTotal', () => {
     const p5 = pick({ name: 'P5', teamCode: 'ESP', position: 'ATT', number: 5 })
 
     const fantasy: Partial<Record<Round, RoundSquad>> = {
-      R32: { players: [p1, p2], captain: playerKey(p1), vice: playerKey(p2) },
-      R16: { players: [p1, p2, p3, p4, p5], captain: playerKey(p1), vice: playerKey(p2) },
+      R32: { players: [p1, p2], captain: playerKey(p1) },
+      R16: { players: [p1, p2, p3, p4, p5], captain: playerKey(p1) },
     }
     // No details -> no live points. R32 free unlimited -> 0. R16: 3 incoming, free 2, 1 paid -> -3.
     const total = scoreFantasyTotal(fantasy, [], {})
@@ -807,7 +793,7 @@ describe('scoreFantasyTotal', () => {
     const p1 = pick({ name: 'P1', teamCode: 'ARG', position: 'ATT', number: 1 })
     const p2 = pick({ name: 'P2', teamCode: 'BRA', position: 'ATT', number: 2 })
     const fantasy: Partial<Record<Round, RoundSquad>> = {
-      R32: { players: [p1, p2], captain: playerKey(p1), vice: playerKey(p2) },
+      R32: { players: [p1, p2], captain: playerKey(p1) },
     }
     expect(scoreFantasyTotal(fantasy, [], {})).toBe(0)
   })
@@ -816,7 +802,7 @@ describe('scoreFantasyTotal', () => {
     const p1 = pick({ name: 'P1', teamCode: 'ARG', position: 'ATT', number: 1 })
     const fantasy: Partial<Record<Round, RoundSquad>> = {
       // Only a FINAL squad, nothing earlier.
-      FINAL: { players: [p1], captain: playerKey(p1), vice: null },
+      FINAL: { players: [p1], captain: playerKey(p1) },
     }
     // FINAL free=5, prev = [] (R32..SF absent) -> 1 transfer <= 5 -> 0 penalty -> 0
     expect(scoreFantasyTotal(fantasy, [], {})).toBe(0)
@@ -825,7 +811,7 @@ describe('scoreFantasyTotal', () => {
   it('folds F3 and F fixtures both into the FINAL round details', () => {
     const p = pick({ name: 'Star', teamCode: 'ARG', position: 'ATT', number: 9 })
     const fantasy: Partial<Record<Round, RoundSquad>> = {
-      FINAL: { players: [p], captain: playerKey(p), vice: null },
+      FINAL: { players: [p], captain: playerKey(p) },
     }
     // ARG plays the third-place play-off (stage 'F3'); a goal there must count for FINAL.
     const f3: ScorableMatch = { stage: 'F3', apiFixtureId: 900, homeCode: 'ARG', awayCode: 'XXX' }
@@ -844,7 +830,7 @@ describe('scoreFantasyTotal', () => {
   it('ignores matches whose fixture id has no detail entry, and matches in other rounds', () => {
     const p = pick({ name: 'Star', teamCode: 'ARG', position: 'ATT', number: 9 })
     const fantasy: Partial<Record<Round, RoundSquad>> = {
-      QF: { players: [p], captain: playerKey(p), vice: null },
+      QF: { players: [p], captain: playerKey(p) },
     }
     // A QF match for ARG exists but its detail is missing -> team did not "feature" -> 0
     const qf: ScorableMatch = { stage: 'QF', apiFixtureId: 555, homeCode: 'ARG', awayCode: 'XXX' }

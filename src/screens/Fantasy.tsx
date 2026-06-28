@@ -50,7 +50,7 @@ export function Fantasy() {
   // edits a local DRAFT that only commits on Save (so abandoning discards cleanly).
   const [mode, setMode] = useState<'view' | 'transfer'>('view')
   const [draft, setDraft] = useState<RoundSquad | null>(null)
-  const emptySquad = (): RoundSquad => ({ players: [], captain: null, vice: null })
+  const emptySquad = (): RoundSquad => ({ players: [], captain: null })
 
   // A slow clock so the timeline flips to LIVE at kickoff even between data polls.
   const [now, setNow] = useState(() => Date.now())
@@ -166,20 +166,16 @@ export function Fantasy() {
 
   // ---- transfer draft (local; commits only on Save) ----
   const cloneSquad = (s: RoundSquad | undefined) =>
-    ({ players: (s?.players ?? []).map((p) => ({ ...p })), captain: s?.captain ?? null, vice: s?.vice ?? null })
+    ({ players: (s?.players ?? []).map((p) => ({ ...p })), captain: s?.captain ?? null })
   const draftPick = (slot: Slot, pick: FantasyPick | null) =>
     setDraft((d) => {
       const cur = d ?? emptySquad()
       const removed = cur.players.find((p) => p.slot === slot)
       const next = cur.players.filter((p) => p.slot !== slot)
       if (pick) next.push(pick)
-      let { captain, vice } = cur
-      if (removed) {
-        const k = playerKey(removed)
-        if (captain === k) captain = null
-        if (vice === k) vice = null
-      }
-      return { players: next, captain, vice }
+      let { captain } = cur
+      if (removed && captain === playerKey(removed)) captain = null
+      return { players: next, captain }
     })
   const draftCaptain = (key: string) => setDraft((d) => (d ? { ...d, captain: d.captain === key ? null : key } : d))
   const startTransfers = () => { setDraft(cloneSquad(committed)); setMode('transfer'); setSelected(null); setOpenSlot(null) }
@@ -194,9 +190,8 @@ export function Fantasy() {
   }
 
   // Shared body for acting on a filled token — rendered in a desktop popover and
-  // a mobile bottom sheet. Captain/Vice are real toggles; the captain can never be
-  // offered Vice (no silent no-op). Toggle-off re-sets the same pick, which makes
-  // the reducer clear captain/vice for that key — no store change needed.
+  // a mobile bottom sheet. Captain is a real toggle; toggling it off re-sets the
+  // same pick, which makes the reducer clear the captain for that key.
   const TokenActions = ({ slot, onClose }: { slot: Slot; onClose: () => void }) => {
     const pick = players.find((p) => p.slot === slot)
     if (!pick) return null

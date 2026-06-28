@@ -54,7 +54,7 @@ function pruneStale(preds: Predictions): Predictions {
   return next
 }
 
-const emptySquad = (): RoundSquad => ({ players: [], captain: null, vice: null })
+const emptySquad = (): RoundSquad => ({ players: [], captain: null })
 
 interface GamesCtx {
   predictions: Predictions
@@ -66,7 +66,6 @@ interface GamesCtx {
   seedRound: (round: Round, players: FantasyPick[]) => void
   setRoundSquad: (round: Round, squad: RoundSquad) => void
   setCaptain: (round: Round, key: string) => void
-  setVice: (round: Round, key: string) => void
   resetFantasy: () => void
 }
 
@@ -211,20 +210,16 @@ export function GamesProvider({ children }: { children: ReactNode }) {
       const removed = cur.players.find((p) => p.slot === slot)
       const players = cur.players.filter((p) => p.slot !== slot)
       if (pick) players.push(pick)
-      let { captain, vice } = cur
-      if (removed) {
-        const k = playerKey(removed)
-        if (captain === k) captain = null
-        if (vice === k) vice = null
-      }
-      return { ...fr, [round]: { players, captain, vice } }
+      let { captain } = cur
+      if (removed && captain === playerKey(removed)) captain = null
+      return { ...fr, [round]: { players, captain } }
     })
   }, [])
 
   const seedRound = useCallback((round: Round, players: FantasyPick[]) => {
     setFantasy((fr) => {
       if (fr[round]) return fr
-      return { ...fr, [round]: { players: players.map((p) => ({ ...p })), captain: null, vice: null } }
+      return { ...fr, [round]: { players: players.map((p) => ({ ...p })), captain: null } }
     })
   }, [])
 
@@ -232,7 +227,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   const setRoundSquad = useCallback((round: Round, squad: RoundSquad) => {
     setFantasy((fr) => ({
       ...fr,
-      [round]: { players: squad.players.map((p) => ({ ...p })), captain: squad.captain, vice: squad.vice },
+      [round]: { players: squad.players.map((p) => ({ ...p })), captain: squad.captain },
     }))
   }, [])
 
@@ -240,24 +235,15 @@ export function GamesProvider({ children }: { children: ReactNode }) {
     setFantasy((fr) => {
       const cur = fr[round]
       if (!cur) return fr
-      const vice = cur.vice === key ? null : cur.vice
-      return { ...fr, [round]: { ...cur, captain: key, vice } }
-    })
-  }, [])
-
-  const setVice = useCallback((round: Round, key: string) => {
-    setFantasy((fr) => {
-      const cur = fr[round]
-      if (!cur || cur.captain === key) return fr
-      return { ...fr, [round]: { ...cur, vice: key } }
+      return { ...fr, [round]: { ...cur, captain: key } }
     })
   }, [])
 
   const resetFantasy = useCallback(() => setFantasy({}), [])
 
   const value = useMemo<GamesCtx>(
-    () => ({ predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, setVice, resetFantasy }),
-    [predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, setVice, resetFantasy],
+    () => ({ predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy }),
+    [predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

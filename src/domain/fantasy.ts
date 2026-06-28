@@ -65,7 +65,6 @@ export interface RoundSquad {
   /** up to 5 picks, one per slot */
   players: FantasyPick[]
   captain: string | null
-  vice: string | null
 }
 /** Unique per player. Includes the shirt number because some squads list two
  *  different players under the same single name (e.g. Brazil's two "Danilo"s). */
@@ -251,8 +250,9 @@ export interface RoundScore {
 
 /**
  * Score a round. `detailsFor(teamCode)` returns the team's finished match details
- * in this round. Captain doubles; if the captain's team didn't feature this round
- * (eliminated), the vice's points are doubled instead (auto-vice).
+ * in this round. The captain's points are doubled; if the captain's team didn't
+ * feature (eliminated), their base is 0 anyway, so the double simply yields 0 —
+ * there's no vice fallback.
  */
 export function scoreRound(
   round: Round,
@@ -260,15 +260,7 @@ export function scoreRound(
   prevPlayers: FantasyPick[],
   detailsFor: (teamCode: TeamCode) => MatchDetail[],
 ): RoundScore {
-  const teamPlayed = (code: TeamCode) => detailsFor(code).length > 0
-
-  // effective captain: captain unless their team didn't feature → vice
-  const capPick = squad.players.find((p) => playerKey(p) === squad.captain)
-  const vicePick = squad.players.find((p) => playerKey(p) === squad.vice)
-  let effectiveCaptain: string | null = null
-  if (capPick && teamPlayed(capPick.teamCode)) effectiveCaptain = squad.captain
-  else if (vicePick && teamPlayed(vicePick.teamCode)) effectiveCaptain = squad.vice
-  else effectiveCaptain = squad.captain // nobody featured yet; keep nominal captain
+  const effectiveCaptain = squad.captain
 
   const perPlayer: RoundScore['perPlayer'] = {}
   let live = 0
