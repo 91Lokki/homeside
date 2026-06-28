@@ -10,6 +10,7 @@ import { useMatchDetails } from '@/lib/matchData'
 import { supabase } from '@/lib/supabase'
 import { useApp } from '@/state/store'
 import { useAuth } from '@/state/auth'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 import { Flag } from '@/components/Flag'
 import { Label } from '@/components/ui/atoms'
@@ -29,14 +30,12 @@ type SortKey = 'predict' | 'fantasy'
 export function Leaderboard() {
   const { status, user, signInWithGoogle } = useAuth()
   const { matches } = useApp()
+  const t = useT()
 
   const [rows, setRows] = useState<PickRow[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('predict')
 
-  // The leaderboard is public — read it from the `leaderboard` view (no emails),
-  // which anon and signed-in users can both see. Names come from each player's
-  // Google display name; scores are computed client-side below.
   useEffect(() => {
     if (!supabase || status === 'unavailable' || status === 'loading') return
     let cancelled = false
@@ -63,8 +62,6 @@ export function Leaderboard() {
     }
   }, [status])
 
-  // Same source data every client scores from — ESPN results → resolved bracket +
-  // finished knockout box scores. Picks differ per person; the results don't.
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const koMatches = useMemo<(Match & { apiFixtureId: number })[]>(
     () =>
@@ -90,53 +87,52 @@ export function Leaderboard() {
     return scored
   }, [rows, resolved, scorable, details, sortKey])
 
-  /* --------------------------------- states -------------------------------- */
   if (status === 'unavailable') {
-    return <Centered>The league isn’t configured for this build.</Centered>
+    return <Centered>The league isn&rsquo;t configured for this build.</Centered>
   }
   if (status === 'loading') {
-    return <Centered>Checking your session…</Centered>
+    return <Centered>{t.leagueSessionCheck}</Centered>
   }
 
   return (
     <div className="animate-fade-in">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <Label>Homeside · 2026</Label>
-          <h1 className="mt-2 font-grotesk text-3xl font-bold tracking-tight sm:text-4xl">League</h1>
+          <Label>{t.leagueLabel}</Label>
+          <h1 className="mt-2 font-grotesk text-3xl font-bold tracking-tight sm:text-4xl">{t.leagueTitle}</h1>
         </div>
         <Segmented value={sortKey} onChange={setSortKey} />
       </header>
 
       {status === 'signedOut' && (
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-black/[0.035] px-4 py-3 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10">
-          <p className="text-sm text-muted">Viewing as a guest. Sign in to play and join the board.</p>
+          <p className="text-sm text-muted">{t.leagueGuestNote}</p>
           <button
             onClick={() => void signInWithGoogle()}
             className="shrink-0 rounded-pill bg-ink px-4 py-2 text-xs font-semibold text-canvas transition-transform duration-300 ease-calm hover:-translate-y-0.5"
           >
-            Sign in
+            {t.leagueSignIn}
           </button>
         </div>
       )}
 
       {loadError ? (
-        <Centered>Couldn’t load the league ({loadError}).</Centered>
+        <Centered>{t.leagueLoadError(loadError)}</Centered>
       ) : rows === null ? (
-        <Centered>Loading the league…</Centered>
+        <Centered>{t.leagueLoading}</Centered>
       ) : board.length === 0 ? (
-        <Centered>No one has joined yet. You’re first — make your picks!</Centered>
+        <Centered>{t.leagueEmpty}</Centered>
       ) : (
         <>
           <div className="mt-6 overflow-hidden rounded-[20px] bg-black/[0.025] ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.04] dark:ring-white/10">
             <div className="grid grid-cols-[2.5rem_1fr_4rem_4rem] items-center gap-2 border-b border-black/[0.06] px-4 py-2.5 text-2xs uppercase tracking-label text-faint dark:border-white/10 sm:grid-cols-[3rem_1fr_5rem_5rem]">
-              <span>#</span>
-              <span>Player</span>
+              <span>{t.leagueHashCol}</span>
+              <span>{t.leaguePlayerCol}</span>
               <button onClick={() => setSortKey('predict')} className={cn('text-right transition-colors', sortKey === 'predict' ? 'text-ink' : 'hover:text-muted')}>
-                Predict
+                {t.navPredict}
               </button>
               <button onClick={() => setSortKey('fantasy')} className={cn('text-right transition-colors', sortKey === 'fantasy' ? 'text-ink' : 'hover:text-muted')}>
-                Fantasy
+                {t.navFantasy}
               </button>
             </div>
             <ul>
@@ -161,7 +157,7 @@ export function Leaderboard() {
                         </span>
                       )}
                       <span className="min-w-0 truncate text-sm font-medium text-ink">{r.name}</span>
-                      {isMe && <span className="shrink-0 rounded-full bg-team/15 px-1.5 py-0.5 text-[10px] font-semibold text-team">you</span>}
+                      {isMe && <span className="shrink-0 rounded-full bg-team/15 px-1.5 py-0.5 text-[10px] font-semibold text-team">{t.leagueYou}</span>}
                     </span>
                     <span className={cn('text-right font-grotesk text-base tnum', sortKey === 'predict' ? 'font-bold text-ink' : 'font-medium text-muted')}>{r.predict}</span>
                     <span className={cn('text-right font-grotesk text-base tnum', sortKey === 'fantasy' ? 'font-bold text-ink' : 'font-medium text-muted')}>{r.fantasy}</span>
@@ -171,7 +167,7 @@ export function Leaderboard() {
             </ul>
           </div>
           <p className="mt-3 px-1 text-2xs text-faint">
-            {detailsLoading ? 'Scoring from finished matches…' : 'Scored from real finished matches via ESPN — same math as each game screen.'}
+            {detailsLoading ? t.leagueScoring : t.leagueScoringDone}
           </p>
         </>
       )}
@@ -180,9 +176,10 @@ export function Leaderboard() {
 }
 
 function Segmented({ value, onChange }: { value: SortKey; onChange: (k: SortKey) => void }) {
+  const t = useT()
   const opts: { key: SortKey; label: string }[] = [
-    { key: 'predict', label: 'Predict' },
-    { key: 'fantasy', label: 'Fantasy' },
+    { key: 'predict', label: t.navPredict },
+    { key: 'fantasy', label: t.navFantasy },
   ]
   return (
     <div className="flex rounded-pill bg-black/[0.04] p-0.5 ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">

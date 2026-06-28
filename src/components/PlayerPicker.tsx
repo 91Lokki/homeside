@@ -4,8 +4,9 @@ import { keyPlayerById, type KeyPlayerArchetype } from '@/data/keyPlayers'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
 import { PlayerAvatar } from './PlayerAvatar'
-import { posCat, POS_ABBR, SLOT_ALLOWS, SLOT_LABEL, playerKey, type PosCat, type Slot } from '@/domain/fantasy'
+import { posCat, SLOT_ALLOWS, playerKey, type PosCat, type Slot } from '@/domain/fantasy'
 import type { TeamCode } from '@/domain/types'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 
 interface PoolPlayer {
@@ -17,7 +18,6 @@ interface PoolPlayer {
   teamName: string
 }
 
-/** Accent-insensitive search key, so "modric" finds "Modrić". */
 const foldText = (s: string) =>
   (s || '')
     .normalize('NFD')
@@ -40,11 +40,6 @@ const POOL: IndexedPlayer[] = Object.entries(SQUADS).flatMap(([code, squad]) =>
   })),
 )
 
-/**
- * Inline player picker — an in-page screen (NOT a modal/overlay). It replaces the
- * squad view while choosing, with a back button, a sticky search, and a responsive
- * grid of player cards that fills the width on desktop and stacks on mobile.
- */
 const ALL_POS: PosCat[] = ['GK', 'DEF', 'MID', 'ATT']
 const ARCHETYPE_BADGE: Record<KeyPlayerArchetype, string> = {
   Scorer: 'text-rose-700/70 ring-rose-500/15 dark:text-rose-200/70 dark:ring-rose-300/15',
@@ -92,23 +87,20 @@ export function PlayerPicker({
   canAdd,
   embedded = false,
 }: {
-  /** The slot being filled, or null to browse the whole pool (picks auto-assign). */
   slot: Slot | null
   onPick: (p: { name: string; teamCode: TeamCode; position: PosCat; number: number | null }) => void
   onClose: () => void
   taken?: Set<string>
   isCountryFull?: (teamCode: TeamCode) => boolean
-  /** In browse mode, whether a position can still be added (an open slot exists). */
   canAdd?: (pos: PosCat) => boolean
-  /** Rendered as a persistent side panel (desktop) — hides the back button. */
   embedded?: boolean
 }) {
+  const t = useT()
   const [query, setQuery] = useState('')
   const [posFilter, setPosFilter] = useState<PosCat | null>(null)
-  const browsing = slot == null // whole-pool browse (no specific slot being filled)
+  const browsing = slot == null
   const allowed = slot ? SLOT_ALLOWS[slot] : ALL_POS
 
-  // Single source of truth for whether a row can be added (drives sort + disable).
   const rowDisabled = (p: IndexedPlayer) =>
     (isCountryFull?.(p.teamCode) ?? false) || (canAdd ? !canAdd(p.pos) : false)
 
@@ -119,7 +111,6 @@ export function PlayerPicker({
       .filter((p) => (browsing && posFilter ? p.pos === posFilter : true))
       .filter((p) => !q || p.search.includes(q))
       .sort((a, b) => {
-        // addable players first — never open on a wall of greyed rows
         const da = rowDisabled(a) ? 1 : 0
         const db = rowDisabled(b) ? 1 : 0
         if (da !== db) return da - db
@@ -128,14 +119,12 @@ export function PlayerPicker({
   }, [query, allowed, taken, browsing, posFilter, isCountryFull, canAdd])
 
   const addableCount = useMemo(() => results.filter((p) => !rowDisabled(p)).length, [results])
-  // Total (untaken) players per position — for the browse filter; always > 0.
   const posCounts = useMemo(() => {
     const m: Record<PosCat, number> = { GK: 0, DEF: 0, MID: 0, ATT: 0 }
     for (const p of POOL) if (!taken?.has(playerKey(p))) m[p.pos]++
     return m
   }, [taken])
 
-  // Position filter for whole-pool browsing (search + look without a target slot).
   const posFilterBar = browsing && (
     <div className="mt-3 flex flex-wrap gap-1.5">
       <button
@@ -145,7 +134,7 @@ export function PlayerPicker({
           posFilter === null ? 'bg-team text-team-ink' : 'bg-black/[0.04] text-muted hover:text-ink dark:bg-white/[0.06]',
         )}
       >
-        All
+        {t.poolAll}
       </button>
       {ALL_POS.map((pos) => (
         <button
@@ -156,18 +145,23 @@ export function PlayerPicker({
             posFilter === pos ? 'bg-team text-team-ink' : 'bg-black/[0.04] text-muted hover:text-ink dark:bg-white/[0.06]',
           )}
         >
-          {POS_ABBR[pos] ?? pos} <span className="tnum opacity-70">{posCounts[pos]}</span>
+          {t.fantasyPosAbbr[pos] ?? pos} <span className="tnum opacity-70">{posCounts[pos]}</span>
         </button>
       ))}
     </div>
   )
 
-  const heading = embedded ? 'Player pool' : `Pick your ${slot ? SLOT_LABEL[slot].toLowerCase() : 'player'}`
+  const slotLabel = slot ? t.fantasySlotLabel[slot] : ''
+  const heading = embedded
+    ? t.poolTitle
+    : slot
+      ? t.poolPickSlot(slotLabel.toLowerCase())
+      : t.poolTitle
   const helper = slot
     ? slot === 'FLEX'
-      ? 'Filling Flex — any outfielder (defender, midfielder or forward).'
-      : `Filling ${SLOT_LABEL[slot].toLowerCase()}.`
-    : 'Tap ＋ to add — each pick drops into the first open spot.'
+      ? t.poolFillFlex
+      : t.poolFillSlot(slotLabel.toLowerCase())
+    : t.poolBrowse
 
   const searchBar = (
     <div className="flex items-center gap-2.5 rounded-pill bg-black/[0.04] px-4 py-3 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10">
@@ -175,7 +169,7 @@ export function PlayerPicker({
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by name, club or country…"
+        placeholder={t.poolSearchPlaceholder}
         className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-faint"
       />
     </div>
@@ -204,10 +198,10 @@ export function PlayerPicker({
               {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} starOnly />}
             </span>
             <span className="block truncate text-2xs text-faint">
-              <span className="font-semibold uppercase tracking-label text-muted">{POS_ABBR[p.pos] ?? p.pos}</span> · {p.teamName}
+              <span className="font-semibold uppercase tracking-label text-muted">{t.fantasyPosAbbr[p.pos] ?? p.pos}</span> · {p.teamName}
               {p.club ? ` · ${p.club}` : ''}
             </span>
-            {full && <span className="mt-0.5 block text-2xs text-amber-600 dark:text-amber-500">country quota full</span>}
+            {full && <span className="mt-0.5 block text-2xs text-amber-600 dark:text-amber-500">{t.poolCountryFull}</span>}
           </span>
           <span className="flex shrink-0 items-center justify-end gap-2">
             {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} showStar={false} />}
@@ -215,7 +209,6 @@ export function PlayerPicker({
               <span className="font-grotesk text-sm tnum text-faint">{p.number}</span>
             )}
           </span>
-          {/* add affordance — the reference's Action column; the only accent in the list */}
           <span
             aria-hidden
             className={cn(
@@ -232,8 +225,6 @@ export function PlayerPicker({
     )
   })
 
-  // Desktop: one framed box — header pinned, list scrolls — that fills the column
-  // height so it lines up top-and-bottom with the pitch beside it.
   if (embedded) {
     return (
       <section className="flex h-full">
@@ -244,10 +235,10 @@ export function PlayerPicker({
               <span className="flex items-center gap-2 text-2xs uppercase tracking-label text-faint">
                 {slot && (
                   <button onClick={onClose} className="normal-case tracking-normal text-team hover:underline">
-                    show all
+                    {t.poolShowAll}
                   </button>
                 )}
-                {addableCount} addable
+                {t.poolAddable(addableCount)}
               </span>
             </div>
             <p className="mt-1 text-2xs text-faint">{helper}</p>
@@ -255,7 +246,7 @@ export function PlayerPicker({
             {posFilterBar}
           </div>
           {results.length === 0 ? (
-            <p className="grid flex-1 place-items-center px-1 text-center text-sm text-faint">No players match.</p>
+            <p className="grid flex-1 place-items-center px-1 text-center text-sm text-faint">{t.poolNoMatch}</p>
           ) : (
             <ul className="min-h-0 flex-1 divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
               {listItems}
@@ -266,25 +257,24 @@ export function PlayerPicker({
     )
   }
 
-  // Mobile / full-screen: heading + search above a bounded, scrollable list.
   return (
     <section className="animate-fade-in">
       <button
         onClick={onClose}
         className="mb-4 inline-flex items-center gap-1 rounded-pill bg-black/[0.04] py-1.5 pl-2 pr-3.5 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.06] transition-colors hover:text-ink dark:bg-white/[0.06] dark:ring-white/10"
       >
-        <ChevronLeft size={16} /> Squad
+        <ChevronLeft size={16} /> {t.poolBack}
       </button>
 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <h2 className="font-grotesk text-2xl font-bold tracking-tight">{heading}</h2>
-        <span className="text-2xs uppercase tracking-label text-faint">{addableCount} addable</span>
+        <span className="text-2xs uppercase tracking-label text-faint">{t.poolAddable(addableCount)}</span>
       </div>
       <p className="mb-4 text-sm text-muted">{helper}</p>
       <div className="mb-4">{searchBar}</div>
 
       {results.length === 0 ? (
-        <p className="px-1 py-10 text-center text-sm text-faint">No players match.</p>
+        <p className="px-1 py-10 text-center text-sm text-faint">{t.poolNoMatch}</p>
       ) : (
         <ul className="panel max-h-[64vh] divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
           {listItems}

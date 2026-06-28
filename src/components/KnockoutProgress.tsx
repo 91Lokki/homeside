@@ -1,5 +1,6 @@
 import { Check, Trophy } from 'lucide-react'
 import type { Round } from '@/domain/fantasy'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 
 export type RoundState = 'done' | 'live' | 'focus' | 'upcoming'
@@ -12,12 +13,8 @@ export interface ProgressNode {
   dateLabel?: string
 }
 
-/**
- * The knockout run as a timeline (not a switcher): a single animated track that
- * fills as the tournament advances, a pulsing node for a round in play, a trophy
- * at the Final. Motion only — the design system forbids gradients and shadows.
- */
 export function KnockoutProgress({ nodes }: { nodes: ProgressNode[] }) {
+  const t = useT()
   const n = nodes.length
   const live = nodes.some((x) => x.state === 'live')
   const allDone = n > 0 && nodes.every((x) => x.state === 'done')
@@ -27,20 +24,19 @@ export function KnockoutProgress({ nodes }: { nodes: ProgressNode[] }) {
   return (
     <div className="mb-7">
       <div className="mb-3 flex items-center justify-between">
-        <span className="label">{allDone ? 'Champions crowned' : 'Knockout run'}</span>
+        <span className="label">{allDone ? t.progressChampions : t.progressRun}</span>
         {live && (
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-team-soft px-2.5 py-0.5 text-2xs font-semibold uppercase tracking-label text-team">
             <span className="relative grid h-1.5 w-1.5 place-items-center">
               <span className="absolute inset-0 rounded-full bg-team animate-ping" />
               <span className="h-1.5 w-1.5 rounded-full bg-team" />
             </span>
-            Live
+            {t.progressLive}
           </span>
         )}
       </div>
 
       <div className="relative">
-        {/* base track + animated fill, drawn between the first and last node centres */}
         <div className="absolute left-[18px] right-[18px] top-[18px] h-[2px] -translate-y-1/2 rounded-full bg-hairline" />
         <div
           className="absolute left-[18px] top-[18px] h-[2px] -translate-y-1/2 rounded-full bg-team transition-[width] duration-700 ease-calm"
@@ -49,7 +45,7 @@ export function KnockoutProgress({ nodes }: { nodes: ProgressNode[] }) {
 
         <div className="relative flex items-start justify-between">
           {nodes.map((node) => (
-            <Node key={node.round} node={node} />
+            <Node key={node.round} node={node} tFinal={t.progressFinal} tPts={t.progressPts} tLive={t.progressLive} />
           ))}
         </div>
       </div>
@@ -57,7 +53,7 @@ export function KnockoutProgress({ nodes }: { nodes: ProgressNode[] }) {
   )
 }
 
-function Node({ node }: { node: ProgressNode }) {
+function Node({ node, tFinal, tPts, tLive }: { node: ProgressNode; tFinal: string; tPts: (n: number) => string; tLive: string }) {
   const { state, round, label, points, dateLabel } = node
   const isFinal = round === 'FINAL'
   const filled = state === 'done' || state === 'live'
@@ -80,13 +76,13 @@ function Node({ node }: { node: ProgressNode }) {
 
       <div className="mt-2 flex flex-col items-center text-center leading-tight">
         <span className={cn('font-grotesk text-2xs font-medium', state === 'upcoming' ? 'text-faint' : 'text-muted')}>
-          {isFinal ? 'Final' : label}
+          {isFinal ? tFinal : label}
         </span>
         <span className="mt-0.5 text-[10px] tnum">
           {state === 'done' ? (
-            <span className="font-semibold text-team">{points ?? 0} pts</span>
+            <span className="font-semibold text-team">{tPts(points ?? 0)}</span>
           ) : state === 'live' ? (
-            <span className="font-semibold uppercase tracking-label text-team">live</span>
+            <span className="font-semibold uppercase tracking-label text-team">{tLive}</span>
           ) : (
             <span className="text-faint">{dateLabel ?? ''}</span>
           )}

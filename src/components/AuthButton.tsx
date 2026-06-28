@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom'
 import { ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '@/state/auth'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 import { AuthSheet } from './AuthSheet'
 
-/** Circular monogram in the home-team colour. */
 function Avatar({ name, size = 28 }: { name: string; size?: number }) {
   return (
     <span
@@ -24,13 +24,9 @@ function Avatar({ name, size = 28 }: { name: string; size?: number }) {
   )
 }
 
-/**
- * Header account control. Signed out → a "Sign in" pill opening the join sheet.
- * Signed in → an avatar pill opening a compact account menu (a dropdown on
- * desktop, a bottom sheet on mobile). Hidden when there's no backend / mid-check.
- */
 export function AuthButton() {
   const { status, displayName, user, signOut } = useAuth()
+  const t = useT()
   const [open, setOpen] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 640px)')
 
@@ -43,7 +39,7 @@ export function AuthButton() {
           onClick={() => setOpen(true)}
           className="rounded-pill border border-black/10 px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-black/[0.04] dark:border-white/15 dark:hover:bg-white/[0.06]"
         >
-          Sign in
+          {t.authSignIn}
         </button>
         {open && <AuthSheet onClose={() => setOpen(false)} />}
       </>
@@ -71,7 +67,7 @@ export function AuthButton() {
         }}
         className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
       >
-        <LogOut size={15} className="text-faint" /> Sign out
+        <LogOut size={15} className="text-faint" /> {t.authSignOut}
       </button>
     </div>
   )
@@ -82,7 +78,7 @@ export function AuthButton() {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        title="Account"
+        title={t.authAccountTitle}
         className={cn(
           'flex items-center gap-2 rounded-pill border border-transparent py-1 pl-1 pr-2 transition-colors',
           open ? 'bg-black/[0.05] dark:bg-white/[0.07]' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',

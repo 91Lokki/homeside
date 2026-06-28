@@ -6,12 +6,15 @@ import { AppProvider, useApp } from '@/state/store'
 import { GamesProvider } from '@/state/games'
 import { AuthProvider } from '@/state/auth'
 import { ThemeProvider, useTheme } from '@/state/theme'
+import { LangProvider } from '@/state/lang'
 import { authEnabled } from '@/lib/supabase'
+import { useT } from '@/lib/useT'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
 import { AuthButton } from '@/components/AuthButton'
 import { RequireAuth } from '@/components/RequireAuth'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { LangToggle } from '@/components/ui/LangToggle'
 import { cn } from '@/lib/utils'
 import { Predict } from '@/screens/Predict'
 import { Fantasy } from '@/screens/Fantasy'
@@ -24,15 +27,17 @@ export function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AuthProvider>
-          <AppProvider>
-            <GamesProvider>
-              <BrowserRouter>
-                <Shell />
-              </BrowserRouter>
-            </GamesProvider>
-          </AppProvider>
-        </AuthProvider>
+        <LangProvider>
+          <AuthProvider>
+            <AppProvider>
+              <GamesProvider>
+                <BrowserRouter>
+                  <Shell />
+                </BrowserRouter>
+              </GamesProvider>
+            </AppProvider>
+          </AuthProvider>
+        </LangProvider>
       </ThemeProvider>
     </ErrorBoundary>
   )
@@ -41,6 +46,7 @@ export function App() {
 function Shell() {
   const { homeCode, homeTeam, setHomeCode, connected } = useApp()
   const { isDark } = useTheme()
+  const t = useT()
   const [pickerOpen, setPickerOpen] = useState(false)
 
   // Onboarding gate — no home team yet, or the user chose to change it.
@@ -57,6 +63,14 @@ function Shell() {
     )
   }
 
+  const TABS = [
+    { to: '/predict', label: t.navPredict, short: t.navPredict, end: false, icon: GitFork },
+    { to: '/fantasy', label: t.navFantasy, short: t.navFantasy, end: false, icon: Users },
+    { to: '/team', label: t.navTeam, short: t.navTeam, end: false, icon: Hexagon },
+    { to: '/schedule', label: t.navSchedule, short: t.navScheduleShort, end: false, icon: CalendarDays },
+    ...(authEnabled ? [{ to: '/league', label: t.navLeague, short: t.navLeague, end: false, icon: Trophy }] : []),
+  ]
+
   return (
     <div className="relative flex min-h-dvh flex-col text-ink">
       <div className="app-backdrop app-backdrop--light" style={{ opacity: isDark ? 0 : 1 }} aria-hidden />
@@ -68,13 +82,13 @@ function Shell() {
             <span className="label hidden sm:inline">2026</span>
           </div>
 
-          <Nav className="hidden sm:flex" />
+          <Nav tabs={TABS} className="hidden sm:flex" />
 
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setPickerOpen(true)}
               className="flex items-center gap-2 rounded-pill border py-1 pl-1 pr-1 transition-colors hover:border-ink/30 sm:pr-3"
-              title="Change team"
+              title={t.navTeam}
             >
               <span
                 className="grid h-7 w-7 place-items-center rounded-full font-grotesk text-[10px] font-bold"
@@ -85,6 +99,7 @@ function Shell() {
               <span className="hidden text-xs font-medium sm:inline">{homeTeam?.name}</span>
             </button>
             <AuthButton />
+            <LangToggle />
             <ThemeToggle />
           </div>
         </div>
@@ -106,33 +121,24 @@ function Shell() {
       <footer className="relative z-10 border-t border-black/[0.06] pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-white/10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-5 py-4 text-2xs text-faint sm:px-8">
           <span>
-            {connected ? 'Real results & stats via ESPN.' : `Snapshot as of ${DATA_META.asOf}.`} Scored from real
-            finished matches only — no simulation.
+            {connected ? t.footerConnected : t.footerSnapshot(DATA_META.asOf)} {t.footerNoSim}
           </span>
-          <span>Homeside · an unofficial 2026 companion</span>
+          <span>{t.footerCredit}</span>
         </div>
       </footer>
 
-      <BottomNav />
+      <BottomNav tabs={TABS} />
     </div>
   )
 }
 
-const TABS = [
-  { to: '/predict', label: 'Predict', short: 'Predict', end: false, icon: GitFork },
-  { to: '/fantasy', label: 'Fantasy', short: 'Fantasy', end: false, icon: Users },
-  { to: '/team', label: 'Team', short: 'Team', end: false, icon: Hexagon },
-  { to: '/schedule', label: 'Schedule', short: 'Sched', end: false, icon: CalendarDays },
-  // The league only appears once a backend is configured (otherwise there's
-  // nothing to rank). Until then the app is exactly the 5-tab experience.
-  ...(authEnabled ? [{ to: '/league', label: 'League', short: 'League', end: false, icon: Trophy }] : []),
-]
+interface Tab { to: string; label: string; short: string; end: boolean; icon: React.ElementType }
 
-function BottomNav() {
+function BottomNav({ tabs }: { tabs: Tab[] }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-black/[0.06] bg-black/[0.03] backdrop-blur-2xl pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-white/[0.04] sm:hidden">
       <div className="flex items-stretch justify-around">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const Icon = t.icon
           return (
             <NavLink
@@ -153,10 +159,10 @@ function BottomNav() {
   )
 }
 
-function Nav({ className }: { className?: string }) {
+function Nav({ tabs, className }: { tabs: Tab[]; className?: string }) {
   return (
     <nav className={cn('flex items-center gap-1', className)}>
-      {TABS.map((t) => (
+      {tabs.map((t) => (
         <NavLink
           key={t.to}
           to={t.to}

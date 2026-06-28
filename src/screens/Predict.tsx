@@ -11,16 +11,15 @@ import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 
 const COLUMNS: Stage[] = ['R32', 'R16', 'QF', 'SF', 'F']
 const CARD_W = 176
 const GUTTER = 26
 const COL_W = CARD_W + GUTTER
-// Flat cards (~66px) sit centered in a slot, leaving moderate, even air between
-// them — Apple keeps the cards short but the spacing comfortable, not cramped.
 const ROW_H = 108
-const THIRD_NO = 103 // third-place play-off (BRACKET stage "F3")
+const THIRD_NO = 103
 const SLIDE_MS = 380
 const CONN = 'border-black/15 dark:border-white/20'
 const STUB = 'bg-black/15 dark:bg-white/20'
@@ -28,7 +27,6 @@ const STUB = 'bg-black/15 dark:bg-white/20'
 const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '')
 const fmtTime = (iso?: string) => (iso ? new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '')
 
-/** True bracket position of every match (in-order walk of the feeder graph). */
 const BRACKET_POS: Record<number, number> = (() => {
   const byNo = new Map(BRACKET.map((b) => [b.matchNo, b]))
   const feeders = (no: number): number[] => {
@@ -58,6 +56,7 @@ export function Predict() {
   const { predictions, setPrediction, clearPredictions, predictLocked, lockPredictions } = useGames()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const [confirming, setConfirming] = useState(false)
+  const t = useT()
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const byNo = useMemo(() => new Map(resolved.map((m) => [m.matchNo, m])), [resolved])
@@ -94,8 +93,6 @@ export function Predict() {
     },
   })
 
-  // The whole bracket is predicted once every tie (incl. third place) has a valid
-  // pick — that's the gate for confirming/locking the bracket.
   const complete = useMemo(
     () =>
       BRACKET.every((b) => {
@@ -106,59 +103,43 @@ export function Predict() {
     [predicted, predictions],
   )
 
-  // mobile: adaptive two-round window — height shrinks to the focused round so all
-  // its matches fit. Switching rounds is a true horizontal carousel: a 200%-wide
-  // track holds both windows and slides by one full container width, so the
-  // leaving and entering windows never overlap (no ghost).
   const maxFocus = COLUMNS.length - 2
   const [focus, setFocus] = useState(0)
-  // slide drives the transition: `from` is the previous focus, `dir` the direction
-  // (+1 advance / leaving slides left, -1 back / leaving slides right). null = idle.
   const [slide, setSlide] = useState<{ from: number; dir: number } | null>(null)
   const goFocus = (i: number) => {
     const next = Math.max(0, Math.min(maxFocus, i))
-    if (next === focus || slide) return // ignore taps mid-animation
+    if (next === focus || slide) return
     setSlide({ from: focus, dir: next > focus ? 1 : -1 })
     setFocus(next)
   }
-  // Clear the slide after the animation runs (a timeout, never a lone
-  // transitionend, so a missed event can't lock the scrubber).
   useEffect(() => {
     if (!slide) return
-    const t = window.setTimeout(() => setSlide(null), SLIDE_MS + 40)
-    return () => window.clearTimeout(t)
+    const timer = window.setTimeout(() => setSlide(null), SLIDE_MS + 40)
+    return () => window.clearTimeout(timer)
   }, [slide])
 
-  /** A focused-round window: the focused column + the next (preview) column. */
   const renderWindow = (f: number) => {
     const previewIsFinal = cols[f + 1].stage === 'F'
-    // The Final has only one match, so its preview column would be short; give the
-    // window enough height to seat the centered Final plus the third-place card
-    // beneath it without overlap.
     const winH = previewIsFinal ? Math.max(cols[f].nos.length * ROW_H, 360) : cols[f].nos.length * ROW_H
     return (
       <div className="flex w-full" style={{ minHeight: winH }}>
-        {/* focused round (left) — connectors fan into the next column */}
         <div className="flex flex-1 flex-col">
           {cols[f].nos.map((no, i) => (
             <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
-              <MatchCard {...cardProps(no)} />
+              <MatchCard {...cardProps(no)} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
         </div>
         <div className="shrink-0" style={{ width: GUTTER }} />
-        {/* preview round (right). The Final's match stays centered (so its connector
-            lines up with the SF pair); the third-place card is positioned below it,
-            outside the flex flow, wired to nothing. */}
         <div className="relative flex flex-1 flex-col">
           {cols[f + 1].nos.map((no) => (
             <Slot key={no} hasNext={false} hasPrev topOfPair>
-              <MatchCard {...cardProps(no)} muted label={previewIsFinal ? 'Final' : undefined} />
+              <MatchCard {...cardProps(no)} muted label={previewIsFinal ? t.predictFinal : undefined} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
           {previewIsFinal && (
             <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 76 }}>
-              <MatchCard {...cardProps(THIRD_NO)} muted label="Third Place Match" />
+              <MatchCard {...cardProps(THIRD_NO)} muted label={t.predictThirdPlace} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </div>
           )}
         </div>
@@ -193,7 +174,6 @@ export function Predict() {
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
   }, [focus, isDesktop])
 
-  // desktop: full bracket, scrubber labels mirror horizontal scroll
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollLeft, setScrollLeft] = useState(0)
   useEffect(() => {
@@ -211,25 +191,23 @@ export function Predict() {
     <div className="animate-fade-in">
       <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Label>Predict the bracket</Label>
-          <h1 className="mt-2 font-grotesk text-3xl font-medium tracking-tight">Pick every winner</h1>
+          <Label>{t.predictLabel}</Label>
+          <h1 className="mt-2 font-grotesk text-3xl font-medium tracking-tight">{t.predictTitle}</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="font-grotesk text-2xl font-semibold tnum leading-none">{score.points}</p>
-            <p className="text-2xs text-faint">
-              pts · {score.correct}/{score.graded} graded
-            </p>
+            <p className="text-2xs text-faint">{t.predictGraded(score.correct, score.graded)}</p>
           </div>
           {predictLocked ? (
             <span className="inline-flex items-center gap-1.5 rounded-pill bg-team-soft px-3 py-1.5 text-xs font-semibold text-team">
-              <Lock size={12} /> Locked in
+              <Lock size={12} /> {t.predictLockedIn}
             </span>
           ) : (
             <>
               {Object.keys(predictions).length > 0 && (
                 <button onClick={clearPredictions} className="rounded-pill border px-3 py-1.5 text-xs text-muted transition-colors hover:text-ink">
-                  Reset
+                  {t.predictReset}
                 </button>
               )}
               {complete && (
@@ -237,23 +215,18 @@ export function Predict() {
                   onClick={() => setConfirming(true)}
                   className="inline-flex items-center gap-1.5 rounded-pill bg-team px-4 py-1.5 text-xs font-semibold text-team-ink transition-opacity hover:opacity-90"
                 >
-                  <Lock size={12} /> Confirm bracket
+                  <Lock size={12} /> {t.predictConfirmBtn}
                 </button>
               )}
             </>
           )}
         </div>
       </div>
-      <p className="mb-6 max-w-2xl text-sm text-muted">
-        Tap a team to predict who wins each tie — your picks carry forward to the next round, all the way to a champion.
-        As real matches finish, correct picks turn{' '}
-        <span className="font-medium text-emerald-600 dark:text-emerald-400">green</span> and wrong ones grey. You make
-        every call; nothing is auto-picked or predicted for you.
-      </p>
+      <p className="mb-6 max-w-2xl text-sm text-muted">{t.predictDesc}</p>
 
       {champion && (
         <div className="panel mb-6 inline-flex items-center gap-2 px-4 py-2">
-          <Label>Your champion</Label>
+          <Label>{t.predictChampion}</Label>
           <Flag code={champCode} size={20} />
           <span className="font-grotesk text-lg font-semibold text-team">{champion.name}</span>
         </div>
@@ -284,14 +257,12 @@ export function Predict() {
                   <div className="relative flex shrink-0 flex-col" style={{ width: CARD_W }}>
                     {col.nos.map((no, i) => (
                       <Slot key={no} hasNext={ci < cols.length - 1} hasPrev={ci > 0} topOfPair={i % 2 === 0}>
-                        <MatchCard {...cardProps(no)} label={col.stage === 'F' ? 'Final' : undefined} />
+                        <MatchCard {...cardProps(no)} label={col.stage === 'F' ? t.predictFinal : undefined} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
                       </Slot>
                     ))}
-                    {/* Third-place play-off sits below the centered Final, wired to
-                        nothing — positioned out of flow so the Final stays centered. */}
                     {col.stage === 'F' && (
                       <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 76 }}>
-                        <MatchCard {...cardProps(THIRD_NO)} muted label="Third Place Match" />
+                        <MatchCard {...cardProps(THIRD_NO)} muted label={t.predictThirdPlace} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
                       </div>
                     )}
                   </div>
@@ -307,13 +278,8 @@ export function Predict() {
             <MobileNav focus={focus} maxFocus={maxFocus} onFocus={goFocus} />
           </div>
           <div ref={boardRef}>
-            {/* Carousel viewport. overflow is clipped ONLY while sliding, so the idle
-                view never crops the right-edge connector stub (fix 3). */}
             <div ref={viewportRef} className={cn('relative', slide && 'overflow-hidden')}>
               {slide && vw > 0 ? (
-                // A 200%-wide track holding [old | new] (advance) or [new | old]
-                // (back). It starts showing one half and animates a full screen
-                // width to the other, so the windows never overlap (no ghost).
                 <div
                   key={`${slide.from}->${focus}`}
                   className="flex"
@@ -335,7 +301,6 @@ export function Predict() {
               )}
             </div>
           </div>
-          {/* keyframes for the full-width carousel slide */}
           <style>{`
             @keyframes carousel-left {
               from { transform: translateX(0); }
@@ -361,17 +326,14 @@ export function Predict() {
               <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-team-soft text-team">
                 <Lock size={18} />
               </div>
-              <h2 className="font-grotesk text-xl font-semibold tracking-tight">Confirm your bracket?</h2>
-              <p className="mt-2 text-sm text-muted">
-                Once you confirm, your picks are locked in and <span className="font-medium text-ink">can’t be changed</span>. Make sure
-                {champion ? <> your champion is <span className="font-medium text-ink">{champion.name}</span>.</> : <> everything looks right.</>}
-              </p>
+              <h2 className="font-grotesk text-xl font-semibold tracking-tight">{t.predictConfirmTitle}</h2>
+              <p className="mt-2 text-sm text-muted">{t.predictConfirmDesc(champion?.name ?? null)}</p>
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   onClick={() => setConfirming(false)}
                   className="rounded-pill px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-ink"
                 >
-                  Cancel
+                  {t.predictCancel}
                 </button>
                 <button
                   onClick={() => {
@@ -380,7 +342,7 @@ export function Predict() {
                   }}
                   className="inline-flex items-center gap-1.5 rounded-pill bg-team px-5 py-2 text-sm font-semibold text-team-ink transition-opacity hover:opacity-90"
                 >
-                  <Lock size={14} /> Lock it in
+                  <Lock size={14} /> {t.predictLock}
                 </button>
               </div>
             </div>
@@ -391,7 +353,6 @@ export function Predict() {
   )
 }
 
-/** One match cell with its slim, lightly-rounded bracket connectors in the gutters. */
 function Slot({
   hasNext,
   hasPrev,
@@ -417,8 +378,6 @@ function Slot({
   )
 }
 
-/** Mobile navigator: a clean segmented control (round labels + trophy) with a
- *  draggable lens over the two rounds in view. No density dashes. */
 function MobileNav({ focus, maxFocus, onFocus }: { focus: number; maxFocus: number; onFocus: (i: number) => void }) {
   const n = COLUMNS.length
   const trackRef = useRef<HTMLDivElement>(null)
@@ -438,7 +397,6 @@ function MobileNav({ focus, maxFocus, onFocus }: { focus: number; maxFocus: numb
       onPointerMove={(e) => e.currentTarget.hasPointerCapture(e.pointerId) && onFocus(focusFromX(e.clientX))}
       className="relative h-11 cursor-grab touch-none select-none overflow-hidden rounded-[14px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] active:cursor-grabbing dark:bg-white/[0.06] dark:ring-white/10"
     >
-      {/* lens (behind labels) marks the two rounds on screen — minimal, no arrows */}
       <div
         className="pointer-events-none absolute inset-y-1 rounded-[11px] bg-black/[0.05] ring-2 ring-inset ring-black/30 transition-[left] duration-300 ease-calm dark:bg-white/12 dark:ring-white/60"
         style={{ left: `${(focus / n) * 100}%`, width: `${(2 / n) * 100}%` }}
@@ -469,6 +427,10 @@ function MatchCard({
   locked,
   muted,
   label,
+  tFinal: _tFinal,
+  tThird: _tThird,
+  tTBD,
+  tFullTime,
 }: {
   no: number
   real: ResolvedBracketMatch | undefined
@@ -480,13 +442,15 @@ function MatchCard({
   locked?: boolean
   muted?: boolean
   label?: string
+  tFinal: string
+  tThird: string
+  tTBD: string
+  tFullTime: string
 }) {
   const def = BRACKET.find((b) => b.matchNo === no)
   const finished = real?.status === 'finished'
   return (
     <div className="relative w-full">
-      {/* a round label sitting at the card's top-left (out of flow, so it never
-          shifts the card or gets clipped by the card's overflow). */}
       {label && (
         <span className="absolute -top-[19px] left-1 font-grotesk text-2xs font-bold uppercase tracking-label text-faint">{label}</span>
       )}
@@ -497,11 +461,11 @@ function MatchCard({
         )}
       >
         <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
-          {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
+          {finished ? `${tFullTime}${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
         </div>
-        <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} />
+        <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} tTBD={tTBD} />
         <div className="h-px bg-black/5 dark:bg-white/[0.07]" />
-        <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} />
+        <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} tTBD={tTBD} />
       </div>
     </div>
   )
@@ -516,6 +480,7 @@ function Side({
   finished,
   onPick,
   locked,
+  tTBD,
 }: {
   code: TeamCode | null
   score: number | null | undefined
@@ -525,6 +490,7 @@ function Side({
   finished?: boolean
   onPick: (code: TeamCode) => void
   locked?: boolean
+  tTBD: string
 }) {
   const team = code ? teamByCode[code] : null
   const isWinner = finished && winner === code
@@ -550,7 +516,7 @@ function Side({
       ) : (
         <span className="h-[19px] w-[19px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
       )}
-      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? team.name : 'TBD'}</span>
+      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? team.name : tTBD}</span>
       {correct && <Check size={13} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
       {score != null && <span className="text-sm font-bold tnum text-ink">{score}</span>}
     </button>

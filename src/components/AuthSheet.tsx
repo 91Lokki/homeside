@@ -2,9 +2,9 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { LogOut, X } from 'lucide-react'
 import { useAuth } from '@/state/auth'
+import { useT } from '@/lib/useT'
 import { Label } from './ui/atoms'
 
-/** The multicolor Google "G" glyph. */
 function GoogleG({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
@@ -16,9 +16,9 @@ function GoogleG({ size = 18 }: { size?: number }) {
   )
 }
 
-/** A small centered modal — sign in (Google) when out, account + sign out when in. */
 export function AuthSheet({ onClose }: { onClose: () => void }) {
   const { status, user, displayName, signInWithGoogle, signOut } = useAuth()
+  const t = useT()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -42,7 +42,7 @@ export function AuthSheet({ onClose }: { onClose: () => void }) {
 
         {signedIn ? (
           <>
-            <Label>Your account</Label>
+            <Label>{t.authAccountTitle}</Label>
             <div className="mt-3 flex items-center gap-3">
               <span
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-full font-grotesk text-sm font-bold"
@@ -55,10 +55,7 @@ export function AuthSheet({ onClose }: { onClose: () => void }) {
                 {user?.email && <p className="truncate text-xs text-faint">{user.email}</p>}
               </div>
             </div>
-            <p className="mt-5 text-sm text-muted">
-              Your bracket and fantasy picks sync to the cloud, so you show up on the league leaderboard. Nothing else
-              is shared.
-            </p>
+            <p className="mt-5 text-sm text-muted">{t.authAccountDesc}</p>
             <button
               onClick={async () => {
                 await signOut()
@@ -66,17 +63,14 @@ export function AuthSheet({ onClose }: { onClose: () => void }) {
               }}
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-pill border border-black/10 py-3 text-sm font-semibold text-ink transition-colors hover:bg-black/[0.04] dark:border-white/15 dark:hover:bg-white/[0.06]"
             >
-              <LogOut size={15} /> Sign out
+              <LogOut size={15} /> {t.authSignOut}
             </button>
           </>
         ) : (
           <>
-            <Label>Homeside league</Label>
-            <h2 className="mt-2 font-grotesk text-2xl font-bold tracking-tight text-ink">Join the league.</h2>
-            <p className="mt-3 text-sm text-muted">
-              Sign in to put your bracket and fantasy scores on the leaderboard against your friends. Your picks stay
-              yours — sign-in just keeps the scoreboard honest.
-            </p>
+            <Label>{t.authLeagueLabel}</Label>
+            <h2 className="mt-2 font-grotesk text-2xl font-bold tracking-tight text-ink">{t.authJoinTitle}</h2>
+            <p className="mt-3 text-sm text-muted">{t.authJoinDesc}</p>
             <button
               onClick={() => void signInWithGoogle()}
               className="mt-6 flex w-full items-center justify-center gap-3 rounded-pill bg-ink py-3 text-sm font-semibold text-canvas transition-transform duration-300 ease-calm hover:-translate-y-0.5"
@@ -84,9 +78,9 @@ export function AuthSheet({ onClose }: { onClose: () => void }) {
               <span className="grid h-6 w-6 place-items-center rounded-full bg-white">
                 <GoogleG size={15} />
               </span>
-              Continue with Google
+              {t.authGoogle}
             </button>
-            <p className="mt-3 text-center text-2xs text-faint">You can keep playing without signing in.</p>
+            <p className="mt-3 text-center text-2xs text-faint">{t.authGuest}</p>
           </>
         )}
       </div>

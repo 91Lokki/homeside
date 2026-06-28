@@ -5,10 +5,9 @@ import type { GroupId, Match } from '@/domain/types'
 import { Flag } from '@/components/Flag'
 import { MatchReport } from '@/components/MatchReport'
 import { useApp } from '@/state/store'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 
-// One glass treatment, one hairline token, one corner radius unify the slider,
-// the standings card and every fixture card into a single engineered family.
 const GLASS = 'bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10'
 const HAIRLINE = 'border-black/5 dark:border-white/[0.07]'
 const RADIUS = 'rounded-[22px]'
@@ -19,7 +18,6 @@ const timeLabel = (m: Match) => new Date(m.kickoff).toLocaleTimeString([], { hou
 const dateLabel = (m: Match) =>
   new Date(m.kickoff).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
-/** Re-render every `ms` while `active`, so a live clock can tick on its own. */
 function useNow(active: boolean, ms = 1000) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -31,9 +29,6 @@ function useNow(active: boolean, ms = 1000) {
   return now
 }
 
-/** A live game clock as MM:SS, ticking every second between polls. ESPN gives a
- *  whole-minute clock, so we anchor to it at each poll and interpolate the seconds
- *  locally; the next poll re-syncs the minute (and handles half-time / stoppage). */
 function liveClock(minute: number | null | undefined, lastUpdated: number | null, now: number): string {
   if (minute == null) return 'LIVE'
   const since = lastUpdated != null ? Math.max(0, Math.min(119, Math.floor((now - lastUpdated) / 1000))) : 0
@@ -41,7 +36,6 @@ function liveClock(minute: number | null | undefined, lastUpdated: number | null
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
 
-/** Consistent section heading shared by both columns, so they read at one scale. */
 function SectionHead({ label, sub }: { label: string; sub?: string }) {
   return (
     <div className="mb-4 flex items-baseline justify-between px-1">
@@ -53,22 +47,17 @@ function SectionHead({ label, sub }: { label: string; sub?: string }) {
 
 export function Schedule() {
   const { matches, homeCode, homeTeam, apiStatus, healthKnown, lastUpdated } = useApp()
+  const t = useT()
   const [group, setGroup] = useState<GroupId>(homeTeam?.group ?? 'A')
   const [openId, setOpenId] = useState<string | null>(null)
 
-  // Tick once a second only while something is actually live, so the clock runs.
   const hasLive = useMemo(() => matches.some((m) => m.status === 'live'), [matches])
   const now = useNow(hasLive)
 
-  const groupCodes = useMemo(() => TEAMS.filter((t) => t.group === group).map((t) => t.code), [group])
+  const groupCodes = useMemo(() => TEAMS.filter((tm) => tm.group === group).map((tm) => tm.code), [group])
   const standings = useMemo(() => computeGroupStandings(matches, group, groupCodes), [matches, group, groupCodes])
-  // Qualified (green) / eliminated (red) / undecided — from real results across all
-  // groups (third-placed teams need every group done), so it updates live.
   const qual = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
-  // The group's six fixtures oldest→newest. A 4-team group plays 3 matchdays of two
-  // games each, chronologically grouped, so matchday = pair index + 1 (the two MD2
-  // games can fall on different calendar dates, so day-of-month won't do).
   const fixtures = useMemo(
     () =>
       matches
@@ -77,9 +66,6 @@ export function Schedule() {
     [matches, group],
   )
 
-  // Bucket the six fixtures into their three matchdays. Apple Sports carries the
-  // calendar date in a header above each pair, which both dates the games and gives
-  // the cards real rhythm — so each match card stays uncluttered below.
   const matchdays = useMemo(() => {
     const out: { day: number; matches: Match[] }[] = []
     fixtures.forEach((m, i) => {
@@ -93,28 +79,24 @@ export function Schedule() {
 
   return (
     <div className="relative z-10 mx-auto max-w-5xl animate-fade-in text-ink">
-      {/* Title block */}
       <header className="px-1">
-        <h1 className="font-grotesk text-3xl font-bold tracking-tight">World Cup</h1>
+        <h1 className="font-grotesk text-3xl font-bold tracking-tight">{t.scheduleTitle}</h1>
         <p className="mt-1.5 text-sm text-muted">
-          {homeTeam ? `Following ${homeTeam.name} · Group ${homeTeam.group}` : '2026'}
+          {homeTeam ? t.scheduleFollowing(homeTeam.name, homeTeam.group) : '2026'}
         </p>
       </header>
 
-      {/* Full-width page control: the group slider relates to the whole layout. */}
       <div className="mt-7">
         <GroupSlider value={group} onChange={(g) => { setGroup(g); setOpenId(null) }} />
       </div>
 
-      {/* Two-column body sharing one scale, radius, glass and spacing rhythm. */}
       <div className="mt-9 grid items-start gap-x-7 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)]">
-        {/* standings */}
         <section>
-          <SectionHead label={`Group ${group}`} sub="Standings" />
+          <SectionHead label={t.scheduleGroupLabel(group)} sub={t.scheduleStandings} />
           <div className={cn('overflow-hidden', RADIUS, GLASS)}>
             <div className={cn(STAND_COLS, 'px-5 pb-2.5 pt-4 text-2xs uppercase tracking-label text-faint')}>
               <span />
-              <span>Team</span>
+              <span>{t.scheduleTeamCol}</span>
               <span className="text-center">GP</span>
               <span className="text-center">W</span>
               <span className="text-center">D</span>
@@ -123,7 +105,7 @@ export function Schedule() {
               <span className="text-center">PTS</span>
             </div>
             {standings.map((row, i) => {
-              const t = teamByCode[row.code]
+              const tm = teamByCode[row.code]
               const isHome = row.code === homeCode
               const status = qual.get(row.code) ?? 'pending'
               return (
@@ -136,8 +118,6 @@ export function Schedule() {
                     isHome && 'bg-team-soft',
                   )}
                 >
-                  {/* Qualification edge: a clearly-visible colored stripe down the
-                      left of the row — green = advancing, red = eliminated. */}
                   {status !== 'pending' && (
                     <span
                       aria-hidden
@@ -156,7 +136,7 @@ export function Schedule() {
                   </span>
                   <span className="flex items-center gap-2.5 truncate">
                     <Flag code={row.code} size={22} />
-                    <span className={cn('truncate font-medium', isHome ? 'text-team' : 'text-ink')}>{t?.name ?? row.code}</span>
+                    <span className={cn('truncate font-medium', isHome ? 'text-team' : 'text-ink')}>{tm?.name ?? row.code}</span>
                   </span>
                   <span className="text-center tnum text-muted">{row.played}</span>
                   <span className="text-center tnum text-muted">{row.win}</span>
@@ -171,25 +151,23 @@ export function Schedule() {
           <div className="mt-3 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 px-1 text-2xs text-faint">
             <span className="inline-flex items-center gap-1.5">
               <span aria-hidden className="h-3 w-1 rounded-full bg-emerald-500" />
-              Advancing
+              {t.scheduleAdvancing}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span aria-hidden className="h-3 w-1 rounded-full bg-red-500" />
-              Eliminated
+              {t.scheduleEliminated}
             </span>
-            <span className="text-faint/80">Top two advance, plus the eight best third-placed teams.</span>
+            <span className="text-faint/80">{t.scheduleAdvanceNote}</span>
           </div>
         </section>
 
-        {/* fixtures & results — dated matchday headers over separated glass cards */}
         <section>
-          <SectionHead label="Fixtures & results" sub="6 matches" />
+          <SectionHead label={t.scheduleFixtures} sub={t.scheduleMatches(6)} />
           <div className="space-y-7">
             {matchdays.map(({ day, matches: dayMatches }) => (
               <div key={day}>
-                {/* Matchday header carries the calendar date for the pair below. */}
                 <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
-                  <span className="text-2xs font-semibold uppercase tracking-label text-faint">Matchday {day}</span>
+                  <span className="text-2xs font-semibold uppercase tracking-label text-faint">{t.scheduleMatchday(day)}</span>
                   <span className="text-2xs uppercase tracking-label text-faint">{dateLabel(dayMatches[0])}</span>
                 </div>
                 <div className="space-y-3">
@@ -238,6 +216,7 @@ function FixtureCard({
   lastUpdated: number | null
   onToggle: () => void
 }) {
+  const t = useT()
   const home = m.homeCode ? teamByCode[m.homeCode] : null
   const away = m.awayCode ? teamByCode[m.awayCode] : null
   const finished = m.status === 'finished'
@@ -246,9 +225,7 @@ function FixtureCard({
   const hWin = finished && (m.homeScore ?? 0) > (m.awayScore ?? 0)
   const aWin = finished && (m.awayScore ?? 0) > (m.homeScore ?? 0)
 
-  // The matchday header above already carries the date, so the caption stays short:
-  // just the match number, plus a red LIVE flag while the game is on.
-  const caption = m.stage === 'group' ? `Group Stage · Match ${matchday}` : m.stage.toUpperCase()
+  const caption = m.stage === 'group' ? t.scheduleGroupMatch(matchday) : m.stage.toUpperCase()
 
   return (
     <button
@@ -264,13 +241,11 @@ function FixtureCard({
         {live && (
           <>
             <span aria-hidden className="opacity-40">·</span>
-            <span className="font-semibold text-red-500">Live</span>
+            <span className="font-semibold text-red-500">{t.scheduleLive}</span>
           </>
         )}
       </p>
 
-      {/* Apple-Sports row: flags pushed to the edges, big scores inboard, the
-          live clock / FT / kickoff time dead-centre, team names under the flags. */}
       <div className="grid items-center gap-x-3 sm:gap-x-5" style={{ gridTemplateColumns: 'minmax(0,1fr) auto auto auto minmax(0,1fr)' }}>
         <div className="col-start-1 row-start-1 flex justify-center"><Flag code={m.homeCode} size={40} /></div>
         <span className={cn('col-start-2 row-start-1 min-w-[1.25rem] text-center font-grotesk text-4xl font-bold leading-none tnum', !showScore ? 'text-transparent' : aWin ? 'text-faint' : 'text-ink')}>
@@ -284,7 +259,7 @@ function FixtureCard({
               <span className="font-grotesk text-xl font-bold tnum text-ink">{liveClock(m.minute, lastUpdated, now)}</span>
             </>
           ) : finished ? (
-            <span className="text-2xs font-semibold uppercase tracking-label text-faint">FT</span>
+            <span className="text-2xs font-semibold uppercase tracking-label text-faint">{t.scheduleFT}</span>
           ) : (
             <span className="font-grotesk text-base font-semibold tnum text-ink">{timeLabel(m)}</span>
           )}
@@ -329,8 +304,6 @@ function GroupSlider({ value, onChange }: { value: GroupId; onChange: (g: GroupI
       onPointerUp={() => setDrag(false)}
       onPointerCancel={() => setDrag(false)}
     >
-      {/* The active thumb is the team accent. Depth comes from a 1px inset rim-light
-          only — the design system forbids drop shadows, so none is used here. */}
       <div
         className="pointer-events-none absolute bottom-1 top-1 rounded-full ring-1 ring-inset ring-white/20 transition-[left] duration-300 ease-calm"
         style={{

@@ -2,16 +2,11 @@ import { useEffect, useState } from 'react'
 import { teamByCode } from '@/data/teams'
 import type { Match } from '@/domain/types'
 import { fetchMatchReport, type ApiStatus, type MatchReport as Report } from '@/lib/api'
-import { liveDataNote } from '@/lib/apiCopy'
 import { teamFillPair } from '@/lib/prng'
 import { useTheme } from '@/state/theme'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 
-/**
- * The match report — a center-rail goal timeline + Apple-Sports-style split stat
- * tracks. Renders inline beneath a finished fixture, inside its glass day-panel,
- * so it never repeats the score line and never wraps itself in another box.
- */
 export function MatchReport({
   match,
   apiStatus,
@@ -24,6 +19,7 @@ export function MatchReport({
   const [report, setReport] = useState<Report | null>(null)
   const [state, setState] = useState<'idle' | 'loading' | 'unavailable' | 'ready'>('idle')
   const { isDark } = useTheme()
+  const t = useT()
 
   useEffect(() => {
     let cancelled = false
@@ -47,20 +43,20 @@ export function MatchReport({
   }, [match.apiFixtureId, match.homeCode, match.awayCode])
 
   if (state === 'loading') {
-    return <div className="px-5 py-5 text-2xs text-faint">Loading report…</div>
+    return <div className="px-5 py-5 text-2xs text-faint">{t.reportLoading}</div>
   }
 
   if (state === 'unavailable') {
     const note = !healthKnown
-      ? 'Checking the live data feed…'
+      ? t.reportChecking
       : apiStatus !== 'ok'
-        ? liveDataNote(apiStatus)
+        ? t.liveDataNote(apiStatus)
         : match.apiFixtureId
-          ? 'A detailed report for this match isn’t available yet.'
-          : liveDataNote('ok')
+          ? t.reportUnavailable
+          : t.liveDataNote('ok')
     return (
       <div className="px-5 py-5">
-        <p className="text-xs text-muted">Final score recorded. {note}</p>
+        <p className="text-xs text-muted">{t.reportFinalScore} {note}</p>
       </div>
     )
   }
@@ -68,9 +64,6 @@ export function MatchReport({
   if (!report) return null
 
   const goals = report.events.filter((e) => e.type === 'Goal' || e.type === 'Own Goal')
-  // Theme-safe, mutually-distinct fill colors so similar kits (e.g. Mexico vs
-  // South Africa, both green) and extreme ones (England white, Germany black)
-  // still read clearly in the split bars.
   const homeT = match.homeCode ? teamByCode[match.homeCode] : undefined
   const awayT = match.awayCode ? teamByCode[match.awayCode] : undefined
   const [homeColor, awayColor] = teamFillPair(
@@ -78,27 +71,25 @@ export function MatchReport({
     { color: awayT?.color ?? '#5b606b', color2: awayT?.color2 ?? '#5b606b' },
     isDark,
   )
-  // An own goal is shown on the side that benefited (the scoreline), not the scorer's team.
   const sideOf = (g: (typeof goals)[number]): 'home' | 'away' => {
     const home = g.team === match.homeCode
     return g.type === 'Own Goal' ? (home ? 'away' : 'home') : home ? 'home' : 'away'
   }
-  // Every goal hangs off one shared center rail in time order, on the side it counted
-  // for. A 3-vs-1 reads as a single chronological story — never two lopsided columns.
   const timeline = goals
     .map((g) => ({ ...g, side: sideOf(g) }))
     .sort((x, y) => (x.minute ?? 999) - (y.minute ?? 999))
 
+  const sl = t.reportStatLabels
   const bars: [string, typeof report.possession, string][] = [
-    ['Possession %', report.possession, '%'],
-    ['Shots', report.shots, ''],
-    ['Shots on Goal', report.shotsOnTarget, ''],
-    ['Corner Kicks', report.corners, ''],
-    ['Total Passes', report.passes, ''],
-    ['Passing Accuracy %', report.passAcc, '%'],
-    ['Offsides', report.offsides, ''],
-    ['Fouls', report.fouls, ''],
-    ['Yellow Cards', report.cards, ''],
+    [sl[0][0], report.possession, sl[0][2]],
+    [sl[1][0], report.shots, sl[1][2]],
+    [sl[2][0], report.shotsOnTarget, sl[2][2]],
+    [sl[3][0], report.corners, sl[3][2]],
+    [sl[4][0], report.passes, sl[4][2]],
+    [sl[5][0], report.passAcc, sl[5][2]],
+    [sl[6][0], report.offsides, sl[6][2]],
+    [sl[7][0], report.fouls, sl[7][2]],
+    [sl[8][0], report.cards, sl[8][2]],
   ]
   const hasStats = bars.some(([, p]) => p.home != null || p.away != null)
 
@@ -106,7 +97,6 @@ export function MatchReport({
     <div className="px-5 pb-7 pt-3 text-ink">
       {timeline.length > 0 && (
         <section className="relative pb-1">
-          {/* The faint vertical rail the whole match hangs from. */}
           <div className="pointer-events-none absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-black/[0.08] dark:bg-white/[0.12]" />
           <ul className="flex flex-col gap-3.5">
             {timeline.map((g, i) => (
@@ -117,6 +107,9 @@ export function MatchReport({
                 detail={g.detail}
                 side={g.side}
                 color={g.side === 'home' ? homeColor : awayColor}
+                tOG={t.reportOG}
+                tPen={t.reportPen}
+                tGoal={t.reportGoalFallback}
               />
             ))}
           </ul>
@@ -127,7 +120,7 @@ export function MatchReport({
         <section
           className={cn(timeline.length > 0 && 'mt-7 border-t border-black/5 pt-7 dark:border-white/[0.07]')}
         >
-          <p className="mb-6 text-center text-2xs uppercase tracking-label text-faint">Team Stats</p>
+          <p className="mb-6 text-center text-2xs uppercase tracking-label text-faint">{t.reportTeamStats}</p>
           <div className="flex flex-col gap-5">
             {bars.map(([label, p, unit]) => (
               <CompareTrack
@@ -147,35 +140,38 @@ export function MatchReport({
   )
 }
 
-/** One goal pinned to the center rail on the side it counted for, in time order. */
 function GoalRow({
   player,
   minute,
   detail,
   side,
   color,
+  tOG,
+  tPen,
+  tGoal,
 }: {
   player: string
   minute: number | null
   detail: string
   side: 'home' | 'away'
   color: string
+  tOG: string
+  tPen: string
+  tGoal: string
 }) {
   const isHome = side === 'home'
-  const tag = detail.includes('own goal') ? '(OG)' : detail.includes('penalty') ? '(pen)' : ''
+  const tag = detail.includes('own goal') ? tOG : detail.includes('penalty') ? tPen : ''
 
   const name = (
     <span className="truncate text-sm font-medium text-ink">
-      {player || 'Goal'}
+      {player || tGoal}
       {tag && <span className="ml-1 font-normal text-faint">{tag}</span>}
     </span>
   )
   const min = minute != null && (
-    <span className="shrink-0 font-grotesk text-xs tnum text-muted">{minute}’</span>
+    <span className="shrink-0 font-grotesk text-xs tnum text-muted">{minute}'</span>
   )
 
-  // The marker sits on the rail, ringed in the page color so it reads as "on" the
-  // line. The scorer hugs the rail from the correct side; the far half stays empty.
   const marker = (
     <span
       className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-canvas"
@@ -209,7 +205,6 @@ function GoalRow({
   )
 }
 
-/** A single full-width split track: the two team colors meet at the proportional point. */
 function CompareTrack({
   label,
   home,
@@ -230,8 +225,6 @@ function CompareTrack({
   const a = away ?? 0
   const total = h + a
   const empty = total === 0
-  // Home's fraction of the always-full-width track; an even split (incl. equal
-  // non-zero values) sits at 50%, and 0-0 falls through to a neutral empty track.
   const homePct = empty ? 50 : (h / total) * 100
 
   return (
@@ -248,14 +241,11 @@ function CompareTrack({
 
       <div className="relative mt-2 h-1.5 w-full overflow-hidden rounded-full">
         {empty ? (
-          // 0-0 (or no recorded contest) — a calm neutral track, never a lone dot.
           <div className="absolute inset-0 bg-black/[0.06] dark:bg-white/[0.08]" />
         ) : (
           <>
-            {/* Away color fills the whole track; home color overlays from the left. */}
             <div className="absolute inset-0" style={{ background: awayColor }} />
             <div className="absolute inset-y-0 left-0" style={{ width: `${homePct}%`, background: homeColor }} />
-            {/* A 1px notch in the page color keeps the meeting point clean. */}
             <div
               className="absolute inset-y-0 w-px -translate-x-1/2 bg-canvas"
               style={{ left: `${homePct}%` }}

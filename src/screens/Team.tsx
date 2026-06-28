@@ -1,9 +1,8 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { computeQualification, finishedFor, liveMatchFor, nextMatchFor, recordFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
-import { AXIS_LABEL, buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
+import { buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
 import type { TeamMatchStats } from '@/lib/api'
-import { liveDataNote } from '@/lib/apiCopy'
 import { useMatchDetails } from '@/lib/matchData'
 import { GROUP_STATS } from '@/data/teamStats'
 import { SQUADS } from '@/data/squads'
@@ -20,17 +19,11 @@ import { TeamSwitcher } from '@/components/TeamSwitcher'
 import { FormDots, Label, Stat } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useTheme } from '@/state/theme'
+import { useT } from '@/lib/useT'
 import { accentOn, rgba, readableInkOn } from '@/lib/prng'
 import { cn } from '@/lib/utils'
 
 const ORDER: AxisKey[] = ['attack', 'finishing', 'possession', 'defense', 'creativity', 'discipline']
-const POS_LINES = [
-  ['GK', 'Goalkeepers'],
-  ['DF', 'Defenders'],
-  ['MF', 'Midfielders'],
-  ['FW', 'Forwards'],
-] as const
-const POS_NAME: Record<string, string> = { GK: 'Goalkeeper', DF: 'Defender', MF: 'Midfielder', FW: 'Forward' }
 
 /** Fallback stats from a real final score alone (Attack/Defense only) — used when
  *  no box score is available; the other axes stay null (never fabricated). */
@@ -44,33 +37,20 @@ function resultStat(m: Match, code: string): TeamMatchStats | null {
 export function Team() {
   const { homeTeam, matches, apiStatus, healthKnown } = useApp()
   const { isDark } = useTheme()
+  const t = useT()
 
-  // Local browse state ONLY: which team this page is showing. Defaults to the
-  // home team and resets on every visit (the screen remounts on route change).
-  // It never writes back to the store, so the global home team, every other page,
-  // and the global team colour are untouched. The team accent is scoped below to
-  // this page's root element, so even the colour change stays local.
   const [viewCode, setViewCode] = useState(homeTeam?.code ?? '')
   const team = teamByCode[viewCode] ?? homeTeam
   const code = team?.code ?? ''
 
   const finished = useMemo(() => (code ? finishedFor(matches, code) : []), [matches, code])
 
-  // Pull the live ESPN box score for EVERY finished match (group + knockout) so
-  // the radar reflects the real feed in real time. /api/match is hard-cached
-  // server-side and memoized per session, so one team's handful of matches stays
-  // well under the cap.
   const fixtureIds = useMemo(
     () => finished.map((m) => m.apiFixtureId).filter((x): x is number => typeof x === 'number'),
     [finished],
   )
   const { details, loading } = useMatchDetails(fixtureIds)
 
-  // Radar inputs, all from REAL data, never fabricated:
-  //  • prefer the LIVE ESPN box score for each finished match,
-  //  • for the group stage fall back to the static ESPN bake until every match is
-  //    fetched (so the card never flickers down to partial data),
-  //  • last resort is the final score alone (gf/ga only — other axes stay null).
   const stats = useMemo<TeamMatchStats[]>(() => {
     const groupMatches = finished.filter((m) => m.stage === 'group')
     const liveGroup = groupMatches
@@ -90,32 +70,25 @@ export function Team() {
     return [...group, ...ko]
   }, [finished, details, code])
 
-  // Dynamic rating standard: rank this team's axes against the whole field
-  // (every team's real group-stage box scores) so the scale adapts and no team
-  // is ever pinned to a flat 0 or a perfect 100.
   const league = useMemo(() => buildLeague(Object.values(GROUP_STATS)), [])
   const ratings = useMemo(() => computeRatings(stats, league), [stats, league])
   const qualMap = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
-  // Collapsed by default so "Players to know" stays the priority read.
   const [fullSquadOpen, setFullSquadOpen] = useState(false)
 
   if (!homeTeam || !team) return null
 
-  // Team accent scoped to a subtree only (overrides --team within it), never
-  // <html> — so the page content + each hero card can show the browsed team's
-  // colour while the global nav theme stays the home team's.
-  const teamVarsFor = (t: typeof team): CSSProperties =>
+  // Rename inner-function team param to `tm` so the outer `t` (translations) stays accessible
+  const teamVarsFor = (tm: typeof team): CSSProperties =>
     ({
-      '--team': accentOn(t.color, isDark),
-      '--team-pure': t.color,
-      '--team-soft': rgba(t.color, isDark ? 0.16 : 0.1),
-      '--team-ink': readableInkOn(t.color),
+      '--team': accentOn(tm.color, isDark),
+      '--team-pure': tm.color,
+      '--team-soft': rgba(tm.color, isDark ? 0.16 : 0.1),
+      '--team-ink': readableInkOn(tm.color),
     }) as CSSProperties
   const teamVars = teamVarsFor(team)
   const browsingAway = team.code !== homeTeam.code
 
-  // Switch the viewed team — LOCAL browse state only, never the global home team.
   const selectTeam = (c: string) => setViewCode(c)
 
   const rec = recordFor(matches, code)
@@ -129,9 +102,6 @@ export function Team() {
   const byLine = (pos: 'GK' | 'DF' | 'MF' | 'FW') =>
     (squad?.players ?? []).filter((p) => p.position === pos).sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
 
-  // Curated key players for this team, resolved against the real squad roster
-  // (keeps the hand-picked order from KEY_PLAYERS). `keyKeys` lets the full squad
-  // mark the same players with a low-key star.
   const pKey = (p: { name: string; number?: number | null }) => playerKey({ teamCode: code, name: p.name, number: p.number })
   const playerByKey = new Map((squad?.players ?? []).map((p) => [pKey(p), p]))
   const keyPlayers = KEY_PLAYERS.filter((m) => m.teamCode === code)
@@ -139,16 +109,15 @@ export function Team() {
     .filter((x): x is { player: NonNullable<ReturnType<typeof playerByKey.get>>; archetypes: typeof x.archetypes } => Boolean(x.player))
   const keyKeys = new Set(keyPlayers.map((x) => pKey(x.player)))
 
-  // The complete roster, grouped by position. Key players keep a low-key star.
   const renderFullSquad = () => (
     <div className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2">
-      {POS_LINES.map(([pos, title]) => {
-        const rows = byLine(pos)
+      {t.teamPosLines.map(([pos, posTitle]) => {
+        const rows = byLine(pos as 'GK' | 'DF' | 'MF' | 'FW')
         if (!rows.length) return null
         return (
           <div key={pos}>
             <div className="mb-2 flex items-baseline gap-2">
-              <span className="font-grotesk text-2xs font-semibold tracking-[0.14em] text-muted">{title}</span>
+              <span className="font-grotesk text-2xs font-semibold tracking-[0.14em] text-muted">{posTitle}</span>
               <span className="h-px flex-1 bg-hairline" />
               <span className="font-grotesk text-2xs tnum text-faint">{rows.length}</span>
             </div>
@@ -177,42 +146,38 @@ export function Team() {
     </div>
   )
 
-  // One hero "card" for any team, with its own scoped colour.
-  const renderHero = (t: typeof team, hMood: typeof mood, hQual: typeof qual, vars: CSSProperties) => (
+  const renderHero = (tm: typeof team, hMood: typeof mood, hQual: typeof qual, vars: CSSProperties) => (
     <section
       style={vars}
       className="relative h-full overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5 sm:px-7"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
       <div className="pointer-events-none absolute right-4 top-3 animate-breathe sm:right-6">
-        <Mascot code={t.code} color={t.color} color2={t.color2} symbol={t.symbol} mood={hMood} size={72} />
+        <Mascot code={tm.code} color={tm.color} color2={tm.color2} symbol={tm.symbol} mood={hMood} size={72} />
       </div>
       <div className="relative max-w-[40rem]">
-        <Label>National team · Group {t.group}</Label>
+        <Label>{t.teamNationalLabel(tm.group)}</Label>
         <div className="mt-2.5 flex items-center gap-3.5">
-          <Flag code={t.code} size={48} className="shrink-0" />
+          <Flag code={tm.code} size={48} className="shrink-0" />
           <div className="min-w-0">
-            <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{t.name}</h1>
+            <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{tm.name}</h1>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">
-            {t.pot === 1 ? 'Top seed · Pot 1' : `Pot ${t.pot}`}
+            {tm.pot === 1 ? t.teamTopSeed : t.teamPot(tm.pot)}
           </span>
-          {t.host && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">Host nation</span>}
-          {hQual === 'in' && <span className="rounded-pill bg-team-soft px-2.5 py-1 text-2xs font-semibold text-team">Through to knockouts</span>}
-          {hQual === 'out' && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-faint">Eliminated</span>}
+          {tm.host && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">{t.teamHost}</span>}
+          {hQual === 'in' && <span className="rounded-pill bg-team-soft px-2.5 py-1 text-2xs font-semibold text-team">{t.teamThrough}</span>}
+          {hQual === 'out' && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-faint">{t.teamEliminated}</span>}
         </div>
       </div>
     </section>
   )
-  const heroFor = (t: typeof team) => renderHero(t, moodFor(matches, t.code).mood, qualMap.get(t.code), teamVarsFor(t))
+  const heroFor = (tm: typeof team) => renderHero(tm, moodFor(matches, tm.code).mood, qualMap.get(tm.code), teamVarsFor(tm))
 
   return (
     <div className="animate-fade-in" style={teamVars}>
-      {/* Controls — desktop: searchable selector + Back. Mobile: a compact search
-          entry + Back. Both share the same local viewCode; neither touches the
-          global home team. */}
       <div className="mb-4 flex min-h-[2.25rem] items-center gap-2">
         <div className="hidden items-center gap-2 sm:flex">
           <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} />
@@ -221,7 +186,7 @@ export function Team() {
               onClick={() => selectTeam(homeTeam.code)}
               className="rounded-pill px-3 py-1.5 text-2xs font-medium text-faint transition-colors hover:text-ink"
             >
-              ← Back to {homeTeam.name}
+              {t.teamBackTo(homeTeam.name)}
             </button>
           )}
         </div>
@@ -232,21 +197,17 @@ export function Team() {
               onClick={() => selectTeam(homeTeam.code)}
               className="inline-flex items-center gap-1.5 rounded-pill bg-black/[0.04] px-3 py-1.5 text-2xs font-medium text-muted ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10"
             >
-              ← {homeTeam.name}
+              {t.teamBackToMobile(homeTeam.name)}
             </button>
           )}
         </div>
       </div>
 
-      {/* Hero — a single card; re-keyed per team for a silky fade on switch. */}
       <div className="mb-4">
         <div key={team.code} className="animate-team-in">{heroFor(team)}</div>
       </div>
 
-      {/* The rest of the profile — re-keyed per team for a silky fade as it syncs
-          to the browsed team. */}
       <div key={team.code} className="grid grid-cols-1 gap-4 animate-team-in lg:grid-cols-12 lg:items-start">
-        {/* Pulse strip — the only result data: compact record + next/live chip. */}
       <section className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-[22px] bg-black/[0.04] px-5 py-4 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 lg:col-span-12">
         {rec.played > 0 ? (
           <>
@@ -259,21 +220,21 @@ export function Team() {
               <span className="text-xs text-faint">L</span>
             </div>
             <span className="hidden h-8 w-px bg-hairline sm:block" />
-            <Stat label="Goals" value={`${rec.gf}:${rec.ga}`} sub={`${rec.gf - rec.ga >= 0 ? '+' : ''}${rec.gf - rec.ga} GD`} />
+            <Stat label={t.teamGoals} value={`${rec.gf}:${rec.ga}`} sub={`${rec.gf - rec.ga >= 0 ? '+' : ''}${rec.gf - rec.ga} GD`} />
             <div className="flex flex-col gap-1">
-              <Label>Form</Label>
+              <Label>{t.teamForm}</Label>
               <FormDots form={rec.form} accent />
             </div>
           </>
         ) : (
           <div className="flex flex-col gap-1">
-            <Label>Record</Label>
-            <span className="text-sm text-muted">No matches played yet.</span>
+            <Label>{t.teamRecord}</Label>
+            <span className="text-sm text-muted">{t.teamNoMatches}</span>
           </div>
         )}
         {next && oppCode && (
           <span className="ml-auto inline-flex items-center gap-2 rounded-pill bg-sunken px-3 py-1.5 text-2xs font-medium text-muted">
-            {live ? <span className="font-semibold text-team">LIVE</span> : <span className="text-faint">Next</span>}
+            {live ? <span className="font-semibold text-team">{t.teamLive}</span> : <span className="text-faint">{t.teamNext}</span>}
             <Flag code={oppCode} size={16} />
             <span className="truncate text-ink">{teamByCode[oppCode]?.name ?? oppCode}</span>
             {!live && <span className="tnum text-faint">{new Date(next.kickoff).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
@@ -281,20 +242,16 @@ export function Team() {
         )}
       </section>
 
-      {/* Players to know — curated key players first; the full roster collapses
-          in beneath them. Not a Fantasy pitch card: a calm, scannable list. */}
       <section className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-5 sm:p-7 lg:col-span-7">
         {!squad?.players?.length ? (
           <>
-            <h2 className="mb-5 font-grotesk text-2xl font-semibold tracking-tight">Squad</h2>
-            <p className="text-sm text-muted">
-              The squad list for {team.name} isn&rsquo;t available yet — it appears once verified from a public source (never fabricated).
-            </p>
+            <h2 className="mb-5 font-grotesk text-2xl font-semibold tracking-tight">{t.teamSquad}</h2>
+            <p className="text-sm text-muted">{t.teamNoSquad(team.name)}</p>
           </>
         ) : keyPlayers.length > 0 ? (
           <>
             <div className="mb-4">
-              <h2 className="font-grotesk text-2xl font-semibold tracking-tight">Players to know</h2>
+              <h2 className="font-grotesk text-2xl font-semibold tracking-tight">{t.teamPlayersToKnow}</h2>
             </div>
             <ul className="space-y-1.5">
               {keyPlayers.map(({ player, archetypes }) => (
@@ -306,7 +263,7 @@ export function Team() {
                   <div className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-ink">{player.name}</span>
                     <p className="mt-0.5 truncate text-2xs text-faint">
-                      {POS_NAME[player.position] ?? player.position}
+                      {t.teamPosName[player.position] ?? player.position}
                       {player.club ? ` · ${player.club}` : ''}
                     </p>
                   </div>
@@ -330,9 +287,9 @@ export function Team() {
                 className="flex w-full items-center justify-between gap-2 py-1 text-left"
               >
                 <span className="font-grotesk text-2xs font-semibold uppercase tracking-[0.14em] text-muted">
-                  Full squad
+                  {t.teamFullSquad}
                   <span className="ml-2 font-system normal-case tracking-normal text-faint">
-                    {squad.players.length} players{!squad.verified ? ' · unconfirmed' : ''}
+                    {t.teamPlayers(squad.players.length, !squad.verified)}
                   </span>
                 </span>
                 <ChevronDown
@@ -346,9 +303,9 @@ export function Team() {
         ) : (
           <>
             <div className="mb-5 flex items-baseline justify-between">
-              <h2 className="font-grotesk text-2xl font-semibold tracking-tight">Squad</h2>
+              <h2 className="font-grotesk text-2xl font-semibold tracking-tight">{t.teamSquad}</h2>
               <span className="text-2xs uppercase tracking-label text-faint">
-                {squad.players.length} players{!squad.verified ? ' · unconfirmed' : ''}
+                {t.teamPlayers(squad.players.length, !squad.verified)}
               </span>
             </div>
             {renderFullSquad()}
@@ -356,43 +313,35 @@ export function Team() {
         )}
       </section>
 
-      {/* Ability rail — the radar + rating bars (or the no-data note). */}
       <div className="flex flex-col gap-4 lg:col-span-5">
         {noData ? (
           <div className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-6 text-sm text-muted">
-            The ability card is built from {team.name}&rsquo;s real match stats.{' '}
-            {!healthKnown
-              ? 'Checking the live data feed…'
-              : apiStatus === 'ok'
-                ? 'It appears once the team has played and the match is in the live data feed.'
-                : liveDataNote(apiStatus)}
+            {t.teamAbilityNoData(team.name, apiStatus, healthKnown)}
           </div>
         ) : (
           <>
-            {/* radar card with team-colour wash */}
             <section className="relative flex flex-col items-center overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-44" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
-              <Label className="relative self-start">Ability card</Label>
+              <Label className="relative self-start">{t.teamAbilityCard}</Label>
               <RadarChart ratings={ratings} color={team.color} />
               <p className="mt-1 text-center font-grotesk text-2xl font-semibold tracking-tight text-team">{ratings.playstyle}</p>
               {ratings.summary && <p className="mt-1.5 max-w-[34ch] text-center text-sm leading-snug text-muted">{ratings.summary}</p>}
               <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-2xs text-faint">
-                <span>Real stats · {ratings.matchesUsed} {ratings.matchesUsed === 1 ? 'match' : 'matches'}</span>
-                {loading && <span>· updating…</span>}
-                {ratings.provisional && <span className="rounded-pill bg-sunken px-2 py-0.5 font-medium text-muted">provisional</span>}
+                <span>{t.teamRealStats(ratings.matchesUsed)}</span>
+                {loading && <span>{t.teamUpdating}</span>}
+                {ratings.provisional && <span className="rounded-pill bg-sunken px-2 py-0.5 font-medium text-muted">{t.teamProvisional}</span>}
               </div>
             </section>
 
-            {/* rating bars — Apple-Sports style */}
             <section className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-5 sm:p-6">
-              <Label className="mb-4 block">Ratings</Label>
+              <Label className="mb-4 block">{t.teamRatings}</Label>
               <div className="space-y-4">
                 {ORDER.map((k) => {
                   const v = ratings.axes[k]
                   return (
                     <div key={k}>
                       <div className="mb-1.5 flex items-baseline justify-between">
-                        <span className="text-sm font-medium">{AXIS_LABEL[k]}</span>
+                        <span className="text-sm font-medium">{t.teamAxisLabel[k]}</span>
                         <span className={cn('font-grotesk text-lg font-semibold tnum leading-none', v == null ? 'text-faint' : 'text-ink')}>
                           {v == null ? '—' : v}
                         </span>
@@ -405,7 +354,7 @@ export function Team() {
                 })}
               </div>
               {ORDER.some((k) => ratings.axes[k] == null) && (
-                <p className="mt-4 text-2xs text-faint">— = not enough real data for this axis yet (never fabricated).</p>
+                <p className="mt-4 text-2xs text-faint">{t.teamNullAxis}</p>
               )}
             </section>
           </>

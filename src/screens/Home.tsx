@@ -12,10 +12,12 @@ import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { DATA_META } from '@/data/meta'
+import { useT } from '@/lib/useT'
 
 export function Home() {
   const { homeTeam, matches } = useApp()
   const { predictions, fantasy } = useGames()
+  const t = useT()
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const predScore = useMemo(() => scorePredictions(predictions, resolved), [predictions, resolved])
@@ -25,12 +27,9 @@ export function Home() {
     <div className="animate-fade-in">
       <header className="mb-8 flex items-end justify-between gap-4">
         <div>
-          <Label>Homeside · 2026 knockouts</Label>
-          <h1 className="mt-2 font-grotesk text-3xl font-medium tracking-tight sm:text-4xl">Two games. Real results.</h1>
-          <p className="mt-2 max-w-md text-muted">
-            Predict the knockout bracket and build a five-player fantasy team. Everything is scored from real match
-            results — no guesses by the app, no win odds.
-          </p>
+          <Label>{t.homeLabel}</Label>
+          <h1 className="mt-2 font-grotesk text-3xl font-medium tracking-tight sm:text-4xl">{t.homeTitle}</h1>
+          <p className="mt-2 max-w-md text-muted">{t.homeDesc}</p>
         </div>
         {homeTeam && (
           <Link to="/team" className="hidden shrink-0 sm:block" title={`${homeTeam.name} — ability card`}>
@@ -43,18 +42,18 @@ export function Home() {
         <GameCard
           to="/predict"
           icon={<GitFork size={18} />}
-          title="Predict the bracket"
-          how="Tap a winner for every tie, up to the champion. Correct picks score as real matches finish."
+          title={t.homePredictTitle}
+          how={t.homePredictHow}
           stat={`${predScore.points} pts`}
-          sub={`${predScore.correct}/${predScore.graded} graded`}
+          sub={t.predictGraded(predScore.correct, predScore.graded)}
         />
         <GameCard
           to="/fantasy"
           icon={<Users size={18} />}
-          title="Five-player fantasy"
-          how="Pick a keeper, defender, midfielder, attacker and a flex. They score from real goals, assists, clean sheets & saves — with transfers and a captain each round."
-          stat={`${picksMade}/5 picked`}
-          sub={picksMade === 5 ? 'squad complete' : 'build your five'}
+          title={t.homeFantasyTitle}
+          how={t.homeFantasyHow}
+          stat={`${picksMade}/5 ${t.homeSquadSub}`}
+          sub={picksMade === 5 ? t.homeSquadComplete : t.homeBuildFive}
         />
       </div>
 
@@ -65,17 +64,15 @@ export function Home() {
               {homeTeam.code}
             </span>
             <div>
-              <p className="text-sm font-medium">{homeTeam.name} ability card</p>
-              <p className="text-2xs text-faint">A radar of real tournament stats</p>
+              <p className="text-sm font-medium">{t.homeAbilityCard(homeTeam.name)}</p>
+              <p className="text-2xs text-faint">{t.homeAbilitySub}</p>
             </div>
           </div>
           <ArrowRight size={16} className="text-faint" />
         </Link>
       )}
 
-      <p className="mt-6 text-2xs text-faint">
-        Results & stats from ESPN (free, no key). Snapshot baseline {DATA_META.asOf}. Knockouts grade as real matches are played.
-      </p>
+      <p className="mt-6 text-2xs text-faint">{t.homeNote(DATA_META.asOf)}</p>
     </div>
   )
 }

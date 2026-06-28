@@ -7,12 +7,8 @@ import { TEAMS, teamByCode } from '@/data/teams'
 import {
   COUNTRY_QUOTA,
   FREE_TRANSFERS,
-  ROUND_LABEL,
   ROUNDS,
-  POS_ABBR,
-  SCORING_RULES,
   SLOT_ALLOWS,
-  SLOT_LABEL,
   countTransfers,
   countryCounts,
   playerKey,
@@ -35,10 +31,10 @@ import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { useT } from '@/lib/useT'
 import { cn } from '@/lib/utils'
 
 const ROUND_SHORT: Record<Round, string> = { R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', FINAL: 'Final' }
-/** Pitch formation rows, own goal (top) → attack (bottom). FLEX shares midfield. */
 const FORMATION: Slot[][] = [['GK'], ['DEF'], ['MID', 'FLEX'], ['ATT']]
 const fmtDate = (ms: number | null) => (ms == null ? '' : new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
 
@@ -83,22 +79,18 @@ export function Fantasy() {
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
   const [selected, setSelected] = useState<Slot | null>(null)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
-  // FIFA-style modes: 'view' shows the scoring panel; 'transfer' opens the pool and
-  // edits a local DRAFT that only commits on Save (so abandoning discards cleanly).
   const [mode, setMode] = useState<'view' | 'transfer'>('view')
   const [draft, setDraft] = useState<RoundSquad | null>(null)
   const emptySquad = (): RoundSquad => ({ players: [], captain: null })
+  const t = useT()
 
-  // A slow clock so the timeline flips to LIVE at kickoff even between data polls.
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 60_000)
-    return () => window.clearInterval(t)
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
   }, [])
   const cur = currentRound(now)
 
-  // How many matches each round has, and how many have finished, to tell a
-  // round that's still being played from one that's fully done.
   const roundMatchCount = useMemo(() => {
     const c: Partial<Record<Round, number>> = {}
     for (const b of BRACKET) {
@@ -110,14 +102,10 @@ export function Fantasy() {
   const roundFinished = (r: Round) => matches.filter((m) => stageToRound(m.stage) === r && m.status === 'finished').length
   const roundFullyDone = (r: Round) => isRoundLocked(r, now) && roundFinished(r) >= (roundMatchCount[r] ?? 99)
 
-  // The round in focus: the round currently being played (locked, not finished),
-  // otherwise the next round you manage. The five carry forward to it.
   const inPlay = [...ROUNDS].reverse().find((r) => isRoundLocked(r, now) && !roundFullyDone(r))
   const focus: Round = inPlay ?? cur
   const editable = focus === cur && !isRoundLocked(focus, now)
 
-  // A stale selection (or an in-progress draft) must not outlive a round change or
-  // an edit-state flip — abandon the draft and fall back to view mode.
   useEffect(() => {
     setSelected(null)
     setMode('view')
@@ -129,13 +117,10 @@ export function Fantasy() {
   const prev = previousRound(focus)
   const prevPlayers = (prev && fantasy[prev]?.players) || []
 
-  // Carry the squad forward into the focus round the first time it opens.
   useEffect(() => {
     if (editable && !fantasy[focus] && prev && fantasy[prev]) seedRound(focus, fantasy[prev]!.players)
   }, [editable, focus, prev, fantasy, seedRound])
 
-  // While transferring, the pitch/pool/token-actions all read the local draft;
-  // otherwise the committed squad. One indirection keeps every downstream read intact.
   const committed = fantasy[focus]
   const transferring = mode === 'transfer' && draft != null
   const squad = transferring ? draft : committed
@@ -144,7 +129,6 @@ export function Fantasy() {
   const counts = countryCounts(players)
   const eliminated = useMemo(() => eliminatedTeams(matches, TEAMS), [matches])
 
-  // box scores for everyone across every round's squad
   const allTeams = useMemo(() => {
     const s = new Set<string>()
     for (const r of ROUNDS) fantasy[r]?.players.forEach((p) => s.add(p.teamCode))
@@ -192,25 +176,22 @@ export function Fantasy() {
   }
   const takenKeys = new Set(players.filter((p) => p.slot !== openSlot).map(playerKey))
 
-  // Where a browsed pick lands: the matching empty slot (exact position, else Flex).
   const slotForPos = (pos: PosCat): Slot | null => {
     if (!players.some((p) => p.slot === pos)) return pos as Slot
     if (pos !== 'GK' && !players.some((p) => p.slot === 'FLEX')) return 'FLEX'
     return null
   }
-  // In browse mode, a position is addable only while it (or Flex) still has room.
   const canAdd = (pos: PosCat) => (openSlot ? SLOT_ALLOWS[openSlot].includes(pos) : slotForPos(pos) !== null)
 
-  // ---- transfer draft (local; commits only on Save) ----
   const cloneSquad = (s: RoundSquad | undefined) =>
     ({ players: (s?.players ?? []).map((p) => ({ ...p })), captain: s?.captain ?? null })
   const draftPick = (slot: Slot, pick: FantasyPick | null) =>
     setDraft((d) => {
-      const cur = d ?? emptySquad()
-      const removed = cur.players.find((p) => p.slot === slot)
-      const next = cur.players.filter((p) => p.slot !== slot)
+      const c = d ?? emptySquad()
+      const removed = c.players.find((p) => p.slot === slot)
+      const next = c.players.filter((p) => p.slot !== slot)
       if (pick) next.push(pick)
-      let { captain } = cur
+      let { captain } = c
       if (removed && captain === playerKey(removed)) captain = null
       return { players: next, captain }
     })
@@ -219,16 +200,12 @@ export function Fantasy() {
   const saveTransfers = () => { if (draft) setRoundSquad(focus, draft); setMode('view'); setDraft(null); setSelected(null); setOpenSlot(null) }
   const cancelTransfers = () => { setMode('view'); setDraft(null); setSelected(null); setOpenSlot(null) }
   const resetDraft = () => { setDraft(cloneSquad(committed)); setSelected(null); setOpenSlot(null) }
-  // Captain works in both modes: drafted while transferring, committed in view.
   const toggleCaptain = (slot: Slot, key: string, isCap: boolean) => {
     if (transferring) { draftCaptain(key); return }
     if (isCap) setRoundPick(focus, slot, { ...players.find((p) => p.slot === slot)! })
     else setCaptain(focus, key)
   }
 
-  // Shared body for acting on a filled token — rendered in a desktop popover and
-  // a mobile bottom sheet. Captain is a real toggle; toggling it off re-sets the
-  // same pick, which makes the reducer clear the captain for that key.
   const TokenActions = ({ slot, onClose }: { slot: Slot; onClose: () => void }) => {
     const pick = players.find((p) => p.slot === slot)
     if (!pick) return null
@@ -244,7 +221,7 @@ export function Fantasy() {
           <div className="min-w-0 flex-1">
             <p className="truncate font-grotesk text-sm font-medium leading-tight">{pick.name}</p>
             <p className="truncate text-2xs text-faint">
-              {POS_ABBR[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {SLOT_LABEL[slot]}
+              {t.fantasyPosAbbr[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {t.fantasySlotLabel[slot]}
             </p>
           </div>
           <button onClick={onClose} aria-label="Done" className="shrink-0 rounded-full p-1 text-faint hover:bg-black/[0.05] hover:text-ink dark:hover:bg-white/[0.06]">
@@ -259,22 +236,20 @@ export function Fantasy() {
             className={cn(row, isCap ? 'bg-team-soft text-team' : 'text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.05]')}
           >
             <Crown size={16} className="shrink-0" />
-            <span className="flex-1 text-left">Captain <span className="text-faint">·2</span></span>
+            <span className="flex-1 text-left">{t.fantasyCaptain} <span className="text-faint">·2</span></span>
             {isCap && <Check size={16} className="shrink-0" />}
           </button>
 
           {transferring && (
             <>
               <div className="my-1 h-px bg-black/5 dark:bg-white/[0.07]" />
-
               <button onClick={() => { onClose(); setOpenSlot(slot) }} className={cn(row, 'text-ink hover:bg-black/[0.04] dark:hover:bg-white/[0.05]')}>
                 <Pencil size={16} className="shrink-0" />
-                <span className="flex-1 text-left">Change player</span>
+                <span className="flex-1 text-left">{t.fantasyChangePlayer}</span>
               </button>
-
               <button onClick={() => { draftPick(slot, null); onClose() }} className={cn(row, 'text-faint hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400')}>
                 <Trash2 size={16} className="shrink-0" />
-                <span className="flex-1 text-left">Remove</span>
+                <span className="flex-1 text-left">{t.fantasyRemove}</span>
               </button>
             </>
           )}
@@ -289,7 +264,6 @@ export function Fantasy() {
     )
   }
 
-  // One pitch token (filled or empty). Closes over the round state + handlers.
   const renderSlot = (slot: Slot) => {
     const pick = players.find((p) => p.slot === slot)
     if (!pick) {
@@ -297,7 +271,7 @@ export function Fantasy() {
         return (
           <div key={slot} className="flex w-[88px] flex-col items-center sm:w-[104px]">
             <span className="h-[52px] w-[52px] rounded-full border border-dashed border-black/10 dark:border-white/15" />
-            <span className="mt-1.5 text-[9px] font-medium uppercase tracking-label text-faint">{SLOT_LABEL[slot]}</span>
+            <span className="mt-1.5 text-[9px] font-medium uppercase tracking-label text-faint">{t.fantasySlotLabel[slot]}</span>
           </div>
         )
       }
@@ -307,7 +281,7 @@ export function Fantasy() {
             <Plus size={18} />
           </span>
           <span className="mt-1.5 flex w-full items-center justify-center rounded-[10px] bg-black/[0.03] px-1.5 py-1 ring-1 ring-inset ring-black/[0.04] dark:bg-white/[0.04] dark:ring-white/[0.06]">
-            <span className="truncate text-[9px] font-medium uppercase tracking-label text-faint">{SLOT_LABEL[slot]}</span>
+            <span className="truncate text-[9px] font-medium uppercase tracking-label text-faint">{t.fantasySlotLabel[slot]}</span>
           </span>
         </button>
       )
@@ -318,8 +292,6 @@ export function Fantasy() {
     const isCap = squad?.captain === key
     const out = eliminated.has(pick.teamCode)
     const active = selected === slot
-    // Open the popover toward the pitch centre so a side token's menu never spills
-    // off the edge: left token opens right, right token opens left, rest centred.
     const popPos = slot === 'MID' ? 'left-0' : slot === 'FLEX' ? 'right-0' : 'left-1/2 -translate-x-1/2'
     return (
       <div key={slot} className="relative flex w-[78px] flex-col items-center sm:w-[92px]">
@@ -358,25 +330,16 @@ export function Fantasy() {
             {keyMeta && keyMeta.archetypes.length > 0 && (
               <span className="mt-px flex max-w-full flex-wrap justify-center gap-0.5">
                 {keyMeta.archetypes.map((a) => (
-                  <span
-                    key={a}
-                    className={cn(
-                      'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
-                      ARCHETYPE_BADGE[a],
-                    )}
-                  >
-                    {a}
-                  </span>
+                  <span key={a} className={cn('shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]', ARCHETYPE_BADGE[a])}>{a}</span>
                 ))}
               </span>
             )}
             <span className="mt-px w-full truncate text-[8px] font-medium uppercase tracking-label text-faint">
-              {out ? 'Eliminated' : `${pick.number != null ? `#${pick.number} · ` : ''}${POS_ABBR[pick.position] ?? pick.position}`}
+              {out ? t.teamEliminated : `${pick.number != null ? `#${pick.number} · ` : ''}${t.fantasyPosAbbr[pick.position] ?? pick.position}`}
             </span>
           </span>
         </button>
 
-        {/* desktop: tap-popover anchored under the token (overlays the pitch) */}
         {editable && active && isDesktop && (
           <>
             <div className="fixed inset-0 z-20" onClick={() => setSelected(null)} aria-hidden />
@@ -389,16 +352,14 @@ export function Fantasy() {
     )
   }
 
-  // The scoring reference — fills the same 640px frame as the pool so it aligns
-  // with the pitch in view mode.
   const HowToScore = () => (
     <section className="panel flex w-full flex-col overflow-hidden lg:h-[640px]">
       <div className="border-b border-black/5 px-5 py-4 dark:border-white/[0.07]">
-        <h2 className="font-grotesk text-xl font-bold tracking-tight">How to score</h2>
-        <p className="mt-1 text-2xs text-faint">Real ESPN box-score events, graded as each match finishes. Captain scores ×2.</p>
+        <h2 className="font-grotesk text-xl font-bold tracking-tight">{t.fantasyHowToScore}</h2>
+        <p className="mt-1 text-2xs text-faint">{t.fantasyHowSub}</p>
       </div>
       <ul className="min-h-0 flex-1 divide-y divide-black/5 overflow-y-auto overscroll-contain dark:divide-white/[0.07]">
-        {SCORING_RULES.map((r) => (
+        {t.fantasyScoringRules.map((r) => (
           <li key={r.label} className="flex items-center justify-between gap-4 px-5 py-2.5">
             <span className="text-sm text-muted">{r.label}</span>
             <span className="shrink-0 font-grotesk text-sm font-medium tnum text-ink">{r.value}</span>
@@ -406,7 +367,7 @@ export function Fantasy() {
         ))}
       </ul>
       <p className="border-t border-black/5 px-5 py-3 text-2xs text-faint dark:border-white/[0.07]">
-        Player matching is best-effort by team + name.
+        {t.fantasyPlayerMatching}
       </p>
     </section>
   )
@@ -415,17 +376,17 @@ export function Fantasy() {
     <div className={cn('animate-fade-in', editable && 'max-lg:pb-[calc(7.5rem+env(safe-area-inset-bottom))]')}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <Label>Knockout fantasy</Label>
-          <h1 className="mt-2 font-grotesk text-3xl font-medium tracking-tight">Your five through the bracket</h1>
+          <Label>{t.fantasyLabel}</Label>
+          <h1 className="mt-2 font-grotesk text-3xl font-medium tracking-tight">{t.fantasyTitle}</h1>
         </div>
         <div className="flex items-center gap-5">
           <div className="text-right">
             <p className="font-grotesk text-2xl font-semibold tnum leading-none">{selScore?.points ?? 0}</p>
-            <p className="text-2xs text-faint">{ROUND_LABEL[focus]} pts</p>
+            <p className="text-2xs text-faint">{t.fantasyRoundLabel[focus]} pts</p>
           </div>
           <div className="text-right">
             <p className="font-grotesk text-2xl font-semibold tnum leading-none text-team">{totalPoints}</p>
-            <p className="text-2xs text-faint">total</p>
+            <p className="text-2xs text-faint">{t.fantasyTotal}</p>
           </div>
         </div>
       </div>
@@ -444,35 +405,25 @@ export function Fantasy() {
         />
       ) : (
         <>
-      {/* knockout progress bar — a timeline, not a switcher */}
       <KnockoutProgress nodes={progressNodes} />
 
-      {/* status line */}
       <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted">
-        <span className="font-medium text-ink">{ROUND_LABEL[focus]}</span>
-        <span>{editable ? (prev ? 'transfers open' : 'build your five') : 'locked — under way'}</span>
-        <span>
-          Max <span className="font-medium text-ink">{quotaMax}</span> / country
-        </span>
+        <span className="font-medium text-ink">{t.fantasyRoundLabel[focus]}</span>
+        <span>{editable ? (prev ? t.fantasyTransfersOpen : t.fantasyBuildFive) : t.fantasyLocked}</span>
+        <span>{t.fantasyMaxCountry(quotaMax)}</span>
         {prev ? (
           <span>
-            Transfers <span className="font-medium text-ink">{transfersUsed}{Number.isFinite(free) ? ` / ${free} free` : ''}</span>
-            {paid > 0 && <span className="text-amber-600 dark:text-amber-500"> · −{paid * 3} pts</span>}
+            {t.fantasyTransfersUsed(transfersUsed, Number.isFinite(free) ? free : null)}
+            {paid > 0 && <span className="text-amber-600 dark:text-amber-500">{t.fantasyPaidPts(paid * 3)}</span>}
           </span>
         ) : (
-          <span>unlimited free changes</span>
+          <span>{t.fantasyUnlimited}</span>
         )}
       </div>
 
-      {/* desktop: pitch on the left, scoring reference on the right — fills the
-          width instead of stranding a narrow pitch in the middle of the page */}
       <div className="lg:flex lg:items-start lg:gap-8">
         <div className="lg:w-[468px] lg:shrink-0">
-      {/* the five — an Apple pitch in formation (own goal top, attack bottom).
-          No overflow-hidden so a token's action popover can extend past the edge.
-          On desktop it's a fixed height so it lines up with the player pool box. */}
       <div className="panel relative mx-auto flex w-full max-w-[440px] flex-col px-3 py-5 sm:px-5 sm:py-7 lg:h-[640px]">
-        {/* implied pitch markings — 1px hairlines only, no green, no fill */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute inset-3 rounded-[14px] border border-black/[0.05] dark:border-white/[0.06]" />
           <div className="absolute left-3 right-3 top-1/2 h-px -translate-y-1/2 bg-black/[0.05] dark:bg-white/[0.06]" />
@@ -482,7 +433,7 @@ export function Fantasy() {
           <div className="absolute bottom-3 left-1/2 h-11 w-1/2 -translate-x-1/2 rounded-t-[10px] border border-b-0 border-black/[0.05] dark:border-white/[0.06]" />
         </div>
 
-        <p className="relative mb-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">Your goal</span></p>
+        <p className="relative mb-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">{t.fantasyGoalEnd}</span></p>
 
         <div className="relative flex flex-1 flex-col justify-between gap-4 py-1 sm:gap-6">
           {FORMATION.map((row, i) => (
@@ -492,11 +443,9 @@ export function Fantasy() {
           ))}
         </div>
 
-        <p className="relative mt-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">Attack</span></p>
+        <p className="relative mt-2 text-center"><span className="text-[9px] font-medium uppercase tracking-label text-faint">{t.fantasyAttackEnd}</span></p>
       </div>
 
-      {/* mobile: a bottom sheet to act on the selected token. Portaled to <body>
-          so `fixed` escapes the page's transform (animate-fade-in) and the nav. */}
       {editable && selected && !isDesktop &&
         createPortal(
           <div className="fixed inset-0 z-[60] lg:hidden">
@@ -511,13 +460,10 @@ export function Fantasy() {
 
         </div>
 
-        {/* right (desktop): the player pool, FIFA-style — always present. Tapping a
-            pitch slot filters it; otherwise picks drop into the first open spot.
-            Hidden on mobile, where tapping a slot opens the full-screen picker. */}
         <div className="hidden lg:block lg:flex-1 lg:min-w-0">
           {!editable ? (
             <div className="panel grid h-[640px] place-items-center p-8 text-center text-sm text-muted">
-              This round is locked and under way.
+              {t.fantasyRoundLocked}
             </div>
           ) : transferring ? (
             <PlayerPicker
@@ -540,10 +486,8 @@ export function Fantasy() {
         </div>
       </div>
 
-      {/* mobile: the scoring panel sits below the pitch in view mode */}
       {!transferring && <div className="mt-8 lg:hidden"><HowToScore /></div>}
 
-      {/* view mode — desktop: a centred CTA below the two columns */}
       {!transferring && (
         <div className="mt-8 hidden flex-col items-center gap-3 lg:flex">
           {editable && (
@@ -551,13 +495,12 @@ export function Fantasy() {
               onClick={startTransfers}
               className="inline-flex items-center justify-center gap-2 rounded-pill bg-team px-7 py-3 font-grotesk text-sm font-semibold text-team-ink transition-opacity hover:opacity-90"
             >
-              <ArrowLeftRight size={16} /> {players.length === 0 ? 'Pick your five' : 'Make transfers'}
+              <ArrowLeftRight size={16} /> {players.length === 0 ? t.fantasyPickFive : t.fantasyMakeTransfers}
             </button>
           )}
         </div>
       )}
 
-      {/* view mode — mobile: floating "Make transfers" so it's always reachable */}
       {!transferring && editable && !isDesktop && !selected &&
         createPortal(
           <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 border-y border-black/[0.06] bg-canvas/95 px-4 py-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
@@ -565,55 +508,53 @@ export function Fantasy() {
               onClick={startTransfers}
               className="flex w-full items-center justify-center gap-2 rounded-pill bg-team px-5 py-3 font-grotesk text-sm font-semibold text-team-ink"
             >
-              <ArrowLeftRight size={16} /> {players.length === 0 ? 'Pick your five' : 'Make transfers'}
+              <ArrowLeftRight size={16} /> {players.length === 0 ? t.fantasyPickFive : t.fantasyMakeTransfers}
             </button>
           </div>,
           document.body,
         )}
 
-      {/* transfer mode: desktop sticky Save/Reset bar */}
       {transferring && (
         <div className="sticky bottom-4 z-30 mt-6 hidden lg:block">
           <div className="panel flex items-center justify-between gap-4 px-5 py-3">
             <div className="text-xs text-muted">
               {prev ? (
                 <>
-                  Transfers <span className="font-medium tnum text-ink">{transfersUsed}{Number.isFinite(free) ? ` / ${free} free` : ''}</span>
-                  {paid > 0 && <span className="text-amber-600 dark:text-amber-500"> · −{paid * 3} pts on save</span>}
+                  {t.fantasyTransfersUsed(transfersUsed, Number.isFinite(free) ? free : null)}
+                  {paid > 0 && <span className="text-amber-600 dark:text-amber-500">{t.fantasyPtsOnSave(paid * 3)}</span>}
                 </>
               ) : (
-                <span>Unlimited changes — build your five</span>
+                <span>{t.fantasyUnlimitedBuild}</span>
               )}
             </div>
             <div className="flex items-center gap-2.5">
-              <button onClick={resetDraft} className="rounded-pill px-4 py-2.5 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.1] hover:text-ink dark:ring-white/15">Reset</button>
-              <button onClick={cancelTransfers} className="rounded-pill px-4 py-2.5 text-sm font-medium text-muted hover:text-ink">Cancel</button>
+              <button onClick={resetDraft} className="rounded-pill px-4 py-2.5 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.1] hover:text-ink dark:ring-white/15">{t.fantasyReset}</button>
+              <button onClick={cancelTransfers} className="rounded-pill px-4 py-2.5 text-sm font-medium text-muted hover:text-ink">{t.fantasyCancel}</button>
               <button onClick={saveTransfers} className="inline-flex items-center gap-2 rounded-pill bg-team px-5 py-2.5 text-sm font-semibold text-team-ink hover:opacity-90">
-                <Check size={16} /> Save
+                <Check size={16} /> {t.fantasySave}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* transfer mode: mobile fixed Save/Reset bar (portaled; only when no sheet/picker is up) */}
       {transferring && !isDesktop && !openSlot && !selected &&
         createPortal(
           <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-40 border-y border-black/[0.06] bg-canvas/95 px-4 py-3 backdrop-blur-xl dark:border-white/10 lg:hidden">
             <div className="mb-2 text-center text-2xs text-muted">
               {prev ? (
                 <>
-                  Transfers <span className="font-medium tnum text-ink">{transfersUsed}{Number.isFinite(free) ? ` / ${free}` : ''}</span>
-                  {paid > 0 && <span className="text-amber-600 dark:text-amber-500"> · −{paid * 3} pts</span>}
+                  {t.fantasyTransfersUsed(transfersUsed, Number.isFinite(free) ? free : null)}
+                  {paid > 0 && <span className="text-amber-600 dark:text-amber-500">{t.fantasyPaidPts(paid * 3)}</span>}
                 </>
               ) : (
-                <span>Unlimited changes</span>
+                <span>{t.fantasyUnlimitedMobile}</span>
               )}
             </div>
             <div className="flex items-center gap-2.5">
-              <button onClick={resetDraft} className="flex-1 rounded-pill px-4 py-3 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.1] dark:ring-white/15">Reset</button>
+              <button onClick={resetDraft} className="flex-1 rounded-pill px-4 py-3 text-sm font-medium text-muted ring-1 ring-inset ring-black/[0.1] dark:ring-white/15">{t.fantasyReset}</button>
               <button onClick={saveTransfers} className="inline-flex flex-[2] items-center justify-center gap-2 rounded-pill bg-team px-4 py-3 text-sm font-semibold text-team-ink">
-                <Check size={16} /> Save
+                <Check size={16} /> {t.fantasySave}
               </button>
             </div>
           </div>,
