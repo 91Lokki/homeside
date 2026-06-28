@@ -1,5 +1,7 @@
 # Homeside
 
+[**English**](README.md) · [**繁體中文**](README.zh-TW.md)
+
 Homeside is an unofficial 2026 World Cup companion app focused on two games:
 knockout bracket prediction and a small fantasy roster game. Around those games
 it provides a home-team experience, live-ish schedule/results, team pages, and an
