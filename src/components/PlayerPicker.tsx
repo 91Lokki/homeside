@@ -52,12 +52,22 @@ const ARCHETYPE_BADGE: Record<KeyPlayerArchetype, string> = {
   Guardian: 'text-emerald-700/70 ring-emerald-500/15 dark:text-emerald-200/70 dark:ring-emerald-300/15',
 }
 
-function KeyPlayerCue({ archetypes, starOnly = false }: { archetypes: KeyPlayerArchetype[]; starOnly?: boolean }) {
+function KeyPlayerCue({
+  archetypes,
+  starOnly = false,
+  showStar = true,
+}: {
+  archetypes: KeyPlayerArchetype[]
+  starOnly?: boolean
+  showStar?: boolean
+}) {
   return (
     <span className="inline-flex shrink-0 flex-wrap items-center justify-end gap-1 leading-none">
-      <span aria-label="Key player" className="shrink-0 text-[13px] text-team/80">
-        ★
-      </span>
+      {showStar && (
+        <span aria-label="Key player" className="shrink-0 text-[13px] text-team/80">
+          ★
+        </span>
+      )}
       {!starOnly && archetypes.map((a) => (
         <span
           key={a}
@@ -199,8 +209,8 @@ export function PlayerPicker({
             </span>
             {full && <span className="mt-0.5 block text-2xs text-amber-600 dark:text-amber-500">country quota full</span>}
           </span>
-          <span className="flex w-44 shrink-0 items-center justify-end gap-2">
-            {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} />}
+          <span className="flex shrink-0 items-center justify-end gap-2">
+            {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} showStar={false} />}
             {p.number != null && (
               <span className="font-grotesk text-sm tnum text-faint">{p.number}</span>
             )}
