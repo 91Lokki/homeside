@@ -59,7 +59,21 @@ function buildContext(bracket: BracketMatch[], teams: Team[], matches: Match[]):
   return { standings, complete, thirdAssign, koResult }
 }
 
-/** Find a valid assignment of the 8 qualifying thirds to the 8 third slots. */
+/**
+ * FIFA's official Round-of-32 third-place assignment. Which third-placed team
+ * faces which group winner is NOT a free choice — FIFA publishes a 495-row table
+ * keyed by exactly WHICH eight groups' thirds qualify. A generic "any valid
+ * matching" picks an arbitrary (usually wrong) pairing, so we encode the real
+ * tournament scenario here. Key = the eight qualifying group letters, sorted;
+ * value = winner's group → the third's group it must host.
+ */
+const OFFICIAL_THIRD_ASSIGNMENT: Record<string, Partial<Record<GroupId, GroupId>>> = {
+  // Real 2026 qualifiers — thirds of B, D, E, F, I, J, K, L (FIFA scenario #67):
+  //   1A–3E · 1B–3J · 1D–3B · 1E–3D · 1G–3I · 1I–3F · 1K–3L · 1L–3K
+  BDEFIJKL: { A: 'E', B: 'J', D: 'B', E: 'D', G: 'I', I: 'F', K: 'L', L: 'K' },
+}
+
+/** Assign the 8 qualifying thirds to the 8 third slots, per FIFA's official table. */
 function assignThirds(
   bracket: BracketMatch[],
   standings: Map<GroupId, StandingRow[]>,
@@ -75,8 +89,24 @@ function assignThirds(
     .sort((a, b) => b.row.points - a.row.points || b.row.gd - a.row.gd || b.row.gf - a.row.gf)
   const qualifying = thirds.slice(0, 8) // 8 best thirds
   const qualifyingGroups = new Set(qualifying.map((q) => q.group))
+  const byGroup = new Map(qualifying.map((q) => [q.group, q.row.code]))
 
-  // The third-place slots, each with its candidate groups.
+  // Preferred: FIFA's official table for this exact set of qualifying groups.
+  const official = OFFICIAL_THIRD_ASSIGNMENT[[...qualifyingGroups].sort().join('')]
+  if (official) {
+    for (const m of bracket) {
+      const hasThird = m.home.source.kind === 'third' || m.away.source.kind === 'third'
+      if (!hasThird) continue
+      const ws = m.home.source.kind === 'winner' ? m.home.source : m.away.source.kind === 'winner' ? m.away.source : null
+      if (!ws || ws.kind !== 'winner') continue
+      const thirdGroup = official[ws.group]
+      const code = thirdGroup ? byGroup.get(thirdGroup) : undefined
+      if (code) out.set(m.matchNo, code)
+    }
+    return
+  }
+
+  // Fallback (hypothetical / incomplete data): any valid matching via backtracking.
   const slots = bracket
     .filter((m) => m.home.source.kind === 'third' || m.away.source.kind === 'third')
     .map((m) => {
@@ -84,9 +114,6 @@ function assignThirds(
       const groups = ref.source.kind === 'third' ? ref.source.groups : []
       return { matchNo: m.matchNo, groups: groups.filter((g) => qualifyingGroups.has(g)) }
     })
-
-  // Backtracking perfect matching (8x8, trivially small).
-  const byGroup = new Map(qualifying.map((q) => [q.group, q.row.code]))
   const usedGroups = new Set<GroupId>()
   const order = [...slots].sort((a, b) => a.groups.length - b.groups.length) // most-constrained first
 
