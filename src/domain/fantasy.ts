@@ -83,7 +83,7 @@ const SHOOTOUT_SCORED = 2
 const SHOOTOUT_MISSED = -1
 
 export const SCORING_RULES: { label: string; value: string }[] = [
-  { label: 'Goal', value: 'ATT +4 · MID +5 · DEF/GK +6' },
+  { label: 'Goal', value: 'FWD +4 · MID +5 · DEF/GK +6' },
   { label: 'Assist', value: '+3' },
   { label: 'Clean sheet (team concedes 0)', value: 'DEF/GK +4 · MID +1' },
   { label: 'GK saves', value: '+1 per 3' },
