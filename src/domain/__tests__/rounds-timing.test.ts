@@ -262,9 +262,11 @@ describe('eliminatedTeams', () => {
     expect(out.has('RSA')).toBe(false)
   })
 
-  it('returns an empty set when there are no finished knockout matches', () => {
+  it('includes teams eliminated in completed groups even before knockout matches finish', () => {
     const out = eliminatedTeams([...SEED_MATCHES], TEAMS)
-    expect(out.size).toBe(0)
+    expect(out.has('CZE')).toBe(true)
+    expect(out.has('QAT')).toBe(true)
+    expect(out.has('HAI')).toBe(true)
   })
 
   it('returns an empty set for empty inputs', () => {

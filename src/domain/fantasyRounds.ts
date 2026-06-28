@@ -1,6 +1,7 @@
 import { BRACKET } from '@/data/bracket'
 import { SEED_MATCHES } from '@/data/fixtures'
 import { resolveBracket } from './bracket'
+import { computeQualification } from './record'
 import type { Match, Team, TeamCode } from './types'
 import { ROUNDS, stageToRound, type Round } from './fantasy'
 
@@ -88,6 +89,10 @@ export function previousRound(round: Round): Round | null {
 export function eliminatedTeams(matches: Match[], teams: Team[]): Set<TeamCode> {
   const resolved = resolveBracket(BRACKET, teams, matches)
   const out = new Set<TeamCode>()
+  const qualification = computeQualification(matches, teams)
+  for (const [code, status] of qualification) {
+    if (status === 'out') out.add(code)
+  }
   for (const m of resolved) {
     if (m.status === 'finished' && m.winnerCode && m.stage !== 'SF') {
       const loser = m.homeCode === m.winnerCode ? m.awayCode : m.homeCode

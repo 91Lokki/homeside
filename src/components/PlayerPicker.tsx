@@ -85,6 +85,7 @@ export function PlayerPicker({
   taken,
   isCountryFull,
   canAdd,
+  unavailableTeams,
   embedded = false,
 }: {
   slot: Slot | null
@@ -93,6 +94,7 @@ export function PlayerPicker({
   taken?: Set<string>
   isCountryFull?: (teamCode: TeamCode) => boolean
   canAdd?: (pos: PosCat) => boolean
+  unavailableTeams?: Set<TeamCode>
   embedded?: boolean
 }) {
   const t = useT()
@@ -107,6 +109,7 @@ export function PlayerPicker({
   const results = useMemo(() => {
     const q = foldText(query.trim())
     return POOL.filter((p) => allowed.includes(p.pos))
+      .filter((p) => !unavailableTeams?.has(p.teamCode))
       .filter((p) => !taken?.has(playerKey(p)))
       .filter((p) => (browsing && posFilter ? p.pos === posFilter : true))
       .filter((p) => !q || p.search.includes(q))
@@ -116,14 +119,17 @@ export function PlayerPicker({
         if (da !== db) return da - db
         return a.teamName.localeCompare(b.teamName) || a.name.localeCompare(b.name)
       })
-  }, [query, allowed, taken, browsing, posFilter, isCountryFull, canAdd])
+  }, [query, allowed, taken, browsing, posFilter, isCountryFull, canAdd, unavailableTeams])
 
   const addableCount = useMemo(() => results.filter((p) => !rowDisabled(p)).length, [results])
   const posCounts = useMemo(() => {
     const m: Record<PosCat, number> = { GK: 0, DEF: 0, MID: 0, ATT: 0 }
-    for (const p of POOL) if (!taken?.has(playerKey(p))) m[p.pos]++
+    for (const p of POOL) {
+      if (unavailableTeams?.has(p.teamCode)) continue
+      if (!taken?.has(playerKey(p))) m[p.pos]++
+    }
     return m
-  }, [taken])
+  }, [taken, unavailableTeams])
 
   const posFilterBar = browsing && (
     <div className="mt-3 flex flex-wrap gap-1.5">

@@ -397,6 +397,7 @@ export function Fantasy() {
         <PlayerPicker
           slot={openSlot}
           taken={takenKeys}
+          unavailableTeams={eliminated}
           isCountryFull={isCountryFull}
           onClose={() => setOpenSlot(null)}
           onPick={(p) => {
@@ -473,6 +474,7 @@ export function Fantasy() {
               embedded
               canAdd={canAdd}
               taken={takenKeys}
+              unavailableTeams={eliminated}
               isCountryFull={isCountryFull}
               onClose={() => setOpenSlot(null)}
               onPick={(p) => {
