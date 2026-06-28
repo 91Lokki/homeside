@@ -79,7 +79,7 @@ function KeyPlayerCue({
 
 export function Fantasy() {
   const { matches } = useApp()
-  const { fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy } = useGames()
+  const { fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain } = useGames()
   const [openSlot, setOpenSlot] = useState<Slot | null>(null)
   const [selected, setSelected] = useState<Slot | null>(null)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
@@ -554,14 +554,6 @@ export function Fantasy() {
               <ArrowLeftRight size={16} /> {players.length === 0 ? 'Pick your five' : 'Make transfers'}
             </button>
           )}
-          <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
-        </div>
-      )}
-
-      {/* view mode — mobile: a tiny in-flow reset link (the CTA itself floats, below) */}
-      {!transferring && (
-        <div className="mt-6 flex justify-center lg:hidden">
-          <button onClick={resetFantasy} className="text-2xs text-faint hover:text-ink">reset everything</button>
         </div>
       )}
 
