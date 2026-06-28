@@ -13,7 +13,19 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      {isDark ? <Moon size={16} /> : <Sun size={16} />}
+      {/* The two icons cross-fade + rotate, so the swap glides rather than jumps. */}
+      <span className="relative block h-4 w-4">
+        <Sun
+          size={16}
+          className="absolute inset-0 transition-all duration-500 ease-calm"
+          style={{ opacity: isDark ? 0 : 1, transform: isDark ? 'rotate(-90deg) scale(0.4)' : 'rotate(0) scale(1)' }}
+        />
+        <Moon
+          size={16}
+          className="absolute inset-0 transition-all duration-500 ease-calm"
+          style={{ opacity: isDark ? 1 : 0, transform: isDark ? 'rotate(0) scale(1)' : 'rotate(90deg) scale(0.4)' }}
+        />
+      </span>
     </button>
   )
 }

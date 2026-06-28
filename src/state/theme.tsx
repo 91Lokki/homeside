@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { accentOn, readableInkOn, rgba } from '@/lib/prng'
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -30,8 +30,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const isDark = mode === 'system' ? systemDark : mode === 'dark'
 
+  // Toggle the `dark` class, and — on every change after the first paint — briefly
+  // add `.theme-transition` so the whole UI eases between palettes instead of
+  // snapping. The first run just sets the class (no transition on load).
+  const firstPaint = useRef(true)
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark)
+    const root = document.documentElement
+    root.classList.toggle('dark', isDark)
+    if (firstPaint.current) {
+      firstPaint.current = false
+      return
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    root.classList.add('theme-transition')
+    const t = window.setTimeout(() => root.classList.remove('theme-transition'), 550)
+    return () => window.clearTimeout(t)
   }, [isDark])
 
   const setMode = useCallback((m: ThemeMode) => {

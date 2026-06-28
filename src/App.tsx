@@ -5,7 +5,7 @@ import { DATA_META } from '@/data/meta'
 import { AppProvider, useApp } from '@/state/store'
 import { GamesProvider } from '@/state/games'
 import { AuthProvider } from '@/state/auth'
-import { ThemeProvider } from '@/state/theme'
+import { ThemeProvider, useTheme } from '@/state/theme'
 import { authEnabled } from '@/lib/supabase'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { TeamPicker } from '@/components/TeamPicker'
@@ -40,6 +40,7 @@ export function App() {
 
 function Shell() {
   const { homeCode, homeTeam, setHomeCode, connected } = useApp()
+  const { isDark } = useTheme()
   const [pickerOpen, setPickerOpen] = useState(false)
 
   // Onboarding gate — no home team yet, or the user chose to change it.
@@ -58,7 +59,8 @@ function Shell() {
 
   return (
     <div className="relative flex min-h-dvh flex-col text-ink">
-      <div className="pointer-events-none fixed inset-0 z-0" style={{ background: 'var(--app-grad)' }} />
+      <div className="app-backdrop app-backdrop--light" style={{ opacity: isDark ? 0 : 1 }} aria-hidden />
+      <div className="app-backdrop app-backdrop--dark" style={{ opacity: isDark ? 1 : 0 }} aria-hidden />
       <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-black/[0.03] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.04]">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <div className="flex items-baseline gap-2">

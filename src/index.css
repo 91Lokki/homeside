@@ -84,6 +84,26 @@
     border-radius: 3px;
   }
 
+  /* Silky light/dark cross-fade. The theme provider adds .theme-transition to
+     <html> for ~0.5s around a toggle, so every themed colour eases instead of
+     snapping; it's removed afterwards so it never slows ordinary interactions.
+     Wrapped in no-preference so reduced-motion users still get an instant swap. */
+  @media (prefers-reduced-motion: no-preference) {
+    html.theme-transition,
+    html.theme-transition *,
+    html.theme-transition *::before,
+    html.theme-transition *::after {
+      transition:
+        background-color 0.5s var(--ease-calm),
+        border-color 0.5s var(--ease-calm),
+        color 0.5s var(--ease-calm),
+        fill 0.5s var(--ease-calm),
+        stroke 0.5s var(--ease-calm),
+        box-shadow 0.5s var(--ease-calm) !important;
+      transition-delay: 0s !important;
+    }
+  }
+
   /* The app never relies on motion for meaning. Honour the OS preference. */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -111,5 +131,18 @@
   .dark .panel {
     background: rgba(255, 255, 255, 0.06);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+
+  /* Full-screen app backdrop, split into a light + dark layer so a theme toggle
+     cross-fades the gradient by opacity (gradients can't be transitioned). */
+  .app-backdrop {
+    @apply pointer-events-none fixed inset-0 z-0;
+    transition: opacity 0.5s var(--ease-calm);
+  }
+  .app-backdrop--light {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--team-pure) 32%, #ffffff) 0%, #f7f6f8 46%, #f0eff2 100%);
+  }
+  .app-backdrop--dark {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--team-pure) 38%, #0b0b14) 0%, #0a0a12 55%, #08080c 100%);
   }
 }
