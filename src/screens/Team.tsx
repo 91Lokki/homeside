@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { computeQualification, finishedFor, liveMatchFor, nextMatchFor, recordFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
 import { AXIS_LABEL, buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
@@ -13,7 +13,6 @@ import { Flag } from '@/components/Flag'
 import { Mascot } from '@/components/mascot/Mascot'
 import { RadarChart } from '@/components/RadarChart'
 import { TeamSwitcher } from '@/components/TeamSwitcher'
-import { HeroCarousel } from '@/components/team/HeroCarousel'
 import { FormDots, Label, Stat } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useTheme } from '@/state/theme'
@@ -93,49 +92,6 @@ export function Team() {
   const ratings = useMemo(() => computeRatings(stats, league), [stats, league])
   const qualMap = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
-  // Mobile swipe order: home team, then its same-group opponents (one swipe
-  // away), then everyone else in a fixed, stable order. Cyclic.
-  const order = useMemo(() => {
-    if (!homeTeam) return []
-    const h = homeTeam.code
-    const sameGroup = TEAMS.filter((t) => t.group === homeTeam.group && t.code !== h).map((t) => t.code)
-    const rest = TEAMS.filter((t) => t.group !== homeTeam.group)
-      .sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
-      .map((t) => t.code)
-    return [h, ...sameGroup, ...rest]
-  }, [homeTeam])
-
-  // One-time, low-key mobile swipe hint.
-  const [showHint, setShowHint] = useState(() => {
-    try {
-      return !localStorage.getItem('homeside.teamSwipeHint')
-    } catch {
-      return false
-    }
-  })
-  const dismissHint = useCallback(() => {
-    setShowHint((on) => {
-      if (on) {
-        try {
-          localStorage.setItem('homeside.teamSwipeHint', '1')
-        } catch {
-          /* ignore */
-        }
-      }
-      return false
-    })
-  }, [])
-  useEffect(() => {
-    if (!showHint) return
-    const t = window.setTimeout(dismissHint, 5000)
-    return () => window.clearTimeout(t)
-  }, [showHint, dismissHint])
-
-  // Direction for the hero "whoosh" when the team changes via search / Back
-  // (not a swipe). Null while idle / after a swipe so the carousel re-centres
-  // instantly for swipe commits.
-  const [jumpFrom, setJumpFrom] = useState<'left' | 'right' | null>(null)
-
   if (!homeTeam || !team) return null
 
   // Team accent scoped to a subtree only (overrides --team within it), never
@@ -151,26 +107,8 @@ export function Team() {
   const teamVars = teamVarsFor(team)
   const browsingAway = team.code !== homeTeam.code
 
-  // Fixed-order neighbours for the mobile swipe carousel (cyclic).
-  const n = order.length
-  const idx = Math.max(0, order.indexOf(team.code))
-
   // Switch the viewed team — LOCAL browse state only, never the global home team.
-  // A jump (search / Back) whooshes the new card in from the side it sits on in
-  // the fixed order (so Back to home, index 0, slides in from the left).
-  const selectTeam = (c: string) => {
-    if (c === team.code) return
-    const ti = order.indexOf(c)
-    setJumpFrom(ti >= 0 && ti < idx ? 'left' : 'right')
-    setViewCode(c)
-  }
-
-  const prevTeam = teamByCode[order[(idx - 1 + n) % n]] ?? team
-  const nextTeam = teamByCode[order[(idx + 1) % n]] ?? team
-  const onCarouselCommit = (d: 'next' | 'prev') => {
-    dismissHint()
-    setViewCode(order[(((idx + (d === 'next' ? 1 : -1)) % n) + n) % n])
-  }
+  const selectTeam = (c: string) => setViewCode(c)
 
   const rec = recordFor(matches, code)
   const qual = qualMap.get(code)
@@ -183,8 +121,7 @@ export function Team() {
   const byLine = (pos: 'GK' | 'DF' | 'MF' | 'FW') =>
     (squad?.players ?? []).filter((p) => p.position === pos).sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
 
-  // One hero "card" for any team, with its own scoped colour — used as the single
-  // desktop hero and as each card in the mobile swipe carousel.
+  // One hero "card" for any team, with its own scoped colour.
   const renderHero = (t: typeof team, hMood: typeof mood, hQual: typeof qual, vars: CSSProperties) => (
     <section
       style={vars}
@@ -225,8 +162,8 @@ export function Team() {
   return (
     <div className="animate-fade-in" style={teamVars}>
       {/* Controls — desktop: searchable selector + Back. Mobile: a compact search
-          entry + Back (swiping the hero card also switches). Both share the same
-          local viewCode; neither touches the global home team. */}
+          entry + Back. Both share the same local viewCode; neither touches the
+          global home team. */}
       <div className="mb-4 flex min-h-[2.25rem] items-center gap-2">
         <div className="hidden items-center gap-2 sm:flex">
           <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} />
@@ -252,27 +189,14 @@ export function Team() {
         </div>
       </div>
 
-      {/* Hero — mobile: a draggable peek-card carousel; desktop: a single card. */}
+      {/* Hero — a single card; re-keyed per team for a silky fade on switch. */}
       <div className="mb-4">
-        <div className="sm:hidden">
-          <HeroCarousel
-            prev={heroFor(prevTeam)}
-            current={heroFor(team)}
-            next={heroFor(nextTeam)}
-            centerKey={team.code}
-            onCommit={onCarouselCommit}
-            jumpFrom={jumpFrom}
-          />
-          {showHint && !browsingAway && (
-            <p className="mt-2.5 text-center text-2xs font-medium tracking-wide text-faint opacity-80">‹ Swipe to explore teams ›</p>
-          )}
-        </div>
-        <div className="hidden sm:block">{heroFor(team)}</div>
+        <div key={team.code} className="animate-team-in">{heroFor(team)}</div>
       </div>
 
-      {/* The rest of the profile — re-keyed per team for a calm fade as it syncs
-          to the (now centred) browsed team. */}
-      <div key={team.code} className="grid grid-cols-1 gap-4 animate-fade-in lg:grid-cols-12 lg:items-start">
+      {/* The rest of the profile — re-keyed per team for a silky fade as it syncs
+          to the browsed team. */}
+      <div key={team.code} className="grid grid-cols-1 gap-4 animate-team-in lg:grid-cols-12 lg:items-start">
         {/* Pulse strip — the only result data: compact record + next/live chip. */}
       <section className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-[22px] bg-black/[0.04] px-5 py-4 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 lg:col-span-12">
         {rec.played > 0 ? (
