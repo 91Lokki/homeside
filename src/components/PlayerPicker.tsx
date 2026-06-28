@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, Plus, Search } from 'lucide-react'
+import { keyPlayerById, type KeyPlayerArchetype } from '@/data/keyPlayers'
 import { SQUADS } from '@/data/squads'
 import { teamByCode } from '@/data/teams'
 import { PlayerAvatar } from './PlayerAvatar'
@@ -45,6 +46,32 @@ const POOL: IndexedPlayer[] = Object.entries(SQUADS).flatMap(([code, squad]) =>
  * grid of player cards that fills the width on desktop and stacks on mobile.
  */
 const ALL_POS: PosCat[] = ['GK', 'DEF', 'MID', 'ATT']
+const ARCHETYPE_BADGE: Record<KeyPlayerArchetype, string> = {
+  Scorer: 'text-rose-700/70 ring-rose-500/15 dark:text-rose-200/70 dark:ring-rose-300/15',
+  Creator: 'text-sky-700/70 ring-sky-500/15 dark:text-sky-200/70 dark:ring-sky-300/15',
+  Guardian: 'text-emerald-700/70 ring-emerald-500/15 dark:text-emerald-200/70 dark:ring-emerald-300/15',
+}
+
+function KeyPlayerCue({ archetypes }: { archetypes: KeyPlayerArchetype[] }) {
+  return (
+    <span className="inline-flex shrink-0 flex-wrap items-center gap-0.5 leading-none">
+      <span aria-label="Key player" className="shrink-0 text-[9px] text-team/70">
+        ★
+      </span>
+      {archetypes.map((a) => (
+        <span
+          key={a}
+          className={cn(
+            'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
+            ARCHETYPE_BADGE[a],
+          )}
+        >
+          {a}
+        </span>
+      ))}
+    </span>
+  )
+}
 
 export function PlayerPicker({
   slot,
@@ -145,10 +172,12 @@ export function PlayerPicker({
   )
 
   const listItems = results.map((p) => {
+    const key = playerKey(p)
+    const keyMeta = keyPlayerById[key]
     const full = isCountryFull?.(p.teamCode) ?? false
     const disabled = rowDisabled(p)
     return (
-      <li key={playerKey(p)}>
+      <li key={key}>
         <button
           type="button"
           disabled={disabled}
@@ -160,7 +189,10 @@ export function PlayerPicker({
         >
           <PlayerAvatar teamCode={p.teamCode} name={p.name} number={p.number} size={34} className="shrink-0" />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
+            <span className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
+              <span className="min-w-0 truncate text-sm font-medium text-ink">{p.name}</span>
+              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} />}
+            </span>
             <span className="block truncate text-2xs text-faint">
               <span className="font-semibold uppercase tracking-label text-muted">{POS_ABBR[p.pos] ?? p.pos}</span> · {p.teamName}
               {p.club ? ` · ${p.club}` : ''}

@@ -244,7 +244,7 @@ export function Fantasy() {
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 items-center gap-1 font-grotesk text-sm font-medium leading-tight">
               <span className="min-w-0 truncate">{pick.name}</span>
-              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact showBadges={false} />}
+              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact />}
             </p>
             <p className="truncate text-2xs text-faint">
               {POS_ABBR[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {SLOT_LABEL[slot]}
@@ -316,9 +316,7 @@ export function Fantasy() {
       )
     }
     const key = playerKey(pick)
-    const keyMeta = keyPlayerById[key]
     const ps = selScore?.perPlayer[key]
-    const team = teamByCode[pick.teamCode]
     const isCap = squad?.captain === key
     const out = eliminated.has(pick.teamCode)
     const active = selected === slot
@@ -342,7 +340,7 @@ export function Fantasy() {
                 active && !isCap && 'ring-2 ring-ink/40',
               )}
             >
-              <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={46} flagBadge={false} />
+              <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={46} />
             </span>
             {pick.number != null && (
               <span className="absolute -bottom-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-canvas px-1 font-grotesk text-[10px] font-semibold tnum text-muted ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
@@ -358,26 +356,10 @@ export function Fantasy() {
           <span className="mt-1.5 flex w-full max-w-full flex-col items-center overflow-hidden rounded-[10px] bg-black/[0.04] px-1.5 py-1 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
             <span className="flex w-full min-w-0 items-center justify-center gap-1">
               <span className="min-w-0 truncate font-grotesk text-xs font-medium leading-tight text-ink">{pick.name}</span>
-              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact showBadges={false} />}
               {ps && <span className="shrink-0 font-grotesk text-xs font-semibold tnum text-team">{ps.final}</span>}
             </span>
-            {keyMeta && keyMeta.archetypes.length > 0 && (
-              <span className="mt-0.5 flex max-w-full flex-wrap justify-center gap-0.5">
-                {keyMeta.archetypes.map((a) => (
-                  <span
-                    key={a}
-                    className={cn(
-                      'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
-                      ARCHETYPE_BADGE[a],
-                    )}
-                  >
-                    {a}
-                  </span>
-                ))}
-              </span>
-            )}
             <span className="mt-0.5 w-full truncate text-[9px] font-medium uppercase tracking-label text-faint">
-              {out ? 'Eliminated' : `${POS_ABBR[pick.position] ?? pick.position} · ${team?.name ?? pick.teamCode}`}
+              {out ? 'Eliminated' : (POS_ABBR[pick.position] ?? pick.position)}
             </span>
           </span>
         </button>
