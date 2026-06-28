@@ -8,8 +8,8 @@ optional private league leaderboard.
 ## What It Does
 
 - **Predict**: pick every knockout winner from the Round of 32 through the final.
-  Picks propagate forward through the bracket, can be locked, and are scored only
-  when real matches finish.
+  Picks propagate forward through the bracket, lock per match at kickoff, and are
+  scored only when real matches finish.
 - **Fantasy**: build a 5-player knockout roster by round: GK, DEF, MID, ATT, and
   FLEX. It supports captains, transfers, country quotas, eliminated-team handling,
   player photos, and key-player markers.
@@ -28,7 +28,7 @@ optional private league leaderboard.
 ### Predict
 
 Predict scores one thing: did the user pick the real winner of a finished
-knockout match?
+knockout match before that match kicked off?
 
 | Stage | Correct pick |
 | --- | ---: |
@@ -39,8 +39,15 @@ knockout match?
 | Third-place match | 1 |
 | Final | 8 |
 
-A perfect bracket is 63 points. There is no scoreline prediction, margin bonus,
-upset bonus, or extra champion bonus.
+The base perfect bracket is 63 points. A user does not have to lock the full
+bracket to play: each match can be picked or changed until its own kickoff. Picks
+recorded after kickoff are treated as late and score nothing.
+
+Confirming the full bracket is an optional early-lock bonus. If the full bracket
+was confirmed before a match kicked off, a correct pick for that match scores
+1.2x. Matches that had already kicked off before the bracket was confirmed do not
+get the bonus. There is no scoreline prediction, margin bonus, upset bonus,
+streak bonus, or extra champion bonus.
 
 ### Fantasy
 
