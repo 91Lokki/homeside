@@ -63,7 +63,7 @@
     color: var(--ink);
     font-family: 'Space Grotesk', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: 'tnum' 0;
-    transition: background-color 0.5s var(--ease-calm);
+    transition: background-color 0.75s var(--ease-calm);
     min-height: 100dvh;
   }
 
@@ -96,7 +96,7 @@
       transition:
         background-color 0.5s var(--ease-calm),
         border-color 0.5s var(--ease-calm),
-        opacity 0.5s var(--ease-calm) !important;
+        opacity 0.75s var(--ease-calm) !important;
       transition-delay: 0s !important;
     }
   }

@@ -55,7 +55,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // values before the dark class (and its CSS vars) change.
     void root.offsetHeight
     root.classList.toggle('dark', isDark)
-    const t = window.setTimeout(() => root.classList.remove('theme-transition'), 550)
+    const t = window.setTimeout(() => root.classList.remove('theme-transition'), 800)
     return () => window.clearTimeout(t)
   }, [isDark])
 
