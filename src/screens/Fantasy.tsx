@@ -233,7 +233,6 @@ export function Fantasy() {
     const pick = players.find((p) => p.slot === slot)
     if (!pick) return null
     const key = playerKey(pick)
-    const keyMeta = keyPlayerById[key]
     const ps = selScore?.perPlayer[key]
     const isCap = squad?.captain === key
     const lines = ps?.detail.matches.flatMap((m) => m.lines) ?? []
@@ -243,10 +242,7 @@ export function Fantasy() {
         <div className="flex items-center gap-2.5">
           <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={28} className="shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="flex min-w-0 items-center gap-1 font-grotesk text-sm font-medium leading-tight">
-              <span className="min-w-0 truncate">{pick.name}</span>
-              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact />}
-            </p>
+            <p className="truncate font-grotesk text-sm font-medium leading-tight">{pick.name}</p>
             <p className="truncate text-2xs text-faint">
               {POS_ABBR[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {SLOT_LABEL[slot]}
             </p>
@@ -375,7 +371,7 @@ export function Fantasy() {
               </span>
             )}
             <span className="mt-px w-full truncate text-[8px] font-medium uppercase tracking-label text-faint">
-              {out ? 'Eliminated' : (POS_ABBR[pick.position] ?? pick.position)}
+              {out ? 'Eliminated' : `${pick.number != null ? `#${pick.number} · ` : ''}${POS_ABBR[pick.position] ?? pick.position}`}
             </span>
           </span>
         </button>
