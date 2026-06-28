@@ -97,7 +97,6 @@ export function TeamPicker({
                     <Flag code={t.code} size={30} />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold leading-tight text-ink">{t.name}</span>
-                      {t.nameTC && <span className="block truncate font-tc text-xs text-faint">{t.nameTC}</span>}
                     </span>
                   </button>
                 ))}
@@ -134,7 +133,7 @@ function MeetView({ team, onBack, onConfirm, isCurrent }: { team: Team; onBack: 
               <Flag code={team.code} size={44} />
               <h1 className="font-grotesk text-4xl font-bold tracking-tight">{team.name}</h1>
             </div>
-            {team.nameTC && <p className="mt-1 font-tc text-lg text-muted">{team.nameTC}</p>}
+
 
             <p className="mt-5 max-w-sm text-muted">
               This is your home base — its little mascot, tinted in {team.name}&rsquo;s colours and shaped by its{' '}
