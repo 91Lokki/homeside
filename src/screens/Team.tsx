@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { computeQualification, finishedFor, liveMatchFor, nextMatchFor, recordFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
 import { AXIS_LABEL, buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
@@ -12,8 +12,11 @@ import type { Match } from '@/domain/types'
 import { Flag } from '@/components/Flag'
 import { Mascot } from '@/components/mascot/Mascot'
 import { RadarChart } from '@/components/RadarChart'
+import { TeamSwitcher } from '@/components/TeamSwitcher'
 import { FormDots, Label, Stat } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
+import { useTheme } from '@/state/theme'
+import { accentOn, rgba, readableInkOn } from '@/lib/prng'
 import { cn } from '@/lib/utils'
 
 const ORDER: AxisKey[] = ['attack', 'finishing', 'possession', 'defense', 'creativity', 'discipline']
@@ -35,7 +38,16 @@ function resultStat(m: Match, code: string): TeamMatchStats | null {
 
 export function Team() {
   const { homeTeam, matches, apiStatus, healthKnown } = useApp()
-  const code = homeTeam?.code ?? ''
+  const { isDark } = useTheme()
+
+  // Local browse state ONLY: which team this page is showing. Defaults to the
+  // home team and resets on every visit (the screen remounts on route change).
+  // It never writes back to the store, so the global home team, every other page,
+  // and the global team colour are untouched. The team accent is scoped below to
+  // this page's root element, so even the colour change stays local.
+  const [viewCode, setViewCode] = useState(homeTeam?.code ?? '')
+  const team = teamByCode[viewCode] ?? homeTeam
+  const code = team?.code ?? ''
 
   const finished = useMemo(() => (code ? finishedFor(matches, code) : []), [matches, code])
 
@@ -80,7 +92,18 @@ export function Team() {
   const ratings = useMemo(() => computeRatings(stats, league), [stats, league])
   const qualMap = useMemo(() => computeQualification(matches, TEAMS), [matches])
 
-  if (!homeTeam) return null
+  if (!homeTeam || !team) return null
+
+  // Team accent scoped to THIS page only (overrides the global --team within this
+  // subtree). Mirrors useTeamColor's math but never touches <html>, so the rest
+  // of the app keeps the home team's colour.
+  const teamVars = {
+    '--team': accentOn(team.color, isDark),
+    '--team-pure': team.color,
+    '--team-soft': rgba(team.color, isDark ? 0.16 : 0.1),
+    '--team-ink': readableInkOn(team.color),
+  } as CSSProperties
+  const browsingAway = team.code !== homeTeam.code
 
   const rec = recordFor(matches, code)
   const qual = qualMap.get(code)
@@ -94,33 +117,48 @@ export function Team() {
     (squad?.players ?? []).filter((p) => p.position === pos).sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
 
   return (
-    <div className="grid grid-cols-1 gap-4 animate-fade-in lg:grid-cols-12 lg:items-start">
+    <div className="grid grid-cols-1 gap-4 animate-fade-in lg:grid-cols-12 lg:items-start" style={teamVars}>
+      {/* Team switcher — browse any national team. Local to this page: it never
+          changes the global home team or colour (see viewCode above). */}
+      <div className="flex flex-wrap items-center gap-2 lg:col-span-12">
+        <span className="label mr-1">Viewing</span>
+        <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={setViewCode} />
+        {browsingAway && (
+          <button
+            onClick={() => setViewCode(homeTeam.code)}
+            className="rounded-pill px-3 py-1.5 text-2xs font-medium text-faint transition-colors hover:text-ink"
+          >
+            ← Back to {homeTeam.name}
+          </button>
+        )}
+      </div>
+
       {/* Identity hero — calm national-team banner. No result data here. */}
       <section className="relative overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5 sm:px-7 lg:col-span-12">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
         <div className="pointer-events-none absolute right-4 top-3 animate-breathe sm:right-6">
-          <Mascot code={code} color={homeTeam.color} color2={homeTeam.color2} symbol={homeTeam.symbol} mood={mood} size={72} />
+          <Mascot code={code} color={team.color} color2={team.color2} symbol={team.symbol} mood={mood} size={72} />
         </div>
         <div className="relative max-w-[40rem]">
-          <Label>National team · Group {homeTeam.group}</Label>
+          <Label>National team · Group {team.group}</Label>
           <div className="mt-2.5 flex items-center gap-3.5">
             <Flag code={code} size={48} className="shrink-0" />
             <div className="min-w-0">
-              <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{homeTeam.name}</h1>
-              {homeTeam.nameTC && <span className="mt-1.5 block font-tc text-base text-faint">{homeTeam.nameTC}</span>}
+              <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{team.name}</h1>
+              {team.nameTC && <span className="mt-1.5 block font-tc text-base text-faint">{team.nameTC}</span>}
             </div>
           </div>
-          {homeTeam.symbol && (
+          {team.symbol && (
             <p className="mt-4 text-sm text-muted">
               <span className="text-faint">National emblem · </span>
-              {homeTeam.symbol}
+              {team.symbol}
             </p>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">
-              {homeTeam.pot === 1 ? 'Top seed · Pot 1' : `Pot ${homeTeam.pot}`}
+              {team.pot === 1 ? 'Top seed · Pot 1' : `Pot ${team.pot}`}
             </span>
-            {homeTeam.host && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">Host nation</span>}
+            {team.host && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">Host nation</span>}
             {qual === 'in' && <span className="rounded-pill bg-team-soft px-2.5 py-1 text-2xs font-semibold text-team">Through to knockouts</span>}
             {qual === 'out' && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-faint">Eliminated</span>}
           </div>
@@ -172,7 +210,7 @@ export function Team() {
         </div>
         {!squad?.players?.length ? (
           <p className="text-sm text-muted">
-            The squad list for {homeTeam.name} isn&rsquo;t available yet — it appears once verified from a public source (never fabricated).
+            The squad list for {team.name} isn&rsquo;t available yet — it appears once verified from a public source (never fabricated).
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-x-10 gap-y-7 sm:grid-cols-2">
@@ -215,7 +253,7 @@ export function Team() {
       <div className="flex flex-col gap-4 lg:col-span-5">
         {noData ? (
           <div className="rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 p-6 text-sm text-muted">
-            The ability card is built from {homeTeam.name}&rsquo;s real match stats.{' '}
+            The ability card is built from {team.name}&rsquo;s real match stats.{' '}
             {!healthKnown
               ? 'Checking the live data feed…'
               : apiStatus === 'ok'
@@ -228,7 +266,7 @@ export function Team() {
             <section className="relative flex flex-col items-center overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-44" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
               <Label className="relative self-start">Ability card</Label>
-              <RadarChart ratings={ratings} color={homeTeam.color} />
+              <RadarChart ratings={ratings} color={team.color} />
               <p className="mt-1 text-center font-grotesk text-2xl font-semibold tracking-tight text-team">{ratings.playstyle}</p>
               {ratings.summary && <p className="mt-1.5 max-w-[34ch] text-center text-sm leading-snug text-muted">{ratings.summary}</p>}
               <div className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-2xs text-faint">
