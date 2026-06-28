@@ -15,10 +15,13 @@ export function TeamSwitcher({
   current,
   homeCode,
   onPick,
+  asSearch = false,
 }: {
   current: string
   homeCode: string
   onPick: (code: string) => void
+  /** Compact search-style trigger (mobile) instead of the flag+name pill. */
+  asSearch?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
@@ -81,16 +84,28 @@ export function TeamSwitcher({
 
   return (
     <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        className="flex items-center gap-2.5 rounded-pill bg-black/[0.04] py-1.5 pl-2 pr-3 ring-1 ring-inset ring-black/[0.06] transition-colors hover:bg-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10 dark:hover:bg-white/[0.1]"
-      >
-        <Flag code={current} size={22} className="shrink-0" />
-        <span className="text-sm font-semibold text-ink">{cur?.name ?? current}</span>
-        <ChevronDown size={15} className={cn('text-faint transition-transform duration-300 ease-calm', open && 'rotate-180')} />
-      </button>
+      {asSearch ? (
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          className="flex items-center gap-2 rounded-pill bg-black/[0.04] px-3 py-1.5 ring-1 ring-inset ring-black/[0.06] transition-colors hover:bg-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10 dark:hover:bg-white/[0.1]"
+        >
+          <Search size={15} className="shrink-0 text-faint" />
+          <span className="text-sm font-medium text-muted">Search teams</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          className="flex items-center gap-2.5 rounded-pill bg-black/[0.04] py-1.5 pl-2 pr-3 ring-1 ring-inset ring-black/[0.06] transition-colors hover:bg-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10 dark:hover:bg-white/[0.1]"
+        >
+          <Flag code={current} size={22} className="shrink-0" />
+          <span className="text-sm font-semibold text-ink">{cur?.name ?? current}</span>
+          <ChevronDown size={15} className={cn('text-faint transition-transform duration-300 ease-calm', open && 'rotate-180')} />
+        </button>
+      )}
 
       {open &&
         (isDesktop ? (

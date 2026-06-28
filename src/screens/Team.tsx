@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type TouchEvent as ReactTouchEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { computeQualification, finishedFor, liveMatchFor, nextMatchFor, recordFor } from '@/domain/record'
 import { moodFor } from '@/domain/mood'
 import { AXIS_LABEL, buildLeague, computeRatings, type AxisKey } from '@/domain/ratings'
@@ -13,6 +13,7 @@ import { Flag } from '@/components/Flag'
 import { Mascot } from '@/components/mascot/Mascot'
 import { RadarChart } from '@/components/RadarChart'
 import { TeamSwitcher } from '@/components/TeamSwitcher'
+import { HeroCarousel } from '@/components/team/HeroCarousel'
 import { FormDots, Label, Stat } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useTheme } from '@/state/theme'
@@ -104,9 +105,7 @@ export function Team() {
     return [h, ...sameGroup, ...rest]
   }, [homeTeam])
 
-  // Slide direction for the switch animation + a one-time mobile swipe hint.
-  const [dir, setDir] = useState<'next' | 'prev' | null>(null)
-  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  // One-time, low-key mobile swipe hint.
   const [showHint, setShowHint] = useState(() => {
     try {
       return !localStorage.getItem('homeside.teamSwipeHint')
@@ -134,47 +133,31 @@ export function Team() {
 
   if (!homeTeam || !team) return null
 
-  // Team accent scoped to THIS page only (overrides the global --team within this
-  // subtree). Mirrors useTeamColor's math but never touches <html>, so the rest
-  // of the app keeps the home team's colour.
-  const teamVars = {
-    '--team': accentOn(team.color, isDark),
-    '--team-pure': team.color,
-    '--team-soft': rgba(team.color, isDark ? 0.16 : 0.1),
-    '--team-ink': readableInkOn(team.color),
-  } as CSSProperties
+  // Team accent scoped to a subtree only (overrides --team within it), never
+  // <html> — so the page content + each hero card can show the browsed team's
+  // colour while the global nav theme stays the home team's.
+  const teamVarsFor = (t: typeof team): CSSProperties =>
+    ({
+      '--team': accentOn(t.color, isDark),
+      '--team-pure': t.color,
+      '--team-soft': rgba(t.color, isDark ? 0.16 : 0.1),
+      '--team-ink': readableInkOn(t.color),
+    }) as CSSProperties
+  const teamVars = teamVarsFor(team)
   const browsingAway = team.code !== homeTeam.code
 
-  // Switch the viewed team. `selectTeam` (dropdown / Back) fades; swiping slides.
-  const selectTeam = (c: string) => {
-    setDir(null)
-    setViewCode(c)
+  // Switch the viewed team — LOCAL browse state only, never the global home team.
+  const selectTeam = (c: string) => setViewCode(c)
+
+  // Fixed-order neighbours for the mobile swipe carousel (cyclic).
+  const n = order.length
+  const idx = Math.max(0, order.indexOf(team.code))
+  const prevTeam = teamByCode[order[(idx - 1 + n) % n]] ?? team
+  const nextTeam = teamByCode[order[(idx + 1) % n]] ?? team
+  const onCarouselCommit = (d: 'next' | 'prev') => {
+    dismissHint()
+    setViewCode(order[(((idx + (d === 'next' ? 1 : -1)) % n) + n) % n])
   }
-  const swipe = (delta: 1 | -1) => {
-    if (order.length === 0) return
-    const i = order.indexOf(team.code)
-    const ni = ((i < 0 ? 0 : i) + delta + order.length) % order.length
-    setDir(delta === 1 ? 'next' : 'prev')
-    setViewCode(order[ni])
-  }
-  const onTouchStart = (e: ReactTouchEvent) => {
-    const t = e.touches[0]
-    touchStart.current = { x: t.clientX, y: t.clientY }
-  }
-  const onTouchEnd = (e: ReactTouchEvent) => {
-    const s = touchStart.current
-    touchStart.current = null
-    if (!s) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - s.x
-    const dy = t.clientY - s.y
-    // Commit only a clearly-horizontal swipe, so vertical scrolling is untouched.
-    if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-      dismissHint()
-      swipe(dx < 0 ? 1 : -1)
-    }
-  }
-  const animClass = dir === 'next' ? 'animate-slide-from-right' : dir === 'prev' ? 'animate-slide-from-left' : 'animate-fade-in'
 
   const rec = recordFor(matches, code)
   const qual = qualMap.get(code)
@@ -187,10 +170,50 @@ export function Team() {
   const byLine = (pos: 'GK' | 'DF' | 'MF' | 'FW') =>
     (squad?.players ?? []).filter((p) => p.position === pos).sort((a, b) => (a.number ?? 99) - (b.number ?? 99))
 
+  // One hero "card" for any team, with its own scoped colour — used as the single
+  // desktop hero and as each card in the mobile swipe carousel.
+  const renderHero = (t: typeof team, hMood: typeof mood, hQual: typeof qual, vars: CSSProperties) => (
+    <section
+      style={vars}
+      className="relative h-full overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5 sm:px-7"
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
+      <div className="pointer-events-none absolute right-4 top-3 animate-breathe sm:right-6">
+        <Mascot code={t.code} color={t.color} color2={t.color2} symbol={t.symbol} mood={hMood} size={72} />
+      </div>
+      <div className="relative max-w-[40rem]">
+        <Label>National team · Group {t.group}</Label>
+        <div className="mt-2.5 flex items-center gap-3.5">
+          <Flag code={t.code} size={48} className="shrink-0" />
+          <div className="min-w-0">
+            <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{t.name}</h1>
+            {t.nameTC && <span className="mt-1.5 block font-tc text-base text-faint">{t.nameTC}</span>}
+          </div>
+        </div>
+        {t.symbol && (
+          <p className="mt-4 text-sm text-muted">
+            <span className="text-faint">National emblem · </span>
+            {t.symbol}
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">
+            {t.pot === 1 ? 'Top seed · Pot 1' : `Pot ${t.pot}`}
+          </span>
+          {t.host && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">Host nation</span>}
+          {hQual === 'in' && <span className="rounded-pill bg-team-soft px-2.5 py-1 text-2xs font-semibold text-team">Through to knockouts</span>}
+          {hQual === 'out' && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-faint">Eliminated</span>}
+        </div>
+      </div>
+    </section>
+  )
+  const heroFor = (t: typeof team) => renderHero(t, moodFor(matches, t.code).mood, qualMap.get(t.code), teamVarsFor(t))
+
   return (
-    <div className="animate-fade-in" style={teamVars} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      {/* Controls — desktop: searchable selector + Back. Mobile: swipe instead
-          (no selector); a subtle Back chip or a one-time hint sits here. */}
+    <div className="animate-fade-in" style={teamVars}>
+      {/* Controls — desktop: searchable selector + Back. Mobile: a compact search
+          entry + Back (swiping the hero card also switches). Both share the same
+          local viewCode; neither touches the global home team. */}
       <div className="mb-4 flex min-h-[2.25rem] items-center gap-2">
         <div className="hidden items-center gap-2 sm:flex">
           <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} />
@@ -203,59 +226,40 @@ export function Team() {
             </button>
           )}
         </div>
-        <div className="flex w-full items-center justify-center sm:hidden">
-          {browsingAway ? (
+        <div className="flex w-full items-center justify-between gap-2 sm:hidden">
+          <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} asSearch />
+          {browsingAway && (
             <button
               onClick={() => selectTeam(homeTeam.code)}
               className="inline-flex items-center gap-1.5 rounded-pill bg-black/[0.04] px-3 py-1.5 text-2xs font-medium text-muted ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10"
             >
-              ← Back to {homeTeam.name}
+              ← {homeTeam.name}
             </button>
-          ) : showHint ? (
-            <span className="text-2xs font-medium tracking-wide text-faint opacity-80">‹ Swipe to explore teams ›</span>
-          ) : null}
+          )}
         </div>
       </div>
 
-      {/* Swipeable team profile — re-keyed per team so each switch slides/fades. */}
-      <div
-        key={team.code}
-        className={cn('grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start', animClass)}
-        style={{ overflowX: 'clip' }}
-      >
-        {/* Identity hero — calm national-team banner. No result data here. */}
-      <section className="relative overflow-hidden rounded-[22px] bg-black/[0.04] ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 px-6 pb-6 pt-5 sm:px-7 lg:col-span-12">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40" style={{ background: 'linear-gradient(180deg, var(--team-soft), transparent)' }} />
-        <div className="pointer-events-none absolute right-4 top-3 animate-breathe sm:right-6">
-          <Mascot code={code} color={team.color} color2={team.color2} symbol={team.symbol} mood={mood} size={72} />
-        </div>
-        <div className="relative max-w-[40rem]">
-          <Label>National team · Group {team.group}</Label>
-          <div className="mt-2.5 flex items-center gap-3.5">
-            <Flag code={code} size={48} className="shrink-0" />
-            <div className="min-w-0">
-              <h1 className="font-grotesk text-4xl font-semibold leading-none tracking-tight sm:text-5xl">{team.name}</h1>
-              {team.nameTC && <span className="mt-1.5 block font-tc text-base text-faint">{team.nameTC}</span>}
-            </div>
-          </div>
-          {team.symbol && (
-            <p className="mt-4 text-sm text-muted">
-              <span className="text-faint">National emblem · </span>
-              {team.symbol}
-            </p>
+      {/* Hero — mobile: a draggable peek-card carousel; desktop: a single card. */}
+      <div className="mb-4">
+        <div className="sm:hidden">
+          <HeroCarousel
+            prev={heroFor(prevTeam)}
+            current={heroFor(team)}
+            next={heroFor(nextTeam)}
+            centerKey={team.code}
+            onCommit={onCarouselCommit}
+          />
+          {showHint && !browsingAway && (
+            <p className="mt-2.5 text-center text-2xs font-medium tracking-wide text-faint opacity-80">‹ Swipe to explore teams ›</p>
           )}
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">
-              {team.pot === 1 ? 'Top seed · Pot 1' : `Pot ${team.pot}`}
-            </span>
-            {team.host && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-muted">Host nation</span>}
-            {qual === 'in' && <span className="rounded-pill bg-team-soft px-2.5 py-1 text-2xs font-semibold text-team">Through to knockouts</span>}
-            {qual === 'out' && <span className="rounded-pill bg-sunken px-2.5 py-1 text-2xs font-medium text-faint">Eliminated</span>}
-          </div>
         </div>
-      </section>
+        <div className="hidden sm:block">{heroFor(team)}</div>
+      </div>
 
-      {/* Pulse strip — the only result data: compact record + next/live chip. */}
+      {/* The rest of the profile — re-keyed per team for a calm fade as it syncs
+          to the (now centred) browsed team. */}
+      <div key={team.code} className="grid grid-cols-1 gap-4 animate-fade-in lg:grid-cols-12 lg:items-start">
+        {/* Pulse strip — the only result data: compact record + next/live chip. */}
       <section className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-[22px] bg-black/[0.04] px-5 py-4 ring-1 ring-inset ring-black/[0.06] backdrop-blur-xl dark:bg-white/[0.06] dark:ring-white/10 lg:col-span-12">
         {rec.played > 0 ? (
           <>
