@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Check, Trophy } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Check, Lock, Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS, teamByCode } from '@/data/teams'
 import { resolveBracket } from '@/domain/bracket'
@@ -54,8 +55,9 @@ const BRACKET_POS: Record<number, number> = (() => {
 
 export function Predict() {
   const { matches } = useApp()
-  const { predictions, setPrediction, clearPredictions } = useGames()
+  const { predictions, setPrediction, clearPredictions, predictLocked, lockPredictions } = useGames()
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const [confirming, setConfirming] = useState(false)
 
   const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const byNo = useMemo(() => new Map(resolved.map((m) => [m.matchNo, m])), [resolved])
@@ -86,8 +88,23 @@ export function Predict() {
     awayCode: predicted[no]?.awayCode ?? null,
     pick: predictions[no] ?? null,
     status: score.perMatch[no] ?? ('unpicked' as PickStatus),
-    onPick: (code: TeamCode) => setPrediction(no, code),
+    locked: predictLocked,
+    onPick: (code: TeamCode) => {
+      if (!predictLocked) setPrediction(no, code)
+    },
   })
+
+  // The whole bracket is predicted once every tie (incl. third place) has a valid
+  // pick — that's the gate for confirming/locking the bracket.
+  const complete = useMemo(
+    () =>
+      BRACKET.every((b) => {
+        const occ = predicted[b.matchNo]
+        const pick = predictions[b.matchNo]
+        return pick != null && occ != null && (pick === occ.homeCode || pick === occ.awayCode)
+      }),
+    [predicted, predictions],
+  )
 
   // mobile: adaptive two-round window — height shrinks to the focused round so all
   // its matches fit. Switching rounds is a true horizontal carousel: a 200%-wide
@@ -204,10 +221,26 @@ export function Predict() {
               pts · {score.correct}/{score.graded} graded
             </p>
           </div>
-          {Object.keys(predictions).length > 0 && (
-            <button onClick={clearPredictions} className="rounded-pill border px-3 py-1.5 text-xs text-muted transition-colors hover:text-ink">
-              Reset
-            </button>
+          {predictLocked ? (
+            <span className="inline-flex items-center gap-1.5 rounded-pill bg-team-soft px-3 py-1.5 text-xs font-semibold text-team">
+              <Lock size={12} /> Locked in
+            </span>
+          ) : (
+            <>
+              {Object.keys(predictions).length > 0 && (
+                <button onClick={clearPredictions} className="rounded-pill border px-3 py-1.5 text-xs text-muted transition-colors hover:text-ink">
+                  Reset
+                </button>
+              )}
+              {complete && (
+                <button
+                  onClick={() => setConfirming(true)}
+                  className="inline-flex items-center gap-1.5 rounded-pill bg-team px-4 py-1.5 text-xs font-semibold text-team-ink transition-opacity hover:opacity-90"
+                >
+                  <Lock size={12} /> Confirm bracket
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -315,6 +348,45 @@ export function Predict() {
           `}</style>
         </>
       )}
+
+      {confirming &&
+        createPortal(
+          <div className="fixed inset-0 z-[80] grid place-items-center p-4">
+            <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => setConfirming(false)} aria-hidden />
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="relative w-full max-w-sm animate-scale-in rounded-[22px] bg-canvas p-6 ring-1 ring-inset ring-black/[0.08] dark:ring-white/10"
+            >
+              <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-team-soft text-team">
+                <Lock size={18} />
+              </div>
+              <h2 className="font-grotesk text-xl font-semibold tracking-tight">Confirm your bracket?</h2>
+              <p className="mt-2 text-sm text-muted">
+                Once you confirm, your picks are locked in and <span className="font-medium text-ink">can’t be changed</span>. Make sure
+                {champion ? <> your champion is <span className="font-medium text-ink">{champion.name}</span>.</> : <> everything looks right.</>}
+              </p>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="rounded-pill px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-ink"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    lockPredictions()
+                    setConfirming(false)
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-pill bg-team px-5 py-2 text-sm font-semibold text-team-ink transition-opacity hover:opacity-90"
+                >
+                  <Lock size={14} /> Lock it in
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
@@ -394,6 +466,7 @@ function MatchCard({
   pick,
   status,
   onPick,
+  locked,
   muted,
   label,
 }: {
@@ -404,6 +477,7 @@ function MatchCard({
   pick: TeamCode | null
   status: PickStatus
   onPick: (code: TeamCode) => void
+  locked?: boolean
   muted?: boolean
   label?: string
 }) {
@@ -425,9 +499,9 @@ function MatchCard({
         <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
           {finished ? `Full-time · ${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
         </div>
-        <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+        <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} />
         <div className="h-px bg-black/5 dark:bg-white/[0.07]" />
-        <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} />
+        <Side code={awayCode} score={real?.awayScore} picked={pick != null && pick === awayCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} />
       </div>
     </div>
   )
@@ -441,6 +515,7 @@ function Side({
   winner,
   finished,
   onPick,
+  locked,
 }: {
   code: TeamCode | null
   score: number | null | undefined
@@ -449,6 +524,7 @@ function Side({
   winner: TeamCode | null | undefined
   finished?: boolean
   onPick: (code: TeamCode) => void
+  locked?: boolean
 }) {
   const team = code ? teamByCode[code] : null
   const isWinner = finished && winner === code
@@ -458,11 +534,11 @@ function Side({
 
   return (
     <button
-      disabled={!code}
-      onClick={() => code && onPick(code)}
+      disabled={!code || locked}
+      onClick={() => code && !locked && onPick(code)}
       className={cn(
         'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors',
-        code && 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
+        code && !locked && 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
         picked && !finished && 'bg-team-soft',
         correct && 'bg-emerald-500/15',
         wrong && 'opacity-40',

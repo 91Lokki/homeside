@@ -8,6 +8,7 @@ import { useAuth } from '@/state/auth'
 import { useApp } from '@/state/store'
 
 const PRED_KEY = 'homeside.predictions'
+const PRED_LOCK_KEY = 'homeside.predictions.locked'
 const FANT_KEY = 'homeside.fantasy.v2'
 // Whose data the local cache currently holds, so switching accounts in the same
 // browser never leaks the previous user's picks into a new account's row.
@@ -60,6 +61,8 @@ interface GamesCtx {
   predictions: Predictions
   setPrediction: (matchNo: number, code: TeamCode) => void
   clearPredictions: () => void
+  predictLocked: boolean
+  lockPredictions: () => void
 
   fantasy: FantasyRounds
   setRoundPick: (round: Round, slot: Slot, pick: FantasyPick | null) => void
@@ -76,10 +79,14 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   const { homeCode, setHomeCode } = useApp()
   const [predictions, setPredictions] = useState<Predictions>(() => load(PRED_KEY, {}))
   const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
+  // Once a bracket is confirmed it can no longer be edited. Local-only (not
+  // synced): a per-browser guard, reset on a fresh account hydrate / clear.
+  const [predictLocked, setPredictLocked] = useState<boolean>(() => load(PRED_LOCK_KEY, false))
 
   // localStorage stays the source of truth offline, and a local cache when signed
   // in — these always run, so the app is unchanged for signed-out users.
   useEffect(() => safeSet(PRED_KEY, JSON.stringify(predictions)), [predictions])
+  useEffect(() => safeSet(PRED_LOCK_KEY, JSON.stringify(predictLocked)), [predictLocked])
   useEffect(() => safeSet(FANT_KEY, JSON.stringify(fantasy)), [fantasy])
 
   /* ----------------------------- cloud sync ------------------------------- */
@@ -134,6 +141,9 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         setPredictions(p)
         setFantasy(f)
         setHomeCode(home)
+        // The lock is local; on a genuine account switch don't carry the previous
+        // user's lock over (same-user refresh keeps it).
+        if (readOwner() && readOwner() !== userId) setPredictLocked(false)
         // Record the server's display_name so that if our live Google name differs
         // (e.g. the row predates name-sync), the upsert effect refreshes it.
         lastSyncedRef.current = snapOf(p, f, home, (data.display_name as string | null) ?? null)
@@ -142,6 +152,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         setPredictions({})
         setFantasy({})
         setHomeCode(null)
+        setPredictLocked(false)
         const { error: upErr } = await supabase
           .from('picks')
           .upsert({ user_id: userId, email: user.email, display_name: displayName, predictions: {}, fantasy: {}, home_code: null })
@@ -202,7 +213,11 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   const setPrediction = useCallback((matchNo: number, code: TeamCode) => {
     setPredictions((p) => pruneStale({ ...p, [matchNo]: code }))
   }, [])
-  const clearPredictions = useCallback(() => setPredictions({}), [])
+  const clearPredictions = useCallback(() => {
+    setPredictions({})
+    setPredictLocked(false)
+  }, [])
+  const lockPredictions = useCallback(() => setPredictLocked(true), [])
 
   const setRoundPick = useCallback((round: Round, slot: Slot, pick: FantasyPick | null) => {
     setFantasy((fr) => {
@@ -242,8 +257,8 @@ export function GamesProvider({ children }: { children: ReactNode }) {
   const resetFantasy = useCallback(() => setFantasy({}), [])
 
   const value = useMemo<GamesCtx>(
-    () => ({ predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy }),
-    [predictions, setPrediction, clearPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy],
+    () => ({ predictions, setPrediction, clearPredictions, predictLocked, lockPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy }),
+    [predictions, setPrediction, clearPredictions, predictLocked, lockPredictions, fantasy, setRoundPick, seedRound, setRoundSquad, setCaptain, resetFantasy],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
