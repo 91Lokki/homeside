@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowLeftRight, Check, Crown, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
+import { keyPlayerById, type KeyPlayerArchetype } from '@/data/keyPlayers'
 import { TEAMS, teamByCode } from '@/data/teams'
 import {
   COUNTRY_QUOTA,
@@ -39,6 +40,41 @@ const ROUND_SHORT: Record<Round, string> = { R32: 'R32', R16: 'R16', QF: 'QF', S
 /** Pitch formation rows, own goal (top) → attack (bottom). FLEX shares midfield. */
 const FORMATION: Slot[][] = [['GK'], ['DEF'], ['MID', 'FLEX'], ['ATT']]
 const fmtDate = (ms: number | null) => (ms == null ? '' : new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))
+
+const ARCHETYPE_BADGE: Record<KeyPlayerArchetype, string> = {
+  Scorer: 'text-rose-700/70 ring-rose-500/15 dark:text-rose-200/70 dark:ring-rose-300/15',
+  Creator: 'text-sky-700/70 ring-sky-500/15 dark:text-sky-200/70 dark:ring-sky-300/15',
+  Guardian: 'text-emerald-700/70 ring-emerald-500/15 dark:text-emerald-200/70 dark:ring-emerald-300/15',
+}
+
+function KeyPlayerCue({
+  archetypes,
+  compact = false,
+  showBadges = true,
+}: {
+  archetypes: KeyPlayerArchetype[]
+  compact?: boolean
+  showBadges?: boolean
+}) {
+  return (
+    <span className={cn('inline-flex max-w-full flex-wrap items-center justify-center gap-0.5', compact ? 'leading-none' : 'gap-y-1')}>
+      <span aria-label="Key player" className={cn('shrink-0 text-team/70', compact ? 'text-[9px]' : 'text-[10px]')}>
+        ★
+      </span>
+      {showBadges && archetypes.map((a) => (
+        <span
+          key={a}
+          className={cn(
+            'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
+            ARCHETYPE_BADGE[a],
+          )}
+        >
+          {a}
+        </span>
+      ))}
+    </span>
+  )
+}
 
 export function Fantasy() {
   const { matches } = useApp()
@@ -196,6 +232,7 @@ export function Fantasy() {
     const pick = players.find((p) => p.slot === slot)
     if (!pick) return null
     const key = playerKey(pick)
+    const keyMeta = keyPlayerById[key]
     const ps = selScore?.perPlayer[key]
     const isCap = squad?.captain === key
     const lines = ps?.detail.matches.flatMap((m) => m.lines) ?? []
@@ -205,7 +242,10 @@ export function Fantasy() {
         <div className="flex items-center gap-2.5">
           <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={28} className="shrink-0" />
           <div className="min-w-0 flex-1">
-            <p className="truncate font-grotesk text-sm font-medium leading-tight">{pick.name}</p>
+            <p className="flex min-w-0 items-center gap-1 font-grotesk text-sm font-medium leading-tight">
+              <span className="min-w-0 truncate">{pick.name}</span>
+              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact showBadges={false} />}
+            </p>
             <p className="truncate text-2xs text-faint">
               {POS_ABBR[pick.position] ?? pick.position} · {teamByCode[pick.teamCode]?.name ?? pick.teamCode} · {SLOT_LABEL[slot]}
             </p>
@@ -276,6 +316,7 @@ export function Fantasy() {
       )
     }
     const key = playerKey(pick)
+    const keyMeta = keyPlayerById[key]
     const ps = selScore?.perPlayer[key]
     const team = teamByCode[pick.teamCode]
     const isCap = squad?.captain === key
@@ -317,8 +358,24 @@ export function Fantasy() {
           <span className="mt-1.5 flex w-full max-w-full flex-col items-center overflow-hidden rounded-[10px] bg-black/[0.04] px-1.5 py-1 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
             <span className="flex w-full min-w-0 items-center justify-center gap-1">
               <span className="min-w-0 truncate font-grotesk text-xs font-medium leading-tight text-ink">{pick.name}</span>
+              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact showBadges={false} />}
               {ps && <span className="shrink-0 font-grotesk text-xs font-semibold tnum text-team">{ps.final}</span>}
             </span>
+            {keyMeta && keyMeta.archetypes.length > 0 && (
+              <span className="mt-0.5 flex max-w-full flex-wrap justify-center gap-0.5">
+                {keyMeta.archetypes.map((a) => (
+                  <span
+                    key={a}
+                    className={cn(
+                      'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
+                      ARCHETYPE_BADGE[a],
+                    )}
+                  >
+                    {a}
+                  </span>
+                ))}
+              </span>
+            )}
             <span className="mt-0.5 w-full truncate text-[9px] font-medium uppercase tracking-label text-faint">
               {out ? 'Eliminated' : `${POS_ABBR[pick.position] ?? pick.position} · ${team?.name ?? pick.teamCode}`}
             </span>
