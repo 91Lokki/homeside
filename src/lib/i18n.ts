@@ -262,9 +262,9 @@ const en: Translations = {
   // Predict
   predictLabel: 'Predict the bracket',
   predictTitle: 'Pick every winner',
-  predictDesc: 'Tap a team to predict who wins each tie — your picks carry forward to the next round, all the way to a champion. Each match locks at kickoff; confirm the full bracket early for a 1.2x bonus on correct picks that were locked before kickoff.',
+  predictDesc: 'Tap a team to predict who wins each tie — your picks carry forward to the next round, all the way to a champion. Each match locks at kickoff; confirm the full bracket early for a 1.4x bonus on correct picks that were locked before kickoff.',
   predictGraded: (c, t) => `pts · ${c}/${t} graded`,
-  predictBonusHint: 'Early-lock bonus: correct picks score 1.2x when your bracket was confirmed before that match kicked off.',
+  predictBonusHint: 'Early-lock bonus: correct picks score 1.4x when your bracket was confirmed before that match kicked off.',
   predictScoreBreakdown: (base, bonus) => `${base} base + ${bonus} early-lock bonus`,
   predictLockedIn: 'Locked in',
   predictReset: 'Reset',
@@ -275,8 +275,8 @@ const en: Translations = {
   predictConfirmTitle: 'Confirm your bracket?',
   predictConfirmDesc: (champion) =>
     champion
-      ? `Once you confirm, your picks are locked in and can't be changed. Correct picks locked before kickoff score 1.2x. Make sure your champion is ${champion}.`
-      : "Once you confirm, your picks are locked in and can't be changed. Correct picks locked before kickoff score 1.2x.",
+      ? `Once you confirm, your picks are locked in and can't be changed. Correct picks locked before kickoff score 1.4x. Make sure your champion is ${champion}.`
+      : "Once you confirm, your picks are locked in and can't be changed. Correct picks locked before kickoff score 1.4x.",
   predictCancel: 'Cancel',
   predictLock: 'Lock it in',
   predictFullTime: 'Full-time · ',
@@ -544,9 +544,9 @@ const zh: Translations = {
   // Predict
   predictLabel: '預測晉級名單',
   predictTitle: '挑選每場勝者',
-  predictDesc: '點擊隊伍預測每場比賽勝者，預測會延續至下一輪直到冠軍。每場開賽後即鎖定；提前確認整張 bracket，開賽前已鎖定且猜中的場次可得 1.2x。',
+  predictDesc: '點擊隊伍預測每場比賽勝者，預測會延續至下一輪直到冠軍。每場開賽後即鎖定；提前確認整張 bracket，開賽前已鎖定且猜中的場次可得 1.4x。',
   predictGraded: (c, t) => `分 · ${c}/${t} 已評分`,
-  predictBonusHint: '提前鎖定加成：若整張 bracket 在該場開賽前已確認，猜中該場得分為 1.2x。',
+  predictBonusHint: '提前鎖定加成：若整張 bracket 在該場開賽前已確認，猜中該場得分為 1.4x。',
   predictScoreBreakdown: (base, bonus) => `${base} 基礎 + ${bonus} 提前鎖定加成`,
   predictLockedIn: '已鎖定',
   predictReset: '重設',
@@ -557,8 +557,8 @@ const zh: Translations = {
   predictConfirmTitle: '確認晉級名單？',
   predictConfirmDesc: (champion) =>
     champion
-      ? `確認後，你的預測將被鎖定且無法更改。開賽前已鎖定且猜中的場次會以 1.2x 計分。請確認你的冠軍是 ${champion}。`
-      : '確認後，你的預測將被鎖定且無法更改。開賽前已鎖定且猜中的場次會以 1.2x 計分。',
+      ? `確認後，你的預測將被鎖定且無法更改。開賽前已鎖定且猜中的場次會以 1.4x 計分。請確認你的冠軍是 ${champion}。`
+      : '確認後，你的預測將被鎖定且無法更改。開賽前已鎖定且猜中的場次會以 1.4x 計分。',
   predictCancel: '取消',
   predictLock: '確認鎖定',
   predictFullTime: '終場 · ',

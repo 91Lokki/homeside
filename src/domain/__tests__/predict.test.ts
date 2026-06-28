@@ -211,8 +211,8 @@ describe('scorePredictions', () => {
       } as Predictions
       const s = scorePredictions(predictions, resolved)
       expect(s.basePoints).toBe(8)
-      expect(s.earlyLockBonus).toBe(1.6)
-      expect(s.points).toBe(9.6)
+      expect(s.earlyLockBonus).toBe(3.2)
+      expect(s.points).toBe(11.2)
       expect(s.perMatch[104]).toBe('correct')
     })
 

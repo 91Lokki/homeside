@@ -45,7 +45,7 @@ recorded after kickoff are treated as late and score nothing.
 
 Confirming the full bracket is an optional early-lock bonus. If the full bracket
 was confirmed before a match kicked off, a correct pick for that match scores
-1.2x. Matches that had already kicked off before the bracket was confirmed do not
+1.4x. Matches that had already kicked off before the bracket was confirmed do not
 get the bonus. There is no scoreline prediction, margin bonus, upset bonus,
 streak bonus, or extra champion bonus.
 

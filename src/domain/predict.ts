@@ -3,7 +3,7 @@ import type { BracketMatch, ResolvedBracketMatch, Stage, TeamCode } from './type
 /** User's predicted winner per bracket match number. */
 export const PICKED_AT_KEY = '__pickedAt'
 export const LOCKED_AT_KEY = '__lockedAt'
-export const EARLY_LOCK_MULTIPLIER = 1.2
+export const EARLY_LOCK_MULTIPLIER = 1.4
 export type Predictions = Record<number, TeamCode> & {
   [PICKED_AT_KEY]?: Record<string, number>
   [LOCKED_AT_KEY]?: number
