@@ -12,7 +12,7 @@ optional private league leaderboard.
 - **Predict**: pick every knockout winner from the Round of 32 through the final.
   Picks propagate forward through the bracket, lock per match at kickoff, and are
   scored only when real matches finish.
-- **Fantasy**: build a 5-player knockout roster by round: GK, DEF, MID, ATT, and
+- **Fantasy**: build a 5-player knockout roster by round: GK, DEF, MID, FWD, and
   FLEX. It supports captains, transfers, country quotas, eliminated-team handling,
   player photos, and key-player markers.
 - **Team**: browse every national team, see the chosen home team styling/mascot,
