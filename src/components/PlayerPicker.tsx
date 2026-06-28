@@ -54,15 +54,15 @@ const ARCHETYPE_BADGE: Record<KeyPlayerArchetype, string> = {
 
 function KeyPlayerCue({ archetypes }: { archetypes: KeyPlayerArchetype[] }) {
   return (
-    <span className="inline-flex shrink-0 flex-wrap items-center gap-0.5 leading-none">
-      <span aria-label="Key player" className="shrink-0 text-[9px] text-team/70">
+    <span className="inline-flex shrink-0 flex-wrap items-center justify-end gap-1 leading-none">
+      <span aria-label="Key player" className="shrink-0 text-[13px] text-team/80">
         ★
       </span>
       {archetypes.map((a) => (
         <span
           key={a}
           className={cn(
-            'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
+            'shrink-0 rounded-[7px] bg-black/[0.025] px-1.5 py-[2px] font-grotesk text-[9px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
             ARCHETYPE_BADGE[a],
           )}
         >
@@ -189,19 +189,19 @@ export function PlayerPicker({
         >
           <PlayerAvatar teamCode={p.teamCode} name={p.name} number={p.number} size={34} className="shrink-0" />
           <span className="min-w-0 flex-1">
-            <span className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
-              <span className="min-w-0 truncate text-sm font-medium text-ink">{p.name}</span>
-              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} />}
-            </span>
+            <span className="block truncate text-sm font-medium text-ink">{p.name}</span>
             <span className="block truncate text-2xs text-faint">
               <span className="font-semibold uppercase tracking-label text-muted">{POS_ABBR[p.pos] ?? p.pos}</span> · {p.teamName}
               {p.club ? ` · ${p.club}` : ''}
             </span>
             {full && <span className="mt-0.5 block text-2xs text-amber-600 dark:text-amber-500">country quota full</span>}
           </span>
-          {p.number != null && (
-            <span className="w-7 shrink-0 text-right font-grotesk text-sm tnum text-faint">{p.number}</span>
-          )}
+          <span className="flex w-24 shrink-0 items-center justify-end gap-2">
+            {p.number != null && (
+              <span className="font-grotesk text-sm tnum text-faint">{p.number}</span>
+            )}
+            {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} />}
+          </span>
           {/* add affordance — the reference's Action column; the only accent in the list */}
           <span
             aria-hidden

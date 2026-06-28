@@ -317,6 +317,7 @@ export function Fantasy() {
       )
     }
     const key = playerKey(pick)
+    const keyMeta = keyPlayerById[key]
     const ps = selScore?.perPlayer[key]
     const isCap = squad?.captain === key
     const out = eliminated.has(pick.teamCode)
@@ -346,11 +347,6 @@ export function Fantasy() {
             <span className="absolute -bottom-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-canvas ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
               <Flag code={pick.teamCode} size={14} />
             </span>
-            {pick.number != null && (
-              <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-canvas font-grotesk text-[10px] font-semibold tnum text-muted ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
-                {pick.number}
-              </span>
-            )}
             {isCap && (
               <span className="absolute -left-1 -top-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-team px-1 font-grotesk text-[9px] font-bold tnum text-team-ink">
                 C×2
@@ -360,8 +356,24 @@ export function Fantasy() {
           <span className="mt-1.5 flex w-auto min-w-[62px] max-w-[86px] flex-col items-center overflow-hidden rounded-[8px] bg-black/[0.04] px-2 py-0.5 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10 sm:max-w-[94px]">
             <span className="flex w-full min-w-0 items-center justify-center gap-1">
               <span className="min-w-0 truncate font-grotesk text-[11px] font-medium leading-tight text-ink">{pick.name}</span>
+              {keyMeta && <KeyPlayerCue archetypes={keyMeta.archetypes} compact showBadges={false} />}
               {ps && <span className="shrink-0 font-grotesk text-xs font-semibold tnum text-team">{ps.final}</span>}
             </span>
+            {keyMeta && keyMeta.archetypes.length > 0 && (
+              <span className="mt-px flex max-w-full flex-wrap justify-center gap-0.5">
+                {keyMeta.archetypes.map((a) => (
+                  <span
+                    key={a}
+                    className={cn(
+                      'shrink-0 rounded-[6px] bg-black/[0.025] px-1 py-[1px] font-grotesk text-[8px] font-semibold leading-none ring-1 ring-inset dark:bg-white/[0.035]',
+                      ARCHETYPE_BADGE[a],
+                    )}
+                  >
+                    {a}
+                  </span>
+                ))}
+              </span>
+            )}
             <span className="mt-px w-full truncate text-[8px] font-medium uppercase tracking-label text-faint">
               {out ? 'Eliminated' : (POS_ABBR[pick.position] ?? pick.position)}
             </span>
