@@ -11,12 +11,10 @@ export function TeamSwitcher({
   current,
   homeCode,
   onPick,
-  asSearch = false,
 }: {
   current: string
   homeCode: string
   onPick: (code: string) => void
-  asSearch?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')

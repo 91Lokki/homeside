@@ -191,7 +191,7 @@ export function Team() {
           )}
         </div>
         <div className="flex w-full items-center justify-between gap-2 sm:hidden">
-          <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} asSearch />
+          <TeamSwitcher current={team.code} homeCode={homeTeam.code} onPick={selectTeam} />
           {browsingAway && (
             <button
               onClick={() => selectTeam(homeTeam.code)}
