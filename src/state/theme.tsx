@@ -33,16 +33,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Toggle the `dark` class, and — on every change after the first paint — briefly
   // add `.theme-transition` so the whole UI eases between palettes instead of
   // snapping. The first run just sets the class (no transition on load).
+  //
+  // ORDER MATTERS: theme-transition must be added BEFORE dark is toggled, then a
+  // forced reflow lets the browser capture pre-toggle computed values so the
+  // transition animates from old → new. Adding it after the toggle means the
+  // CSS vars have already snapped and there is nothing left to animate.
   const firstPaint = useRef(true)
   useEffect(() => {
     const root = document.documentElement
-    root.classList.toggle('dark', isDark)
     if (firstPaint.current) {
       firstPaint.current = false
+      root.classList.toggle('dark', isDark)
       return
     }
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.toggle('dark', isDark)
+      return
+    }
     root.classList.add('theme-transition')
+    // Force a style recalculation so the browser records the current computed
+    // values before the dark class (and its CSS vars) change.
+    void root.offsetHeight
+    root.classList.toggle('dark', isDark)
     const t = window.setTimeout(() => root.classList.remove('theme-transition'), 550)
     return () => window.clearTimeout(t)
   }, [isDark])
