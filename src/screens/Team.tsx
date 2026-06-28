@@ -131,6 +131,11 @@ export function Team() {
     return () => window.clearTimeout(t)
   }, [showHint, dismissHint])
 
+  // Direction for the hero "whoosh" when the team changes via search / Back
+  // (not a swipe). Null while idle / after a swipe so the carousel re-centres
+  // instantly for swipe commits.
+  const [jumpFrom, setJumpFrom] = useState<'left' | 'right' | null>(null)
+
   if (!homeTeam || !team) return null
 
   // Team accent scoped to a subtree only (overrides --team within it), never
@@ -146,12 +151,20 @@ export function Team() {
   const teamVars = teamVarsFor(team)
   const browsingAway = team.code !== homeTeam.code
 
-  // Switch the viewed team — LOCAL browse state only, never the global home team.
-  const selectTeam = (c: string) => setViewCode(c)
-
   // Fixed-order neighbours for the mobile swipe carousel (cyclic).
   const n = order.length
   const idx = Math.max(0, order.indexOf(team.code))
+
+  // Switch the viewed team — LOCAL browse state only, never the global home team.
+  // A jump (search / Back) whooshes the new card in from the side it sits on in
+  // the fixed order (so Back to home, index 0, slides in from the left).
+  const selectTeam = (c: string) => {
+    if (c === team.code) return
+    const ti = order.indexOf(c)
+    setJumpFrom(ti >= 0 && ti < idx ? 'left' : 'right')
+    setViewCode(c)
+  }
+
   const prevTeam = teamByCode[order[(idx - 1 + n) % n]] ?? team
   const nextTeam = teamByCode[order[(idx + 1) % n]] ?? team
   const onCarouselCommit = (d: 'next' | 'prev') => {
@@ -248,6 +261,7 @@ export function Team() {
             next={heroFor(nextTeam)}
             centerKey={team.code}
             onCommit={onCarouselCommit}
+            jumpFrom={jumpFrom}
           />
           {showHint && !browsingAway && (
             <p className="mt-2.5 text-center text-2xs font-medium tracking-wide text-faint opacity-80">‹ Swipe to explore teams ›</p>

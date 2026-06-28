@@ -23,16 +23,25 @@ export function HeroCarousel({
   next,
   centerKey,
   onCommit,
+  jumpFrom,
+  cardHeight = 296,
 }: {
   prev: ReactNode
   current: ReactNode
   next: ReactNode
   centerKey: string
   onCommit: (dir: 'next' | 'prev') => void
+  /** When the team changes via search / Back (not a swipe), slide the new card
+   *  in from this side. Ignored for swipe commits (those re-centre instantly). */
+  jumpFrom?: 'left' | 'right' | null
+  /** Fixed card height (px) so cards never resize between teams. */
+  cardHeight?: number
 }) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(0)
+  const selfCommit = useRef(false)
+  const prevCenter = useRef(centerKey)
 
   const cardW = Math.max(0, w - 2 * (PEEK + GAP))
   const step = cardW + GAP
@@ -60,11 +69,28 @@ export function HeroCarousel({
     return () => ro.disconnect()
   }, [])
 
-  // Re-centre instantly whenever the centered team changes (commit / search pick)
-  // or the width changes — no animation, so a re-window never visibly slides.
+  // Re-centre when the centered team changes. A swipe commit (selfCommit) and a
+  // plain width change re-centre instantly; an external jump (search / Back to
+  // home) whooshes the new card in from `jumpFrom`.
   useLayoutEffect(() => {
-    apply(baseTx, false)
-  }, [centerKey, baseTx])
+    const el = trackRef.current
+    if (!el) return
+    const centerChanged = prevCenter.current !== centerKey
+    prevCenter.current = centerKey
+    if (!centerChanged || selfCommit.current) {
+      selfCommit.current = false
+      apply(baseTx, false)
+      return
+    }
+    if (jumpFrom) {
+      const off = (jumpFrom === 'left' ? -1 : 1) * (w || step * 1.5)
+      apply(baseTx + off, false)
+      void el.offsetHeight // commit the off-screen start before animating in
+      apply(baseTx, true)
+    } else {
+      apply(baseTx, false)
+    }
+  }, [centerKey, baseTx, jumpFrom, w])
 
   // Gesture via native listeners (so a horizontal drag can preventDefault while
   // touch-action: pan-y keeps vertical scrolling working).
@@ -113,7 +139,11 @@ export function HeroCarousel({
       // Commit after the snap finishes — a timer, not transitionend, so it's
       // deterministic. The parent re-windows and the track remounts re-centred,
       // so the just-snapped team stays put (no jump).
-      if (commit) window.setTimeout(() => onCommit(dir), DUR + 20)
+      if (commit)
+        window.setTimeout(() => {
+          selfCommit.current = true // tell the re-centre effect this was a swipe
+          onCommit(dir)
+        }, DUR + 20)
     }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false })
@@ -127,7 +157,7 @@ export function HeroCarousel({
     }
   }, [onCommit])
 
-  const cell = { flex: `0 0 ${cardW}px`, maxWidth: `${cardW}px` } as const
+  const cell = { flex: `0 0 ${cardW}px`, maxWidth: `${cardW}px`, height: `${cardHeight}px` } as const
 
   return (
     <div ref={viewportRef} className="overflow-hidden" style={{ touchAction: 'pan-y' }}>
