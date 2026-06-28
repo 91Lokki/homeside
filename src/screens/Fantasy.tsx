@@ -27,6 +27,7 @@ import {
 import { currentRound, eliminatedTeams, isRoundLocked, previousRound, roundFirstKickoff } from '@/domain/fantasyRounds'
 import type { Match } from '@/domain/types'
 import { useMatchDetails } from '@/lib/matchData'
+import { Flag } from '@/components/Flag'
 import { PlayerAvatar } from '@/components/PlayerAvatar'
 import { PlayerPicker } from '@/components/PlayerPicker'
 import { KnockoutProgress, type ProgressNode } from '@/components/KnockoutProgress'
@@ -324,7 +325,7 @@ export function Fantasy() {
     // off the edge: left token opens right, right token opens left, rest centred.
     const popPos = slot === 'MID' ? 'left-0' : slot === 'FLEX' ? 'right-0' : 'left-1/2 -translate-x-1/2'
     return (
-      <div key={slot} className="relative flex w-[88px] flex-col items-center sm:w-[104px]">
+      <div key={slot} className="relative flex w-[78px] flex-col items-center sm:w-[92px]">
         <button
           type="button"
           onClick={() => editable && setSelected(active ? null : slot)}
@@ -340,10 +341,13 @@ export function Fantasy() {
                 active && !isCap && 'ring-2 ring-ink/40',
               )}
             >
-              <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={46} />
+              <PlayerAvatar teamCode={pick.teamCode} name={pick.name} number={pick.number} size={46} flagBadge={false} />
+            </span>
+            <span className="absolute -bottom-1 -left-1 grid h-5 w-5 place-items-center rounded-full bg-canvas ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
+              <Flag code={pick.teamCode} size={14} />
             </span>
             {pick.number != null && (
-              <span className="absolute -bottom-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-canvas px-1 font-grotesk text-[10px] font-semibold tnum text-muted ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
+              <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-canvas font-grotesk text-[10px] font-semibold tnum text-muted ring-1 ring-inset ring-black/[0.06] dark:ring-white/10">
                 {pick.number}
               </span>
             )}
@@ -353,12 +357,12 @@ export function Fantasy() {
               </span>
             )}
           </span>
-          <span className="mt-1.5 flex w-full max-w-full flex-col items-center overflow-hidden rounded-[10px] bg-black/[0.04] px-1.5 py-1 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10">
+          <span className="mt-1.5 flex w-auto min-w-[62px] max-w-[86px] flex-col items-center overflow-hidden rounded-[8px] bg-black/[0.04] px-2 py-0.5 text-center ring-1 ring-inset ring-black/[0.06] dark:bg-white/[0.06] dark:ring-white/10 sm:max-w-[94px]">
             <span className="flex w-full min-w-0 items-center justify-center gap-1">
-              <span className="min-w-0 truncate font-grotesk text-xs font-medium leading-tight text-ink">{pick.name}</span>
+              <span className="min-w-0 truncate font-grotesk text-[11px] font-medium leading-tight text-ink">{pick.name}</span>
               {ps && <span className="shrink-0 font-grotesk text-xs font-semibold tnum text-team">{ps.final}</span>}
             </span>
-            <span className="mt-0.5 w-full truncate text-[9px] font-medium uppercase tracking-label text-faint">
+            <span className="mt-px w-full truncate text-[8px] font-medium uppercase tracking-label text-faint">
               {out ? 'Eliminated' : (POS_ABBR[pick.position] ?? pick.position)}
             </span>
           </span>
