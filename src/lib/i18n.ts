@@ -239,7 +239,7 @@ const en: Translations = {
   // Footer
   footerConnected: 'Real results & stats via ESPN.',
   footerSnapshot: (asOf) => `Snapshot as of ${asOf}.`,
-  footerNoSim: 'Scored from real finished matches only — no simulation.',
+  footerNoSim: 'Scored from real finished matches only .',
   footerCredit: 'Homeside · an unofficial 2026 companion',
 
   // Home
@@ -346,7 +346,7 @@ const en: Translations = {
     ['FW', 'Forwards'],
   ],
   teamPosName: { GK: 'Goalkeeper', DF: 'Defender', MF: 'Midfielder', FW: 'Forward' },
-  teamNoSquad: (name) => `The squad list for ${name} isn't available yet — it appears once verified from a public source (never fabricated).`,
+  teamNoSquad: (name) => `The squad list for ${name} isn't available yet.`,
   teamPlayersToKnow: 'Players to know',
   teamFullSquad: 'Full squad',
   teamPlayers: (n, u) => `${n} players${u ? ' · unconfirmed' : ''}`,
@@ -519,8 +519,8 @@ const zh: Translations = {
   // Footer
   footerConnected: '數據來源：ESPN。',
   footerSnapshot: (asOf) => `快照截至 ${asOf}。`,
-  footerNoSim: '僅計算已完賽比賽得分——不模擬。',
-  footerCredit: 'Homeside · 非官方 2026 年伴侶',
+  footerNoSim: '僅計算已完賽比賽得分。',
+  footerCredit: 'Homeside · 非官方 2026 年世界盃',
 
   // Home
   homeLabel: 'Homeside · 2026 淘汰賽',
@@ -560,7 +560,7 @@ const zh: Translations = {
 
   // Fantasy
   fantasyLabel: '淘汰賽 Fantasy',
-  fantasyTitle: '你的五人陣容征戰淘汰賽',
+  fantasyTitle: '你的五人陣容',
   fantasyTotal: '總計',
   fantasyLive: '直播中',
   fantasyTransfersOpen: '換人開放中',
@@ -593,12 +593,12 @@ const zh: Translations = {
     SF: '四強賽',
     FINAL: '決賽階段',
   },
-  fantasySlotLabel: { GK: '門將', DEF: '後衛', MID: '中場', ATT: '前鋒', FLEX: '彈性位' },
+  fantasySlotLabel: { GK: '門將', DEF: '後衛', MID: '中場', ATT: '前鋒', FLEX: '自由人' },
   fantasyPosAbbr: { GK: 'GK', DEF: 'DEF', MID: 'MID', ATT: 'FWD' },
   fantasyScoringRules: [
     { label: '進球', value: '前鋒 +4 · 中場 +5 · 後衛/門將 +6' },
     { label: '助攻', value: '+3' },
-    { label: '零失球（全場未失分）', value: '後衛/門將 +4 · 中場 +1' },
+    { label: '零封', value: '後衛/門將 +4 · 中場 +1' },
     { label: '門將撲救', value: '每 3 次 +1' },
     { label: '場內 12 碼進球', value: '依位置計進球分' },
     { label: '場內 12 碼未進', value: '−2' },
@@ -608,7 +608,7 @@ const zh: Translations = {
     { label: '紅牌', value: '−3' },
     { label: '烏龍球', value: '−2' },
   ],
-  fantasyPlayerMatching: '球員配對依隊伍＋姓名最佳努力比對。',
+  fantasyPlayerMatching: '球員配對依隊伍＋姓名比對。',
 
   // Team
   teamNationalLabel: (g) => `國家隊 · ${g} 組`,
@@ -626,7 +626,7 @@ const zh: Translations = {
     ['FW', '前鋒'],
   ],
   teamPosName: { GK: '門將', DF: '後衛', MF: '中場', FW: '前鋒' },
-  teamNoSquad: (name) => `${name} 的大名單尚未提供——確認後將自動顯示（資料來自公開來源，從不編造）。`,
+  teamNoSquad: (name) => `${name} 的大名單尚未提供——確認後將自動顯示。`,
   teamPlayersToKnow: '重點球員',
   teamFullSquad: '完整名單',
   teamPlayers: (n, u) => `${n} 名球員${u ? '·未確認' : ''}`,
