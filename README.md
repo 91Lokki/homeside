@@ -9,21 +9,30 @@ optional private league leaderboard.
 
 ## What It Does
 
-- **Predict**: pick every knockout winner from the Round of 32 through the final.
-  Picks propagate forward through the bracket, lock per match at kickoff, and are
-  scored only when real matches finish.
-- **Fantasy**: build a 5-player knockout roster by round: GK, DEF, MID, FWD, and
-  FLEX. It supports captains, transfers, country quotas, eliminated-team handling,
-  player photos, and key-player markers.
-- **Team**: browse every national team, see the chosen home team styling/mascot,
-  form, next match, squad, key players, and an ability card built from real match
-  stats when available.
-- **Schedule**: group standings, fixtures, live score display, qualification
-  state, and finished-match reports.
-- **League**: optional Supabase-backed sign-in and leaderboard for Predict and
-  Fantasy scores.
-- **Personalization**: home team, team-colored theme, light/dark mode, and
-  English/Chinese UI strings.
+### Predict *(requires sign-in)*
+Pick every knockout winner from the Round of 32 through the final. Picks propagate forward through the bracket, lock per match at kickoff, and are scored only when real matches finish. Confirm the full bracket early for a 1.4× bonus.
+
+![Predict](docs/screenshots/Predict.png)
+
+### Fantasy *(requires sign-in)*
+Build a 5-player knockout roster each round: GK, DEF, MID, FWD, and FLEX. Supports captains, transfers, country quotas, eliminated-team handling, player photos, and key-player markers.
+
+![Fantasy](docs/screenshots/Fantasy.png)
+
+### Team
+Browse every national team — home team styling and mascot, form, next match, squad, key players, and an ability radar card built from real match stats.
+
+![Team](docs/screenshots/Team.png)
+
+### Schedule
+Group standings, fixtures, live score display, qualification state, and finished-match reports with goal timelines and team stats.
+
+![Schedule](docs/screenshots/Schedule.png)
+
+### League *(requires sign-in)*
+Supabase-backed leaderboard showing Predict and Fantasy scores side by side across all signed-in players.
+
+![League](docs/screenshots/League.png)
 
 ## Current Scoring
 
