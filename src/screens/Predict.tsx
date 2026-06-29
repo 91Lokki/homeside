@@ -10,7 +10,9 @@ import { Flag } from '@/components/Flag'
 import { Label } from '@/components/ui/atoms'
 import { useApp } from '@/state/store'
 import { useGames } from '@/state/games'
+import { useTheme } from '@/state/theme'
 import { useMediaQuery } from '@/lib/useMediaQuery'
+import { rgba, teamFillColor } from '@/lib/prng'
 import { useT } from '@/lib/useT'
 import { useTName } from '@/lib/useTName'
 import { cn } from '@/lib/utils'
@@ -511,20 +513,29 @@ function Side({
   tTBD: string
 }) {
   const tName = useTName()
+  const { isDark } = useTheme()
   const team = code ? teamByCode[code] : null
   const isWinner = finished && winner === code
   const correct = picked && status === 'correct'
   const wrong = picked && status === 'wrong'
   const dim = finished && !isWinner
+  const pickedColor = team ? teamFillColor(team.color, team.color2, isDark) : null
+  const pickedStyle =
+    picked && !finished && pickedColor
+      ? {
+          background: rgba(pickedColor, isDark ? 0.22 : 0.14),
+          boxShadow: `inset 3px 0 0 ${pickedColor}`,
+        }
+      : undefined
 
   return (
     <button
       disabled={!code || locked}
       onClick={() => code && !locked && onPick(code)}
+      style={pickedStyle}
       className={cn(
         'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors',
         code && !locked && 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
-        picked && !finished && 'bg-team-soft',
         correct && 'bg-emerald-500/15',
         wrong && 'opacity-40',
         dim && !wrong && 'opacity-45',
