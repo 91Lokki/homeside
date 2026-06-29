@@ -547,7 +547,7 @@ function Side({
       ) : (
         <span className="h-[19px] w-[19px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
       )}
-      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? tName(team) : tTBD}</span>
+      <span className={cn('min-w-0 flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? tName(team) : tTBD}</span>
       {correct && <Check size={13} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
       {score != null && <span className="text-sm font-bold tnum text-ink">{score}</span>}
     </button>
