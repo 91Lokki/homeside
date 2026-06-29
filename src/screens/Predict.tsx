@@ -20,6 +20,7 @@ const CARD_W = 176
 const GUTTER = 26
 const COL_W = CARD_W + GUTTER
 const ROW_H = 108
+const MOBILE_ROW_H = 92
 const THIRD_NO = 103
 const SLIDE_MS = 380
 const CONN = 'border-black/15 dark:border-white/20'
@@ -134,7 +135,7 @@ export function Predict() {
 
   const renderWindow = (f: number) => {
     const previewIsFinal = cols[f + 1].stage === 'F'
-    const winH = previewIsFinal ? Math.max(cols[f].nos.length * ROW_H, 360) : cols[f].nos.length * ROW_H
+    const winH = previewIsFinal ? Math.max(cols[f].nos.length * MOBILE_ROW_H, 320) : cols[f].nos.length * MOBILE_ROW_H
     return (
       <div className="flex w-full" style={{ minHeight: winH }}>
         <div className="flex flex-1 flex-col">
@@ -516,15 +517,22 @@ function Side({
   const correct = picked && status === 'correct'
   const wrong = picked && status === 'wrong'
   const dim = finished && !isWinner
+  const pickedStyle =
+    picked && !finished
+      ? {
+          background: 'color-mix(in srgb, var(--team) 18%, transparent)',
+          boxShadow: 'inset 3px 0 0 var(--team)',
+        }
+      : undefined
 
   return (
     <button
       disabled={!code || locked}
       onClick={() => code && !locked && onPick(code)}
+      style={pickedStyle}
       className={cn(
         'flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors',
         code && !locked && 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]',
-        picked && !finished && 'bg-team-soft',
         correct && 'bg-emerald-500/15',
         wrong && 'opacity-40',
         dim && !wrong && 'opacity-45',
