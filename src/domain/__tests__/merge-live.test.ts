@@ -1,4 +1,9 @@
 import { describe, it, expect } from 'vitest'
+import { BRACKET } from '@/data/bracket'
+import { SEED_MATCHES } from '@/data/fixtures'
+import { TEAMS } from '@/data/teams'
+import { resolveBracket } from '@/domain/bracket'
+import { PICKED_AT_KEY, scorePredictions } from '@/domain/predict'
 import { mergeMatches } from '@/lib/api'
 import type { Match, Stage } from '@/domain/types'
 
@@ -560,6 +565,36 @@ describe('mergeMatches', () => {
   })
 
   describe('appending brand-new live matches', () => {
+    it('infers the knockout stage when ESPN reports a resolved bracket match as group', () => {
+      const live = [
+        makeMatch({
+          id: 'espn-rsa-can',
+          stage: 'group',
+          homeCode: 'RSA',
+          awayCode: 'CAN',
+          kickoff: '2026-06-28T19:00:00Z',
+          status: 'finished',
+          homeScore: 1,
+          awayScore: 2,
+          apiFixtureId: 700073,
+        }),
+      ]
+      const out = mergeMatches(SEED_MATCHES, live)
+      const ko = out.find((m) => m.id === 'espn-rsa-can')!
+      expect(ko.stage).toBe('R32')
+
+      const resolved = resolveBracket(BRACKET, TEAMS, out)
+      const m73 = resolved.find((m) => m.matchNo === 73)!
+      expect(m73.status).toBe('finished')
+      expect(m73.homeCode).toBe('RSA')
+      expect(m73.awayCode).toBe('CAN')
+      expect(m73.winnerCode).toBe('CAN')
+
+      const score = scorePredictions({ 73: 'CAN', [PICKED_AT_KEY]: { 73: Date.parse('2026-06-28T18:00:00Z') } }, resolved)
+      expect(score.perMatch[73]).toBe('correct')
+      expect(score.points).toBe(1)
+    })
+
     it('appends a live match whose pair is not in the seed', () => {
       const seed = [makeMatch({ id: 's1', stage: 'group', homeCode: 'ARG', awayCode: 'BRA' })]
       const live = [

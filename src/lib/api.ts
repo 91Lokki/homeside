@@ -1,4 +1,6 @@
+import { BRACKET } from '@/data/bracket'
 import { TEAMS } from '@/data/teams'
+import { resolveBracket } from '@/domain/bracket'
 import type { Match, Stage, TeamCode } from '@/domain/types'
 
 /**
@@ -181,6 +183,26 @@ const pairKey = (a: TeamCode, b: TeamCode) => [a, b].sort().join('~')
 // Include the stage so a knockout rematch never collides with (and overwrites)
 // the same two teams' group-stage meeting.
 const mergeKey = (m: Match) => `${m.stage}:${pairKey(m.homeCode!, m.awayCode!)}`
+const firstKnockoutKickoffMs = Math.min(...BRACKET.map((m) => new Date(m.kickoff).getTime()).filter(Number.isFinite))
+
+function inferKnockoutStage(lm: Match, mergedSoFar: Match[]): Match {
+  if (lm.stage !== 'group' || !lm.homeCode || !lm.awayCode) return lm
+  const kickoffMs = new Date(lm.kickoff).getTime()
+  if (!Number.isFinite(kickoffMs) || kickoffMs < firstKnockoutKickoffMs) return lm
+
+  const livePair = pairKey(lm.homeCode, lm.awayCode)
+  const candidates = resolveBracket(BRACKET, TEAMS, mergedSoFar).filter(
+    (m) => m.homeCode && m.awayCode && pairKey(m.homeCode, m.awayCode) === livePair,
+  )
+  if (!candidates.length) return lm
+
+  const nearest = candidates.reduce((best, m) => {
+    const bestDist = Math.abs(kickoffMs - new Date(best.kickoff).getTime())
+    const dist = Math.abs(kickoffMs - new Date(m.kickoff).getTime())
+    return dist < bestDist ? m : best
+  })
+  return { ...lm, stage: nearest.stage }
+}
 
 /**
  * Overlay real results onto the seed. A result updates an existing seed match (by
@@ -197,23 +219,24 @@ export function mergeMatches(seed: Match[], live: Match[]): Match[] {
 
   for (const lm of live) {
     if (!lm.homeCode || !lm.awayCode) continue
-    const key = mergeKey(lm)
+    const normalized = inferKnockoutStage(lm, out)
+    const key = mergeKey(normalized)
     const i = index.get(key)
     if (i != null) {
       const seedMatch = out[i]
-      const flip = seedMatch.homeCode !== lm.homeCode
+      const flip = seedMatch.homeCode !== normalized.homeCode
       out[i] = {
         ...seedMatch,
-        status: lm.status,
-        minute: lm.minute,
-        kickoff: lm.kickoff || seedMatch.kickoff,
-        apiFixtureId: lm.apiFixtureId ?? seedMatch.apiFixtureId,
-        homeScore: flip ? lm.awayScore : lm.homeScore,
-        awayScore: flip ? lm.homeScore : lm.awayScore,
-        pens: lm.pens ? (flip ? { home: lm.pens.away, away: lm.pens.home } : lm.pens) : seedMatch.pens,
+        status: normalized.status,
+        minute: normalized.minute,
+        kickoff: normalized.kickoff || seedMatch.kickoff,
+        apiFixtureId: normalized.apiFixtureId ?? seedMatch.apiFixtureId,
+        homeScore: flip ? normalized.awayScore : normalized.homeScore,
+        awayScore: flip ? normalized.homeScore : normalized.awayScore,
+        pens: normalized.pens ? (flip ? { home: normalized.pens.away, away: normalized.pens.home } : normalized.pens) : seedMatch.pens,
       }
     } else {
-      out.push(lm)
+      out.push(normalized)
       index.set(key, out.length - 1)
     }
   }
