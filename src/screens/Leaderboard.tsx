@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { BRACKET } from '@/data/bracket'
 import { TEAMS } from '@/data/teams'
 import { resolveBracket } from '@/domain/bracket'
-import { scorePredictions, type Predictions } from '@/domain/predict'
+import { scorePredictions, stampMissingPredictionTimes, type Predictions } from '@/domain/predict'
 import { scoreFantasyTotal, type ScorableMatch } from '@/domain/fantasy'
 import type { RoundSquad, Round } from '@/domain/fantasy'
 import type { Match } from '@/domain/types'
@@ -78,11 +78,14 @@ export function Leaderboard() {
   )
 
   const board = useMemo(() => {
-    const scored = (rows ?? []).map((r) => ({
-      ...r,
-      predict: scorePredictions(r.predictions ?? {}, resolved).points,
-      fantasy: scoreFantasyTotal(r.fantasy ?? {}, scorable, details),
-    }))
+    const scored = (rows ?? []).map((r) => {
+      const predictions = stampMissingPredictionTimes(r.predictions ?? {}, BRACKET)
+      return {
+        ...r,
+        predict: scorePredictions(predictions, resolved).points,
+        fantasy: scoreFantasyTotal(r.fantasy ?? {}, scorable, details),
+      }
+    })
     scored.sort((a, b) => b[sortKey] - a[sortKey] || b.predict + b.fantasy - (a.predict + a.fantasy) || a.name.localeCompare(b.name))
     return scored
   }, [rows, resolved, scorable, details, sortKey])

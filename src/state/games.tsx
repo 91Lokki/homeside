@@ -139,7 +139,8 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         return
       }
       if (data) {
-        const p = stampMissingPredictionTimes((data.predictions as Predictions) ?? {}, BRACKET)
+        const rawPredictions = (data.predictions as Predictions) ?? {}
+        const p = stampMissingPredictionTimes(rawPredictions, BRACKET)
         const f = (data.fantasy as FantasyRounds) ?? {}
         const home = (data.home_code as string | null) ?? null
         setPredictions(p)
@@ -147,7 +148,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         setHomeCode(home)
         // Record the server's display_name so that if our live Google name differs
         // (e.g. the row predates name-sync), the upsert effect refreshes it.
-        lastSyncedRef.current = snapOf(p, f, home, (data.display_name as string | null) ?? null)
+        lastSyncedRef.current = snapOf(rawPredictions, f, home, (data.display_name as string | null) ?? null)
       } else if (readOwner() && readOwner() !== userId) {
         // local cache belongs to a different account — wipe to a clean slate.
         setPredictions({})
