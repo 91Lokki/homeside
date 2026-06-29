@@ -84,9 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // src/state/games.tsx), and reload to a clean signed-out slate.
   const deleteAccount = async () => {
     if (!supabase || !user) return
+    // Surface a failed delete (e.g. the DELETE policy/grant isn't applied yet) so
+    // the UI never signs out + reloads as if it worked while the row — and the
+    // leaderboard entry it feeds — actually survives.
     const { error } = await supabase.from('picks').delete().eq('user_id', user.id)
-    // eslint-disable-next-line no-console
-    if (error) console.warn('[auth] delete account failed:', error.message)
+    if (error) throw new Error(error.message)
     await supabase.auth.signOut()
     try {
       localStorage.removeItem('homeside.predictions')

@@ -30,6 +30,7 @@ export function AuthButton() {
   const [open, setOpen] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteFailed, setDeleteFailed] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 640px)')
 
   if (status === 'unavailable' || status === 'loading') return null
@@ -133,6 +134,7 @@ export function AuthButton() {
               </div>
               <h2 className="font-grotesk text-xl font-semibold tracking-tight">{t.authDeleteTitle}</h2>
               <p className="mt-2 text-sm text-muted">{t.authDeleteDesc}</p>
+              {deleteFailed && <p className="mt-3 text-sm font-medium text-rose-600 dark:text-rose-400">{t.authDeleteFailed}</p>}
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   onClick={() => setConfirmingDelete(false)}
@@ -144,7 +146,13 @@ export function AuthButton() {
                 <button
                   onClick={async () => {
                     setDeleting(true)
-                    await deleteAccount()
+                    setDeleteFailed(false)
+                    try {
+                      await deleteAccount() // reloads the page on success
+                    } catch {
+                      setDeleting(false)
+                      setDeleteFailed(true)
+                    }
                   }}
                   disabled={deleting}
                   className="inline-flex items-center gap-1.5 rounded-pill bg-rose-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
