@@ -263,6 +263,46 @@ describe('scorePredictions', () => {
       expect(s.graded).toBe(1)
       expect(s.points).toBe(1.4)
     })
+
+    it('repairs locked picks that were bulk-stamped after kickoff by the legacy migration', () => {
+      const badStamp = Date.parse('2026-06-28T19:05:08.409Z')
+      const migrated = stampMissingPredictionTimes(
+        { 73: 'CAN', 74: 'BRA', [LOCK_FLAG]: true, [PICKED_AT_KEY]: { 73: badStamp, 74: badStamp }, [LOCKED_AT_KEY]: badStamp } as unknown as Predictions,
+        [bracketMatch(73), bracketMatch(74)],
+      )
+      const resolved = [
+        rbm({
+          matchNo: 73,
+          stage: 'R32',
+          status: 'finished',
+          winnerCode: 'CAN',
+          homeCode: 'RSA',
+          awayCode: 'CAN',
+          kickoff: '2026-06-28T19:00:00Z',
+        }),
+      ]
+
+      expect(migrated[PICKED_AT_KEY]?.['73']).toBe(Date.parse('2026-06-28T18:59:59.999Z'))
+      expect(migrated[PICKED_AT_KEY]?.['74']).toBe(Date.parse('2026-06-28T18:59:59.999Z'))
+      expect(migrated[LOCKED_AT_KEY]).toBe(Date.parse('2026-06-28T18:59:59.999Z'))
+      const s = scorePredictions(migrated, resolved)
+      expect(s.perMatch[73]).toBe('correct')
+      expect(s.points).toBe(1.4)
+    })
+
+    it('preserves genuine per-pick timestamps when they are not a bulk legacy stamp', () => {
+      const pickedAt = {
+        73: Date.parse('2026-06-28T17:08:08.069Z'),
+        74: Date.parse('2026-06-28T17:47:21.699Z'),
+      }
+      const migrated = stampMissingPredictionTimes(
+        { 73: 'RSA', 74: 'BRA', [LOCK_FLAG]: true, [PICKED_AT_KEY]: pickedAt, [LOCKED_AT_KEY]: Date.parse('2026-06-28T17:47:21.699Z') } as unknown as Predictions,
+        [bracketMatch(73), bracketMatch(74)],
+      )
+
+      expect(migrated[PICKED_AT_KEY]).toEqual(pickedAt)
+      expect(migrated[LOCKED_AT_KEY]).toBe(Date.parse('2026-06-28T17:47:21.699Z'))
+    })
   })
 
   describe('round-weighted points per stage', () => {

@@ -117,19 +117,32 @@ export function stampMissingPredictionTimes(
   const pickedAt = { ...(preds[PICKED_AT_KEY] ?? {}) }
   const firstKickoff = Math.min(...bracket.map((m) => kickoffMs(m)).filter((ms): ms is number => ms != null))
   const legacyAt = Number.isFinite(firstKickoff) ? firstKickoff - 1 : at
+  const numericMatches = bracket.filter((m) => preds[m.matchNo] != null)
+  const numericPickedTimes = numericMatches
+    .map((m) => pickedAt[String(m.matchNo)])
+    .filter((ts): ts is number => typeof ts === 'number' && Number.isFinite(ts))
+  const uniquePickedTimes = new Set(numericPickedTimes)
+  const lockedAt = lockedAtFor(preds)
+  const hadBadBulkStamp =
+    (preds as Record<string, unknown>)[LOCK_FLAG] === true &&
+    numericMatches.length > 0 &&
+    numericPickedTimes.length === numericMatches.length &&
+    uniquePickedTimes.size === 1 &&
+    lockedAt === numericPickedTimes[0] &&
+    numericPickedTimes[0] > legacyAt
   let changed = false
 
   for (const m of bracket) {
-    if (preds[m.matchNo] != null && pickedAt[String(m.matchNo)] == null) {
+    if (preds[m.matchNo] != null && (pickedAt[String(m.matchNo)] == null || hadBadBulkStamp)) {
       pickedAt[String(m.matchNo)] = legacyAt
       changed = true
     }
   }
-  if ((preds as Record<string, unknown>)[LOCK_FLAG] === true && preds[LOCKED_AT_KEY] == null) {
+  if ((preds as Record<string, unknown>)[LOCK_FLAG] === true && (preds[LOCKED_AT_KEY] == null || hadBadBulkStamp)) {
     changed = true
   }
   return changed
-    ? ({ ...preds, [PICKED_AT_KEY]: pickedAt, [LOCKED_AT_KEY]: preds[LOCKED_AT_KEY] ?? legacyAt } as Predictions)
+    ? ({ ...preds, [PICKED_AT_KEY]: pickedAt, [LOCKED_AT_KEY]: hadBadBulkStamp ? legacyAt : preds[LOCKED_AT_KEY] ?? legacyAt } as Predictions)
     : preds
 }
 
