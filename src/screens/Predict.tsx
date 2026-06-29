@@ -483,7 +483,7 @@ function MatchCard({
           muted ? 'bg-black/[0.02] ring-black/[0.05] dark:bg-white/[0.03] dark:ring-white/[0.07]' : 'bg-black/[0.04] ring-black/[0.06] dark:bg-white/[0.05] dark:ring-white/10',
         )}
       >
-        <div className="border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
+        <div className="truncate border-b border-black/5 px-3 py-1 text-2xs text-faint dark:border-white/[0.07]">
           {finished ? `${tFullTime}${fmtDate(def?.kickoff)}` : `${fmtDate(def?.kickoff)} · ${fmtTime(def?.kickoff)}`}
         </div>
         <Side code={homeCode} score={real?.homeScore} picked={pick != null && pick === homeCode} status={status} winner={real?.winnerCode} finished={finished} onPick={onPick} locked={locked} tTBD={tTBD} />
