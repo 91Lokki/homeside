@@ -452,7 +452,20 @@ describe('buildPredictedBracket', () => {
       expect(out[89]).toEqual({ homeCode: 'ESP', awayCode: 'NED' })
     })
 
-    it('leaves a downstream slot null when the feeder match has no prediction', () => {
+    it('fills a downstream slot with the real winner when a feeder has finished and has no prediction', () => {
+      const resolved = [
+        rbm({ matchNo: 73, stage: 'R32', status: 'finished', winnerCode: 'CAN', homeCode: 'RSA', awayCode: 'CAN' }),
+        rbm({ matchNo: 75, stage: 'R32', homeCode: 'JPN', awayCode: 'MAR' }),
+      ]
+      const out = buildPredictedBracket(
+        [bracketMatch(73), bracketMatch(75), bracketMatch(90)],
+        resolved,
+        {},
+      )
+      expect(out[90]).toEqual({ homeCode: 'CAN', awayCode: null })
+    })
+
+    it('leaves a downstream slot null when the feeder match is unfinished and has no prediction', () => {
       const resolved = [
         rbm({ matchNo: 74, stage: 'R32', homeCode: 'ESP', awayCode: 'POR' }),
         rbm({ matchNo: 77, stage: 'R32', homeCode: 'GER', awayCode: 'NED' }),

@@ -157,8 +157,9 @@ export interface PredictedOccupants {
 
 /**
  * Build the user's OWN predicted bracket: R32 slots come from real group results
- * (resolveBracket), and each later slot is filled by the user's predicted winner
- * of the feeding match — so picks propagate forward to the champion.
+ * (resolveBracket), and later slots are filled by the user's predicted feeder
+ * winner until a feeder has a real finished result. Once a match is finished,
+ * the real winner/loser advances so new or late users can still pick later ties.
  */
 export function buildPredictedBracket(
   bracket: BracketMatch[],
@@ -172,18 +173,26 @@ export function buildPredictedBracket(
   const occ = (kind: string, ref: { matchNo?: number }, side: 'home' | 'away', no: number): TeamCode | null => {
     if (kind === 'matchWinner' && ref.matchNo != null) {
       const w = predictions[ref.matchNo]
-      if (w == null) return null
-      // Reject a stale pick that is no longer one of the feeder's (known) occupants.
-      const f = out[ref.matchNo]
-      if (f && f.homeCode != null && f.awayCode != null && w !== f.homeCode && w !== f.awayCode) return null
-      return w
+      if (w != null) {
+        // Reject a stale pick that is no longer one of the feeder's (known) occupants.
+        const f = out[ref.matchNo]
+        if (f && f.homeCode != null && f.awayCode != null && w !== f.homeCode && w !== f.awayCode) return null
+        return w
+      }
+      const real = realByNo.get(ref.matchNo)
+      return real?.status === 'finished' ? real.winnerCode ?? null : null
     }
     if (kind === 'matchLoser' && ref.matchNo != null) {
       const src = out[ref.matchNo]
       const w = predictions[ref.matchNo]
-      if (!src || !w || src.homeCode == null || src.awayCode == null) return null
-      if (w !== src.homeCode && w !== src.awayCode) return null // stale
-      return src.homeCode === w ? src.awayCode : src.homeCode
+      if (w != null) {
+        if (!src || src.homeCode == null || src.awayCode == null) return null
+        if (w !== src.homeCode && w !== src.awayCode) return null // stale
+        return src.homeCode === w ? src.awayCode : src.homeCode
+      }
+      const real = realByNo.get(ref.matchNo)
+      if (real?.status !== 'finished' || real.winnerCode == null || real.homeCode == null || real.awayCode == null) return null
+      return real.homeCode === real.winnerCode ? real.awayCode : real.homeCode
     }
     // group-derived slot (winner / runnerUp / third) — use the REAL resolved team
     const real = realByNo.get(no)
