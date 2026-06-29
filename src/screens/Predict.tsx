@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Lock, Trophy } from 'lucide-react'
 import { BRACKET } from '@/data/bracket'
@@ -20,7 +20,8 @@ const CARD_W = 176
 const GUTTER = 26
 const COL_W = CARD_W + GUTTER
 const ROW_H = 108
-const MOBILE_ROW_H = 92
+const MOBILE_ROW_H = 104
+const MOBILE_WINDOW_H = 'min(560px, calc(100vh - 220px))'
 const THIRD_NO = 103
 const SLIDE_MS = 380
 const CONN = 'border-black/15 dark:border-white/20'
@@ -135,25 +136,24 @@ export function Predict() {
 
   const renderWindow = (f: number) => {
     const previewIsFinal = cols[f + 1].stage === 'F'
-    const winH = previewIsFinal ? Math.max(cols[f].nos.length * MOBILE_ROW_H, 320) : cols[f].nos.length * MOBILE_ROW_H
     return (
-      <div className="flex w-full" style={{ minHeight: winH }}>
-        <div className="flex flex-1 flex-col">
+      <div className="flex w-full overflow-y-auto pr-1" style={{ height: MOBILE_WINDOW_H }}>
+        <div className="flex flex-1 flex-col gap-2">
           {cols[f].nos.map((no, i) => (
-            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0}>
+            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0} className="flex-none" style={{ minHeight: MOBILE_ROW_H }}>
               <MatchCard {...cardProps(no)} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
         </div>
         <div className="shrink-0" style={{ width: GUTTER }} />
-        <div className="relative flex flex-1 flex-col">
+        <div className="relative flex flex-1 flex-col gap-2">
           {cols[f + 1].nos.map((no) => (
-            <Slot key={no} hasNext={false} hasPrev topOfPair>
+            <Slot key={no} hasNext={false} hasPrev topOfPair className="flex-none" style={{ minHeight: MOBILE_ROW_H }}>
               <MatchCard {...cardProps(no)} muted label={previewIsFinal ? t.predictFinal : undefined} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
           {previewIsFinal && (
-            <div className="absolute inset-x-0" style={{ top: '50%', marginTop: 76 }}>
+            <div className="mt-2">
               <MatchCard {...cardProps(THIRD_NO)} muted label={t.predictThirdPlace} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </div>
           )}
@@ -377,14 +377,18 @@ function Slot({
   hasPrev,
   topOfPair,
   children,
+  className,
+  style,
 }: {
   hasNext: boolean
   hasPrev: boolean
   topOfPair: boolean
   children: ReactNode
+  className?: string
+  style?: CSSProperties
 }) {
   return (
-    <div className="relative flex min-h-0 flex-1 items-center">
+    <div className={cn('relative flex min-h-0 flex-1 items-center', className)} style={style}>
       {hasPrev && <div className={cn('pointer-events-none absolute top-1/2 h-px', STUB)} style={{ right: '100%', width: GUTTER / 2 }} />}
       {hasNext &&
         (topOfPair ? (
