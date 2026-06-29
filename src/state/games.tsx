@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BRACKET } from '@/data/bracket'
-import type { TeamCode } from '@/domain/types'
+import { TEAMS } from '@/data/teams'
+import { resolveBracket } from '@/domain/bracket'
+import type { ResolvedBracketMatch, TeamCode } from '@/domain/types'
 import { buildPredictedBracket, hasMatchStarted, LOCK_FLAG, LOCKED_AT_KEY, PICKED_AT_KEY, stampMissingPredictionTimes, type Predictions } from '@/domain/predict'
 import { playerKey, type FantasyPick, type RoundSquad, type Round, type Slot } from '@/domain/fantasy'
 import { supabase } from '@/lib/supabase'
@@ -37,11 +39,11 @@ function safeSet(key: string, value: string) {
 }
 
 /** Drop downstream predictions made stale by an upstream change (see Predict). */
-function pruneStale(preds: Predictions): Predictions {
+function pruneStale(preds: Predictions, resolved: ResolvedBracketMatch[]): Predictions {
   const next = { ...preds }
   const pickedAt = { ...(next[PICKED_AT_KEY] ?? {}) }
   for (let guard = 0; guard < 8; guard++) {
-    const occ = buildPredictedBracket(BRACKET, [], next)
+    const occ = buildPredictedBracket(BRACKET, resolved, next)
     let changed = false
     for (const m of BRACKET) {
       if (m.stage === 'R32') continue
@@ -80,7 +82,8 @@ const Ctx = createContext<GamesCtx | null>(null)
 
 export function GamesProvider({ children }: { children: ReactNode }) {
   const { user, displayName } = useAuth()
-  const { homeCode, setHomeCode } = useApp()
+  const { homeCode, setHomeCode, matches } = useApp()
+  const resolved = useMemo(() => resolveBracket(BRACKET, TEAMS, matches), [matches])
   const [predictions, setPredictions] = useState<Predictions>(() => stampMissingPredictionTimes(load(PRED_KEY, {}), BRACKET))
   const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
   // Once a bracket is confirmed it can no longer be edited. The lock lives INSIDE
@@ -216,9 +219,9 @@ export function GamesProvider({ children }: { children: ReactNode }) {
     if (match && hasMatchStarted(match)) return
     setPredictions((p) => {
       const pickedAt = { ...(p[PICKED_AT_KEY] ?? {}), [String(matchNo)]: Date.now() }
-      return pruneStale({ ...p, [matchNo]: code, [PICKED_AT_KEY]: pickedAt } as Predictions)
+      return pruneStale({ ...p, [matchNo]: code, [PICKED_AT_KEY]: pickedAt } as Predictions, resolved)
     })
-  }, [])
+  }, [resolved])
   const clearPredictions = useCallback(() => setPredictions({}), [])
   const lockPredictions = useCallback(
     () => setPredictions((p) => ({ ...p, [LOCK_FLAG]: true, [LOCKED_AT_KEY]: p[LOCKED_AT_KEY] ?? Date.now() }) as unknown as Predictions),
