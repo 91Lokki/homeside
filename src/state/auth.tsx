@@ -21,6 +21,9 @@ interface AuthCtx {
   displayName: string | null
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  /** Remove this account's stored picks from the league and sign out (the Google
+   *  account itself is untouched). Wipes the local cache and reloads. */
+  deleteAccount: () => Promise<void>
 }
 
 const Ctx = createContext<AuthCtx | null>(null)
@@ -75,8 +78,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  // Delete only the app account (the league row), never the Google account. The
+  // picks row must be removed while still authenticated (RLS lets you delete only
+  // your own row); then sign out, wipe the local cache (keys mirror
+  // src/state/games.tsx), and reload to a clean signed-out slate.
+  const deleteAccount = async () => {
+    if (!supabase || !user) return
+    const { error } = await supabase.from('picks').delete().eq('user_id', user.id)
+    // eslint-disable-next-line no-console
+    if (error) console.warn('[auth] delete account failed:', error.message)
+    await supabase.auth.signOut()
+    try {
+      localStorage.removeItem('homeside.predictions')
+      localStorage.removeItem('homeside.fantasy.v2')
+      localStorage.removeItem('homeside.owner')
+    } catch {
+      /* ignore */
+    }
+    window.location.assign(window.location.origin + window.location.pathname)
+  }
+
   const value = useMemo<AuthCtx>(
-    () => ({ status, user, displayName, signInWithGoogle, signOut }),
+    () => ({ status, user, displayName, signInWithGoogle, signOut, deleteAccount }),
     [status, user, displayName],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

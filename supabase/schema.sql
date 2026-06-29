@@ -69,13 +69,21 @@ create policy "picks update own" on public.picks
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+-- …and may DELETE their OWN row. This powers the in-app "Delete account" action,
+-- which removes a player from the league only — it never touches their Google /
+-- auth identity (that lives in auth.users and isn't reachable from the client).
+drop policy if exists "picks delete own" on public.picks;
+create policy "picks delete own" on public.picks
+  for delete to authenticated
+  using (auth.uid() = user_id);
+
 -- 3b) Table-level grants. RLS decides WHICH ROWS the authenticated role sees, but
 --     the role still needs base table access — without these, queries fail with
 --     "permission denied for table picks" before RLS is ever evaluated. (Supabase
 --     usually auto-grants these; we set them explicitly so this script is
 --     self-sufficient on any project.)
 grant usage on schema public to authenticated;
-grant select, insert, update on public.picks to authenticated;
+grant select, insert, update, delete on public.picks to authenticated;
 grant select on public.members to authenticated;
 
 -- 3c) Public, EMAIL-FREE leaderboard. The view runs with definer rights

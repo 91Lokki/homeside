@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, LogOut } from 'lucide-react'
+import { ChevronDown, LogOut, Trash2 } from 'lucide-react'
 import { useAuth } from '@/state/auth'
 import { useMediaQuery } from '@/lib/useMediaQuery'
 import { useT } from '@/lib/useT'
@@ -25,9 +25,11 @@ function Avatar({ name, size = 28 }: { name: string; size?: number }) {
 }
 
 export function AuthButton() {
-  const { status, displayName, user, signOut } = useAuth()
+  const { status, displayName, user, signOut, deleteAccount } = useAuth()
   const t = useT()
   const [open, setOpen] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 640px)')
 
   if (status === 'unavailable' || status === 'loading') return null
@@ -68,6 +70,15 @@ export function AuthButton() {
         className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-ink transition-colors hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
       >
         <LogOut size={15} className="text-faint" /> {t.authSignOut}
+      </button>
+      <button
+        onClick={() => {
+          close()
+          setConfirmingDelete(true)
+        }}
+        className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-400"
+      >
+        <Trash2 size={15} /> {t.authDeleteAccount}
       </button>
     </div>
   )
@@ -111,6 +122,40 @@ export function AuthButton() {
             document.body,
           )
         ))}
+
+      {confirmingDelete &&
+        createPortal(
+          <div className="fixed inset-0 z-[80] grid place-items-center p-4">
+            <div className="absolute inset-0 animate-fade-in bg-black/40 backdrop-blur-sm" onClick={() => !deleting && setConfirmingDelete(false)} aria-hidden />
+            <div role="dialog" aria-modal="true" className="relative w-full max-w-sm animate-scale-in rounded-[22px] bg-canvas p-6 ring-1 ring-inset ring-black/[0.08] dark:ring-white/10">
+              <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/12 text-rose-600 dark:text-rose-400">
+                <Trash2 size={18} />
+              </div>
+              <h2 className="font-grotesk text-xl font-semibold tracking-tight">{t.authDeleteTitle}</h2>
+              <p className="mt-2 text-sm text-muted">{t.authDeleteDesc}</p>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  disabled={deleting}
+                  className="rounded-pill px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-ink disabled:opacity-50"
+                >
+                  {t.authDeleteCancel}
+                </button>
+                <button
+                  onClick={async () => {
+                    setDeleting(true)
+                    await deleteAccount()
+                  }}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-1.5 rounded-pill bg-rose-600 px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                >
+                  <Trash2 size={14} /> {t.authDeleteConfirm}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

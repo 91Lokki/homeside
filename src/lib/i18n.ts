@@ -201,6 +201,11 @@ export interface Translations {
   // ── Auth ──
   authSignIn: string
   authSignOut: string
+  authDeleteAccount: string
+  authDeleteTitle: string
+  authDeleteDesc: string
+  authDeleteCancel: string
+  authDeleteConfirm: string
   authAccountTitle: string
   authAccountDesc: string
   authLeagueLabel: string
@@ -483,6 +488,12 @@ const en: Translations = {
   // Auth
   authSignIn: 'Sign in',
   authSignOut: 'Sign out',
+  authDeleteAccount: 'Delete account',
+  authDeleteTitle: 'Delete your account?',
+  authDeleteDesc:
+    'This removes your bracket and fantasy picks from the league and signs you out on this device. It does NOT delete your Google account, and can’t be undone.',
+  authDeleteCancel: 'Cancel',
+  authDeleteConfirm: 'Delete account',
   authAccountTitle: 'Your account',
   authAccountDesc: 'Your bracket and fantasy picks sync to the cloud, so you show up on the league leaderboard. Nothing else is shared.',
   authLeagueLabel: 'Homeside league',
@@ -765,6 +776,11 @@ const zh: Translations = {
   // Auth
   authSignIn: '登入',
   authSignOut: '登出',
+  authDeleteAccount: '刪除帳號',
+  authDeleteTitle: '確定刪除帳號？',
+  authDeleteDesc: '這會把你的預測與 Fantasy 選擇從聯賽中移除，並在此裝置登出。不會刪除你的 Google 帳戶，且此操作無法復原。',
+  authDeleteCancel: '取消',
+  authDeleteConfirm: '刪除帳號',
   authAccountTitle: '你的帳號',
   authAccountDesc: '你的預測與 Fantasy 選擇已同步至雲端，讓你出現在聯賽排行榜上。不分享其他資料。',
   authLeagueLabel: 'Homeside 聯賽',
