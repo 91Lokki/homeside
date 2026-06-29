@@ -140,7 +140,7 @@ export function Predict() {
       <div className="flex w-full overflow-y-auto pr-1" style={{ height: MOBILE_WINDOW_H }}>
         <div className="flex flex-1 flex-col">
           {cols[f].nos.map((no, i) => (
-            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0} className="flex-none" style={{ height: MOBILE_ROW_H }}>
+            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0} className="flex-none" style={{ minHeight: MOBILE_ROW_H }}>
               <MatchCard {...cardProps(no)} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
@@ -547,7 +547,7 @@ function Side({
       ) : (
         <span className="h-[19px] w-[19px] shrink-0 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
       )}
-      <span className={cn('min-w-0 flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? tName(team) : tTBD}</span>
+      <span className={cn('flex-1 truncate text-[14px] font-semibold', team ? 'text-ink' : 'font-normal text-faint')}>{team ? tName(team) : tTBD}</span>
       {correct && <Check size={13} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
       {score != null && <span className="text-sm font-bold tnum text-ink">{score}</span>}
     </button>
