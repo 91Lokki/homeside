@@ -183,12 +183,17 @@ const pairKey = (a: TeamCode, b: TeamCode) => [a, b].sort().join('~')
 // Include the stage so a knockout rematch never collides with (and overwrites)
 // the same two teams' group-stage meeting.
 const mergeKey = (m: Match) => `${m.stage}:${pairKey(m.homeCode!, m.awayCode!)}`
-const firstKnockoutKickoffMs = Math.min(...BRACKET.map((m) => new Date(m.kickoff).getTime()).filter(Number.isFinite))
+const kickoffTime = (iso?: string): number | null => {
+  if (!iso) return null
+  const ms = Date.parse(iso)
+  return Number.isFinite(ms) ? ms : null
+}
+const firstKnockoutKickoffMs = Math.min(...BRACKET.map((m) => kickoffTime(m.kickoff)).filter((ms): ms is number => ms != null))
 
 function inferKnockoutStage(lm: Match, mergedSoFar: Match[]): Match {
   if (lm.stage !== 'group' || !lm.homeCode || !lm.awayCode) return lm
-  const kickoffMs = new Date(lm.kickoff).getTime()
-  if (!Number.isFinite(kickoffMs) || kickoffMs < firstKnockoutKickoffMs) return lm
+  const kickoffMs = kickoffTime(lm.kickoff)
+  if (kickoffMs == null || kickoffMs < firstKnockoutKickoffMs) return lm
 
   const livePair = pairKey(lm.homeCode, lm.awayCode)
   const candidates = resolveBracket(BRACKET, TEAMS, mergedSoFar).filter(
@@ -197,8 +202,10 @@ function inferKnockoutStage(lm: Match, mergedSoFar: Match[]): Match {
   if (!candidates.length) return lm
 
   const nearest = candidates.reduce((best, m) => {
-    const bestDist = Math.abs(kickoffMs - new Date(best.kickoff).getTime())
-    const dist = Math.abs(kickoffMs - new Date(m.kickoff).getTime())
+    const bestMs = kickoffTime(best.kickoff) ?? Number.POSITIVE_INFINITY
+    const ms = kickoffTime(m.kickoff) ?? Number.POSITIVE_INFINITY
+    const bestDist = Math.abs(kickoffMs - bestMs)
+    const dist = Math.abs(kickoffMs - ms)
     return dist < bestDist ? m : best
   })
   return { ...lm, stage: nearest.stage }
