@@ -138,17 +138,17 @@ export function Predict() {
     const previewIsFinal = cols[f + 1].stage === 'F'
     return (
       <div className="flex w-full overflow-y-auto pr-1" style={{ height: MOBILE_WINDOW_H }}>
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 flex-col">
           {cols[f].nos.map((no, i) => (
-            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0} className="flex-none" style={{ minHeight: MOBILE_ROW_H }}>
+            <Slot key={no} hasNext hasPrev={false} topOfPair={i % 2 === 0} className="flex-none" style={{ height: MOBILE_ROW_H }}>
               <MatchCard {...cardProps(no)} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
         </div>
         <div className="shrink-0" style={{ width: GUTTER }} />
-        <div className="relative flex flex-1 flex-col gap-2">
+        <div className="relative flex flex-1 flex-col">
           {cols[f + 1].nos.map((no) => (
-            <Slot key={no} hasNext={false} hasPrev topOfPair className="flex-none" style={{ minHeight: MOBILE_ROW_H }}>
+            <Slot key={no} hasNext={false} hasPrev topOfPair className="flex-none" style={{ height: MOBILE_ROW_H * 2 }}>
               <MatchCard {...cardProps(no)} muted label={previewIsFinal ? t.predictFinal : undefined} tFinal={t.predictFinal} tThird={t.predictThirdPlace} tTBD={t.predictTBD} tFullTime={t.predictFullTime} />
             </Slot>
           ))}
