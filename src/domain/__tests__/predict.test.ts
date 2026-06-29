@@ -2,9 +2,11 @@ import { describe, it, expect } from 'vitest'
 import {
   scorePredictions,
   buildPredictedBracket,
+  LOCK_FLAG,
   LOCKED_AT_KEY,
   PICKED_AT_KEY,
   ROUND_POINTS,
+  stampMissingPredictionTimes,
   type Predictions,
 } from '@/domain/predict'
 import { BRACKET } from '@/data/bracket'
@@ -237,6 +239,29 @@ describe('scorePredictions', () => {
       expect(s.basePoints).toBe(8)
       expect(s.earlyLockBonus).toBe(0)
       expect(s.points).toBe(8)
+    })
+
+    it('migrates legacy locked picks without timestamps so they can still be graded', () => {
+      const bracket = [bracketMatch(73)]
+      const migrated = stampMissingPredictionTimes({ 73: 'CAN', [LOCK_FLAG]: true } as unknown as Predictions, bracket)
+      const resolved = [
+        rbm({
+          matchNo: 73,
+          stage: 'R32',
+          status: 'finished',
+          winnerCode: 'CAN',
+          homeCode: 'RSA',
+          awayCode: 'CAN',
+          kickoff: '2026-06-28T19:00:00Z',
+        }),
+      ]
+
+      expect(migrated[PICKED_AT_KEY]?.['73']).toBeLessThan(Date.parse('2026-06-28T19:00:00Z'))
+      expect(migrated[LOCKED_AT_KEY]).toBeLessThan(Date.parse('2026-06-28T19:00:00Z'))
+      const s = scorePredictions(migrated, resolved)
+      expect(s.perMatch[73]).toBe('correct')
+      expect(s.graded).toBe(1)
+      expect(s.points).toBe(1.4)
     })
   })
 

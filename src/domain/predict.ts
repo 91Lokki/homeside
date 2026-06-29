@@ -3,6 +3,7 @@ import type { BracketMatch, ResolvedBracketMatch, Stage, TeamCode } from './type
 /** User's predicted winner per bracket match number. */
 export const PICKED_AT_KEY = '__pickedAt'
 export const LOCKED_AT_KEY = '__lockedAt'
+export const LOCK_FLAG = '__locked'
 export const EARLY_LOCK_MULTIPLIER = 1.4
 export type Predictions = Record<number, TeamCode> & {
   [PICKED_AT_KEY]?: Record<string, number>
@@ -106,6 +107,30 @@ export function hasEarlyLockBonus(predictions: Predictions, match: { kickoff?: s
   const deadline = kickoffMs(match)
   const lockedAt = lockedAtFor(predictions)
   return deadline != null && lockedAt != null && lockedAt <= deadline
+}
+
+export function stampMissingPredictionTimes(
+  preds: Predictions,
+  bracket: Array<Pick<BracketMatch, 'matchNo' | 'kickoff'>>,
+  at: number = Date.now(),
+): Predictions {
+  const pickedAt = { ...(preds[PICKED_AT_KEY] ?? {}) }
+  const firstKickoff = Math.min(...bracket.map((m) => kickoffMs(m)).filter((ms): ms is number => ms != null))
+  const legacyAt = Number.isFinite(firstKickoff) ? firstKickoff - 1 : at
+  let changed = false
+
+  for (const m of bracket) {
+    if (preds[m.matchNo] != null && pickedAt[String(m.matchNo)] == null) {
+      pickedAt[String(m.matchNo)] = legacyAt
+      changed = true
+    }
+  }
+  if ((preds as Record<string, unknown>)[LOCK_FLAG] === true && preds[LOCKED_AT_KEY] == null) {
+    changed = true
+  }
+  return changed
+    ? ({ ...preds, [PICKED_AT_KEY]: pickedAt, [LOCKED_AT_KEY]: preds[LOCKED_AT_KEY] ?? legacyAt } as Predictions)
+    : preds
 }
 
 function roundTenth(n: number): number {

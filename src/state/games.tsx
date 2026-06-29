@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BRACKET } from '@/data/bracket'
 import type { TeamCode } from '@/domain/types'
-import { buildPredictedBracket, hasMatchStarted, LOCKED_AT_KEY, PICKED_AT_KEY, type Predictions } from '@/domain/predict'
+import { buildPredictedBracket, hasMatchStarted, LOCK_FLAG, LOCKED_AT_KEY, PICKED_AT_KEY, stampMissingPredictionTimes, type Predictions } from '@/domain/predict'
 import { playerKey, type FantasyPick, type RoundSquad, type Round, type Slot } from '@/domain/fantasy'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/state/auth'
@@ -12,7 +12,6 @@ const FANT_KEY = 'homeside.fantasy.v2'
 // Reserved (non-match) key inside the predictions blob that marks the bracket as
 // confirmed/locked. Lives with the picks so it syncs across devices for free; all
 // scoring iterates real bracket match numbers, so this key is harmless to them.
-const LOCK_FLAG = '__locked'
 // Whose data the local cache currently holds, so switching accounts in the same
 // browser never leaks the previous user's picks into a new account's row.
 const OWNER_KEY = 'homeside.owner'
@@ -60,23 +59,6 @@ function pruneStale(preds: Predictions): Predictions {
   return { ...next, [PICKED_AT_KEY]: pickedAt }
 }
 
-function stampMissingPredictionTimes(preds: Predictions, at: number = Date.now()): Predictions {
-  const pickedAt = { ...(preds[PICKED_AT_KEY] ?? {}) }
-  let changed = false
-  for (const m of BRACKET) {
-    if (preds[m.matchNo] != null && pickedAt[String(m.matchNo)] == null) {
-      pickedAt[String(m.matchNo)] = at
-      changed = true
-    }
-  }
-  if ((preds as Record<string, unknown>)[LOCK_FLAG] === true && preds[LOCKED_AT_KEY] == null) {
-    changed = true
-  }
-  return changed
-    ? ({ ...preds, [PICKED_AT_KEY]: pickedAt, [LOCKED_AT_KEY]: preds[LOCKED_AT_KEY] ?? at } as Predictions)
-    : preds
-}
-
 const emptySquad = (): RoundSquad => ({ players: [], captain: null })
 
 interface GamesCtx {
@@ -99,7 +81,7 @@ const Ctx = createContext<GamesCtx | null>(null)
 export function GamesProvider({ children }: { children: ReactNode }) {
   const { user, displayName } = useAuth()
   const { homeCode, setHomeCode } = useApp()
-  const [predictions, setPredictions] = useState<Predictions>(() => stampMissingPredictionTimes(load(PRED_KEY, {})))
+  const [predictions, setPredictions] = useState<Predictions>(() => stampMissingPredictionTimes(load(PRED_KEY, {}), BRACKET))
   const [fantasy, setFantasy] = useState<FantasyRounds>(() => load(FANT_KEY, {}))
   // Once a bracket is confirmed it can no longer be edited. The lock lives INSIDE
   // the predictions blob under a reserved key, so it rides every existing
@@ -157,7 +139,7 @@ export function GamesProvider({ children }: { children: ReactNode }) {
         return
       }
       if (data) {
-        const p = stampMissingPredictionTimes((data.predictions as Predictions) ?? {})
+        const p = stampMissingPredictionTimes((data.predictions as Predictions) ?? {}, BRACKET)
         const f = (data.fantasy as FantasyRounds) ?? {}
         const home = (data.home_code as string | null) ?? null
         setPredictions(p)
