@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { accentOn, readableInkOn, rgba } from '@/lib/prng'
 
 type ThemeMode = 'light' | 'dark' | 'system'
@@ -84,7 +84,7 @@ export function useTheme() {
  * and readable ink. Pass null to fall back to neutral.
  */
 export function useTeamColor(color: string | null | undefined, isDark: boolean) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
     if (!color) {
       root.style.removeProperty('--team')
